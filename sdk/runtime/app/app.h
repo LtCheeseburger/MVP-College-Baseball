@@ -78,6 +78,9 @@ std::string Sha1(const std::vector<uint8_t>& data);  // lower case hex
 // the recompiled code, <exe>.dll, built from the game in assets when missing or out of date (game_code.cpp) and
 // loaded; false after telling the player why the game cannot start, or when they chose not to start it yet
 bool PrepareGameCode(const GameFiles& game);
+// --build-game-code (setup): builds what is missing behind the same window and exits; 0 ready and the player chose
+// Start (or nothing to build), 2 ready and they chose Exit, 1 failed or stopped
+int BuildGameCode(const GameFiles& game);
 int Instance();  // --instance N on the command line, 0 without: a second copy on this PC for system link tests
 void* Window();  // HWND
 // boot splash: GameInfo::splash .bmp or .png beside the exe, up before the game window

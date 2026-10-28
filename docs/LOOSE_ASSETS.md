@@ -99,19 +99,22 @@ It is binary on purpose: nothing in it is meant to be edited, and both readers (
 ```json
 {
   "format": 1,
-  "source": { "isoSha1": "...", "xbeSha1": "<kImageSha1>", "release": "MVP 06 NCAA Baseball (NTSC)" },
-  "created": "2026-10-28T00:00:00Z", "setup": "0.1.0",
+  "source": { "image": "<file name>", "xbeSha1": "<kImageSha1>", "release": "MVP 06 NCAA Baseball", "setup": "0.1.0" },
+  "created": "2026-10-28T00:00:00Z",
   "files": {
     "data/models_big/a000i/x.xsh/00_tex0.dds": {
       "sha1": "...", "size": 0,
-      "origin": { "archive": "data/models.big", "member": "a000i\\x.xsh", "image": 0, "refpack": false }
+      "origin": { "disc": "data/models.big", "member": "a000i\\x.xsh", "part": "00_tex0.dds" }
     },
     "data/movies/intro.vp6": { "sha1": "...", "size": 0, "origin": { "disc": "data/movies/intro.vp6" } }
   }
 }
 ```
-- Every installed game file is listed. Paths are relative to `game/`, with `/`.
-- `origin` says where repair gets it again: a plain disc file, an archive member, or one image of an `.xsh`.
+- Written by `LooseInstaller` (MVP Workshop.Core), which setup uses. Every installed game file is listed, `_big.json`
+  and `xsh.meta` included. Paths are relative to `game/`, with `/`.
+- `origin` says where repair gets it again: the disc file, plus the archive member (nested ones joined with `\`) and
+  the part of a split `.xsh`. Repair re-extracts that disc file and writes only the files that failed.
+- The image is named, not hashed: hashing a whole dump would add minutes to setup, and `xbeSha1` already fixes the release.
 - **Modded?** A file is modded when its hash differs from the manifest. Mods should go in mod folders (6) rather than
   editing these files, but direct edits are allowed and verify reports them as "changed" and offers to restore them, never silently.
 - The `format` number goes up with any incompatible layout change. The runtime refuses a higher number than it knows and says so.

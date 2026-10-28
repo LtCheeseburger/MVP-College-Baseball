@@ -733,7 +733,8 @@ void ShowFailure() {
     MessageBoxW(nullptr, text.c_str(), kGame.title, MB_ICONERROR);
 }
 
-// the build on its own thread, the window on this one; false when it failed, the player stopped it, or chose Exit
+// the build on its own thread, the window on this one; false when it failed or the player stopped it (g_start says
+// whether they then chose Start or Exit)
 bool BuildWithWindow(std::vector<Target>& targets) {
     if (std::wstring blocker = Blocker(targets); !blocker.empty()) {
         MessageBoxW(nullptr, blocker.c_str(), kGame.title, MB_ICONERROR);
@@ -756,7 +757,7 @@ bool BuildWithWindow(std::vector<Target>& targets) {
     worker.join();
     SetThreadExecutionState(ES_CONTINUOUS);
     if (!ok && !g_progress.cancel) ShowFailure();
-    return ok && g_start;
+    return ok;
 }
 
 }  // namespace
@@ -769,7 +770,7 @@ bool PrepareGameCode(const GameFiles& game) {
     std::vector<Image> images = Images();
     std::vector<Target> stale = StaleTargets(game, images);
     for (const Target& target : stale) LOGR("Game code: building %ls.dll", target.image->exe.c_str());
-    bool built = stale.empty() || BuildWithWindow(stale);
+    bool built = stale.empty() || (BuildWithWindow(stale) && g_start);
     ReleaseMutex(lock);
     CloseHandle(lock);
     if (!built) return false;
@@ -778,6 +779,20 @@ bool PrepareGameCode(const GameFiles& game) {
     MessageBoxW(nullptr, L"The game's code could not be loaded, see the log in the logs folder.", kGame.title,
                 MB_ICONERROR);
     return false;
+}
+
+int BuildGameCode(const GameFiles& game) {
+    std::wstring mutex_name = std::wstring(kGame.name) + L"-GameCode";
+    HANDLE lock = CreateMutexW(nullptr, FALSE, mutex_name.c_str());
+    WaitForSingleObject(lock, INFINITE);
+    std::vector<Image> images = Images();  // the targets point into it
+    std::vector<Target> stale = StaleTargets(game, images);
+    for (const Target& target : stale) LOGR("Game code: building %ls.dll (--build-game-code)", target.image->exe.c_str());
+    g_start = true;  // nothing to build counts as ready to play
+    bool built = stale.empty() || BuildWithWindow(stale);
+    ReleaseMutex(lock);
+    CloseHandle(lock);
+    return !built ? 1 : g_start ? 0 : 2;
 }
 
 }  // namespace app
