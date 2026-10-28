@@ -53,58 +53,47 @@ extracted archive therefore keeps a `_big.json` beside its members:
 ## 4. Textures (`.xsh`, SHPX)
 An `.xsh` is a container: a 16-byte header (`SHPX`, size, count, version), a directory of `(tag[4], offset)`,
 an optional group name, then one block per image. Each block has a 16-byte header plus pixels, followed by attachments
-(palette `0x2x`, comment `0x6F`, name `0x70`, hotspots `0x7C`, metal bin `0x69`, and so on).
+(name `0x70`, metal bin `0x69`, hotspots `0x7C`, palette `0x2A`, comment `0x6F`).
+
+What the disc holds (survey of all 11,903 SHPX files, 39,744 images):
+| SHPX type | Count | Storage | Loose form |
+|---|---|---|---|
+| 0x7D BGRA8888 | 19,203 | always swizzled, each mip level on its own | DDS 32-bit A8R8G8B8 (legacy masks), unswizzled |
+| 0x60 DXT1 | 14,657 | linear blocks | DDS `DXT1`, blocks copied as they are |
+| 0x61 DXT3 | 5,300 | linear blocks | DDS `DXT3`, blocks copied as they are |
+| 0x7B PAL8 | 584 | palette in a `0x2A` attachment | **raw** `.bin` (the block's bytes after its header) |
+
+Mip levels: the count is the top 4 bits of the header's last u16 (`RawY >> 12`); levels follow level 0 back to back.
+Some DXT blocks end with 16 zero bytes after the pixels (kept as "pad"). Nothing else (other types, RefPack-compressed
+pixels, shared or out-of-order blocks) occurs, and anything like that would stay raw or keep the file whole.
+12 files named `.xsh` are not SHPX and stay plain files.
 
 Each `.xsh` becomes a folder with the **same name, extension included**:
 ```
 <tex>.xsh/
-  xsh.json         everything that isn't pixels
-  00_<tag>.dds     one per image, in directory order
-  01_<tag>.dds
-  03_<tag>.bin     an image kept native (see below)
+  xsh.meta         every byte that isn't pixels (binary, below)
+  00_<tag>.dds     one per image, numbered in file order
+  03_<tag>.bin     an image kept raw
 ```
 
-### Which formats become DDS
-| SHPX type | Name | Loose form |
-|---|---|---|
-| 0x60 / 0x61 / 0x62 | DXT1 / 3 / 5 | DDS BC1 / BC2 / BC3, blocks copied as they are (Xbox DXT blocks are not swizzled) |
-| 0x7D | BGRA8888 | DDS `B8G8R8A8_UNORM`, unswizzled when the swizzle flag is set |
-| 0x7F, 0x78 | RGB565 | DDS `B5G6R5_UNORM`, unswizzled |
-| 0x7E | ARGB1555 | DDS `B5G5R5A1_UNORM`, unswizzled |
-| 0x64 | A8 | DDS `A8_UNORM`, unswizzled |
-| 0x7B | PAL8 | **native** `.bin` (raw block bytes); the palette stays in `xsh.json` attachments |
-| type with flag 0x80 (RefPack pixels) | any | **native** `.bin` until a byte-identical round trip is proven |
-| anything else | | **native** `.bin` |
-
-DDS files use the `DX10` header extension only for formats with no legacy FourCC/mask. Mip levels are written as DDS mips
-when the block carries them (the mip count and where it's stored must be confirmed against the data in Phase 3 before code is written).
-
-### `xsh.json`
-```json
-{
-  "version": 1,
-  "magic": "SHPX", "declaredSize": 0, "shpxVersion": "G357",
-  "groupName": "...",                              // null when absent
-  "images": [
-    { "file": "00_tex0.dds", "tag": "tex0", "offset": 64,
-      "header": "base64 of the 16-byte block header",
-      "swizzled": true, "pad": "base64 of any bytes between the pixels and the next block",
-      "attachments": [ { "header": "base64", "data": "base64" } ] }
-  ],
-  "tail": "base64 of bytes after the last block, if any"
-}
-```
-The point is that **every byte of the original is either in a DDS or in this file**. Offsets are kept so the rebuild
-puts blocks where they were. An edited image that changes size relays the blocks out and fixes up the directory offsets.
+### `xsh.meta` (binary, little endian)
+`"XSHM"`, u32 version (1), u32 head length + head (file start up to the first block: header, directory, group name),
+u32 image count, then per image in file order: u32 directory index, u8 kind (0 DDS, 1 raw), u16 name length + name,
+the 16-byte block header, u32 pad length, u32 rest length + rest (attachments up to the next block).
+It is binary on purpose: nothing in it is meant to be edited, and both readers (C# and C++) stay tiny.
 
 ### Rebuild rule and the test
-- The runtime rebuilds the `.xsh` bytes when the game opens it: DDS pixels → re-swizzle where it applies → block header
-  (width/height updated only if the DDS changed size) → attachments → padding.
-- **Acceptance test (Phase 3):** for every `.xsh` on the disc, loose or inside an archive, extract → rebuild gives
-  **byte-identical** output. The C# (Workshop.Core) and C++ (sdk) rebuilds must both pass.
-- Edited DDS in another format or size: re-encoded to the original SHPX type. Bad input (wrong dimensions for a
-  power-of-two-only type, unreadable DDS) logs a warning and falls back to the archive member if the `.big` is still installed.
-  Otherwise the game gets a 1×1 placeholder of the right type, and verify flags the file so repair can restore it from the ISO.
+- Rebuild: head, then per image its header (width, height, mip count and block size updated from the DDS), pixels
+  (BGRA re-swizzled per level), pad and rest; then the declared size and the directory offsets are patched.
+- **Passed (2026-10-28):** all 11,903 SHPX files split and rebuild byte-identical, through the written DDS files, in
+  MVP Workshop (`XshFolder`, test `tests/LooseTextures`) and in the runtime (`sdk/runtime/kernel/xsh.cpp`). Size-only
+  planning (DDS headers only) agrees with the built length for every file.
+- Edited images: a DDS in the slot's format is used at any size and mip count (BGRA needs power-of-two sides).
+  MVP Workshop also converts other formats (DXT5, BGRA into a DXT slot and the reverse, rebuilding the mip chain).
+  The runtime does not convert: a DDS it can't use is logged (`textures: ... shown blank`) and replaced by blank pixels
+  in the original size, so the game never gets a malformed file.
+- In archives, texture folders are built when the archive opens and RefPack-compressed like other members
+  (11,153 of the 11,903 were compressed on the disc).
 
 ## 5. Manifest (`game/manifest.json`)
 ```json
@@ -138,9 +127,8 @@ The game's own `modvfs::AddPatch` patches (main menu, feflow) run on the winner'
 the same as today. A mod that replaces a patched member gets patched too. That is intended: the patches are fixes, not content.
 
 ## 7. Open questions for Phase 2/3 (checked against the code, not guessed)
-1. Audio banks (`proj*dat.big` / `proj*hdr.big`): does the audio code stream from the archive by offset? If so, those
-   archives stay packed (listed in the manifest as whole files) until the dsound path is understood.
-2. Does any caller read a member's compressed RefPack bytes directly (see 3)?
-3. Where SHPX stores mip counts, and whether any `.xsh` has blocks overlapping or out of directory order.
+1. ~~Audio banks~~: served from loose folders like the rest; menus, a match and a dynasty load ran that way (Phase 2).
+2. ~~Raw RefPack readers~~: moot, members are served compressed (see 3).
+3. ~~SHPX mip counts and block order~~ (answered in 4).
 4. How long it takes to rebuild an `.xsh` while a match loads, to decide whether a cache (`%LOCALAPPDATA%`, keyed by DDS hash) is needed.
 5. How much disk space the full loose install takes, measured once, for the setup space check.

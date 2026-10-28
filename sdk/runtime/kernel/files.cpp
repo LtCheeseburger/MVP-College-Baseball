@@ -10,6 +10,7 @@
 #include "kernel/kernel.h"
 #include "kernel/exports.h"
 #include "kernel/modvfs.h"
+#include "kernel/xsh.h"
 #include "kernel/save_safety.h"
 
 namespace fs = std::filesystem;
@@ -382,6 +383,8 @@ KERNEL_EXPORT(190, NtCreateFile, 9) {
     bool exists = fs::exists(host, ec);
     bool is_dir = exists && fs::is_directory(host, ec);
     bool want_dir = options & 1;
+    // a texture pack installed as a folder opens as the file it stands for
+    if (is_dir && !want_dir && disposition == 1 && xsh::IsFolder(host)) return OpenLoose(host, name, handle_out, iosb);
     uint32_t info = 1;  // FILE_OPENED
     if (want_dir || is_dir) {
         if (!exists) {
@@ -487,6 +490,7 @@ KERNEL_EXPORT(202, NtOpenFile, 6) {
         IoStatus(iosb, kObjectNameNotFound, 5);
         return host.empty() ? kObjectPathNotFound : kObjectNameNotFound;
     }
+    if (!(options & 1) && xsh::IsFolder(host)) return OpenLoose(host, name, handle_out, iosb);
     auto f = std::make_shared<File>();
     f->host = host;
     f->xbox = Normalize(name);
@@ -762,7 +766,7 @@ KERNEL_EXPORT(210, NtQueryFullAttributesFile, 2) {
     std::string name = ReadAnsiString(R32(a[0] + 4));
     Target t = Resolve(name, R32(a[0]));
     std::error_code ec;
-    if (!t.disc && !t.host.empty() && !fs::exists(t.host, ec)) {
+    if (!t.disc && !t.host.empty() && (!fs::exists(t.host, ec) || xsh::IsFolder(t.host))) {
         if (auto vf = modvfs::OpenLoose(t.host)) {
             FillNetworkInfo(a[1], ToFileTime(fs::last_write_time(modvfs::LooseFolder(t.host), ec)), vf->Size(), false);
             return kSuccess;

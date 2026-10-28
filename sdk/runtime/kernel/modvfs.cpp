@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "core/log.h"
+#include "kernel/xsh.h"
 
 namespace fs = std::filesystem;
 
@@ -421,7 +422,11 @@ public:
             std::string name = rel.generic_string();
             std::replace(name.begin(), name.end(), '/', '\\');
             if (it->is_directory(ec)) {
-                if (fs::exists(it->path() / "_big.json", ec)) {
+                // a texture pack as a folder keeps its own name
+                if (xsh::IsFolder(it->path())) {
+                    found.push_back({Upper(name), it->path()});
+                    it.disable_recursion_pending();
+                } else if (fs::exists(it->path() / "_big.json", ec)) {
                     size_t us = name.rfind('_');
                     if (us != std::string::npos && name.find('\\', us) == std::string::npos) {
                         found.push_back({Upper(name.substr(0, us) + "." + name.substr(us + 1)), it->path()});
@@ -459,7 +464,10 @@ public:
         for (Entry& e : entries_) {
             std::string up = Upper(e.name);
             e.pack = std::find(packed.begin(), packed.end(), up) != packed.end();
-            if (fs::is_directory(e.path, ec)) {
+            if (xsh::IsFolder(e.path)) {
+                e.xsh = true;
+                if (!xsh::Size(e.path, e.size)) return false;
+            } else if (fs::is_directory(e.path, ec)) {
                 auto child = std::make_shared<LooseBig>();
                 if (!child->Build(e.path, label + "\\" + e.name, {})) return false;
                 e.child = child;
@@ -495,14 +503,14 @@ public:
         // packing is most of the cost of opening a loose archive: spread it over the cores
         std::vector<Entry*> to_pack;
         for (Entry& e : entries_)
-            if (e.pack) to_pack.push_back(&e);
+            if (e.pack || (e.xsh && !e.loaded)) to_pack.push_back(&e);
         std::atomic<size_t> next{0};
         std::atomic<bool> failed{false};
         auto work = [&] {
             for (size_t i; (i = next++) < to_pack.size();) {
                 Entry& e = *to_pack[i];
-                if (!e.loaded && !LoadFile(e.path, e.bytes)) failed = true;
-                e.bytes = Pack(e.bytes);
+                if (!e.loaded && !(e.xsh ? xsh::Build(e.path, e.bytes) : LoadFile(e.path, e.bytes))) failed = true;
+                if (e.pack) e.bytes = Pack(e.bytes);
                 e.loaded = true;
                 e.size = e.bytes.size();
             }
@@ -551,6 +559,7 @@ private:
         uint64_t offset = 0, size = 0;
         bool pack = false;    // packed again (RefPack) as the disc stored it
         bool loaded = false;  // served from bytes
+        bool xsh = false;     // a texture pack folder, rebuilt into the .xsh
         std::vector<uint8_t> bytes;
         std::shared_ptr<LooseBig> child;
     };
@@ -592,6 +601,7 @@ private:
 }  // namespace
 
 fs::path LooseFolder(const fs::path& host) {
+    if (xsh::IsFolder(host)) return host;
     std::error_code ec;
     if (!host.has_filename() || !fs::is_directory(host.parent_path(), ec)) return {};
     fs::path dir = FindNoCase(host.parent_path(), FolderName(host.filename().string()));
@@ -599,6 +609,12 @@ fs::path LooseFolder(const fs::path& host) {
 }
 
 std::shared_ptr<Virtual> OpenLoose(const fs::path& host) {
+    // a texture pack outside any archive, installed as a folder of the same name
+    if (xsh::IsFolder(host)) {
+        std::vector<uint8_t> bytes;
+        if (!xsh::Build(host, bytes)) return nullptr;
+        return std::make_shared<BytesView>(bytes);
+    }
     fs::path folder = LooseFolder(host);
     if (folder.empty()) return nullptr;
     // archives don't change while the game runs, and some are opened many times
