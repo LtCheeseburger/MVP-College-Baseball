@@ -68,6 +68,7 @@ int Nearest(const std::vector<uint32_t>& values, uint32_t v) {
 }
 
 const std::vector<uint32_t> kRenderPercent = {25, 33, 50, 67, 75, 85, 100, 125, 150, 200};
+const std::vector<uint32_t> kInternalHeights = {720, 1080, 1440};
 // window sizes 16:9, then the desktop's own; the same width and height are the fullscreen mode
 struct Size {
     uint32_t w, h;
@@ -166,9 +167,19 @@ const std::vector<Row>& Rows() {
              app::Get().height = kWindowSizes[size_t(i)].h;
              app::ApplyDisplay();
          }},
-        {L"Render Resolution", {L"25%", L"33%", L"50%", L"67%", L"75%", L"85%", L"100%", L"125%", L"150%", L"200%"},
-         [] { return Nearest(kRenderPercent, app::Get().render_percent); },
-         [](int i) { app::Get().render_percent = kRenderPercent[size_t(i)]; }},
+        {L"Render Resolution", {L"25%", L"33%", L"50%", L"67%", L"75%", L"85%", L"100%", L"125%", L"150%", L"200%",
+          L"720p", L"1080p", L"1440p"},
+         [] {
+             // fixed internal_resolution heights follow the percentages
+             for (size_t i = 0; i < kInternalHeights.size(); i++)
+                 if (app::Get().internal_height == kInternalHeights[i]) return int(kRenderPercent.size() + i);
+             return Nearest(kRenderPercent, app::Get().render_percent);
+         },
+         [](int i) {
+             size_t n = kRenderPercent.size();
+             app::Get().internal_height = size_t(i) < n ? 0 : kInternalHeights[size_t(i) - n];
+             if (size_t(i) < n) app::Get().render_percent = kRenderPercent[size_t(i)];
+         }},
         {L"Anti-Aliasing", {L"Off", L"FXAA"}, [] { return app::Get().fxaa ? 1 : 0; },
          [](int i) { app::Get().fxaa = i != 0; }},
         {L"Upscaler", {L"Bilinear", L"AMD FSR 1"}, [] { return app::Get().fsr ? 1 : 0; },

@@ -47,10 +47,14 @@ void Load() {
     s.width = t["width"].value_or(s.width);
     s.height = t["height"].value_or(s.height);
     s.render_percent = std::clamp(t["render_percent"].value_or(s.render_percent), kMinRenderPercent, kMaxRenderPercent);
-    // fps_cap was the name before vsync became independent; its 1 meant the monitor's refresh rate
-    uint32_t limit = t["fps_limit"].value_or(t["fps_cap"].value_or(s.fps_limit));
+    std::string ires = t["internal_resolution"].value_or(std::string("native"));
+    s.internal_height = ires == "720p" ? 720 : ires == "1080p" ? 1080 : ires == "1440p" ? 1440 : 0;
+    // fps_limit and before it fps_cap were the older names; fps_cap 1 meant the monitor's refresh rate
+    uint32_t limit = t["frame_limit"].value_or(t["fps_limit"].value_or(t["fps_cap"].value_or(s.fps_limit)));
     s.fps_limit = limit == 1 ? 0 : limit ? std::clamp(limit, 30u, 1000u) : 0;
     s.vsync = t["vsync"].value_or(s.vsync);
+    std::string stats = t["frame_stats"].value_or(std::string("off"));
+    s.frame_stats = stats == "log" ? 1 : stats == "overlay" ? 2 : stats == "both" ? 3 : 0;
     s.background_fps = t["background_fps"].value_or(s.background_fps);
     s.mute_unfocused = t["mute_unfocused"].value_or(s.mute_unfocused);
     s.aniso = t["anisotropic_filtering"].value_or(s.aniso);
@@ -87,8 +91,10 @@ toml::table Table() {
                   {"width", int64_t(s.width)},
                   {"height", int64_t(s.height)},
                   {"render_percent", int64_t(s.render_percent)},
-                  {"fps_limit", int64_t(s.fps_limit)},
+                  {"internal_resolution", s.internal_height ? std::to_string(s.internal_height) + "p" : "native"},
+                  {"frame_limit", int64_t(s.fps_limit)},
                   {"vsync", s.vsync},
+                  {"frame_stats", s.frame_stats == 1 ? "log" : s.frame_stats == 2 ? "overlay" : s.frame_stats == 3 ? "both" : "off"},
                   {"background_fps", int64_t(s.background_fps)},
                   {"mute_unfocused", s.mute_unfocused},
                   {"anisotropic_filtering", int64_t(s.aniso)},
@@ -186,7 +192,8 @@ Mode CachedOutput() {
 }
 
 float RenderScale(uint32_t guest_height) {
-    float h = CachedOutput().height * (std::clamp(Get().render_percent, kMinRenderPercent, kMaxRenderPercent) / 100.0f);
+    float h = Get().internal_height ? float(Get().internal_height)
+                                    : CachedOutput().height * (std::clamp(Get().render_percent, kMinRenderPercent, kMaxRenderPercent) / 100.0f);
     return guest_height ? std::max(h / guest_height, 0.1f) : 1.0f;
 }
 

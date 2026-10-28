@@ -306,17 +306,25 @@ void SetFrameBuffers(const char* caller, uint32_t pp) {
 constexpr bool kVBlank = XDK_CDevice_VBlankCount != xdk::kUnknown && XDK_CDevice_VBlankEvent != xdk::kUnknown &&
                          XDK_CDevice_VBlankCallback != xdk::kUnknown;
 
+// the next guest blank, for BlockUntilVerticalBlank; 0 before the clock runs
+std::atomic<int64_t> g_next_blank{0};
+
 // what the library's vertical blank interrupt leaves for the title: count, event, callback
 void VerticalBlank(X86Context& ctx) {
     using clock = std::chrono::steady_clock;
+    constexpr auto kBlank = std::chrono::nanoseconds(1000000000ll / 60);
     uint32_t info = mem::AllocSystem(12), shown = 0;
     auto next = clock::now();
     // XBE_PERF: blanks and swaps a second, to show the guest clock holds whatever the frame limit is
     auto stat = next;
     uint32_t stat_count = Dev(XDK_CDevice_VBlankCount), stat_swaps = Dev(kDevSwapCount);
     for (;;) {
-        next = std::max(next + std::chrono::microseconds(16667), clock::now());
-        std::this_thread::sleep_until(next);
+        // on an exact 60 Hz grid, a late wake does not push the later blanks back; a stall of more than a blank
+        // starts the grid again
+        next += kBlank;
+        if (next < clock::now() - kBlank) next = clock::now();
+        g_next_blank = next.time_since_epoch().count();
+        app::SleepUntil(next);
         uint32_t count = Dev(XDK_CDevice_VBlankCount) + 1, swaps = Dev(kDevSwapCount);
         SetDev(XDK_CDevice_VBlankCount, count);
         if (diag::Perf() && next - stat >= std::chrono::seconds(1)) {
@@ -493,8 +501,12 @@ HLE_STDCALL(D3D_MakeRequestedSpace, 2) {
     return ScratchPush();
 }
 
+// until the guest clock's next blank
 HLE_STDCALL(D3DDevice_BlockUntilVerticalBlank, 0) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(16));
+    using clock = std::chrono::steady_clock;
+    int64_t next = g_next_blank.load();
+    if (next) app::SleepUntil(clock::time_point(clock::duration(next)));
+    else std::this_thread::sleep_for(std::chrono::milliseconds(16));
     return 0;
 }
 // (status): D3DRASTER_STATUS {InVBlank, ScanLine} on a 60 Hz frame clock. The library reads the GPU's scanline,
@@ -626,6 +638,7 @@ HLE_STDCALL(D3DDevice_Swap, 1) {
     Walk(Dev(kDevPush));  // reports asked for at the end of the frame
     if (g_backend) g_backend->Present(SurfaceOf(g_buffers[1]));
     app::Pace();
+    app::NoteGuestFrame();
     // like the XDK, the surfaces stay put and their memory rotates: titles keep back buffer pointers and copy its data
     uint32_t last = g_buffers[g_buffer_count - 1], data = R32(last + 4), lk = R32(last + 8);
     for (uint32_t i = g_buffer_count - 1; i > 0; i--) {

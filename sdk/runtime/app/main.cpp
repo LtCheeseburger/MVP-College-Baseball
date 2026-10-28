@@ -263,23 +263,6 @@ bool MuteNow() { return Get().mute_unfocused && !g_focused; }
 void ApplyDisplay() { PostMessageW(g_hwnd, kApplyDisplay, 0, 0); }
 void OpenGameWindow(bool apply) { SendMessageW(g_hwnd, kOpenWindow, apply, 0); }
 
-void Pace() {
-    using clock = std::chrono::steady_clock;
-    static clock::time_point next = clock::now();
-    uint32_t cap = g_focused ? Get().fps_limit : Get().background_fps;
-    auto now = clock::now();
-    if (!cap) {
-        next = now;
-        return;
-    }
-    auto period = std::chrono::nanoseconds(1000000000ull / cap);
-    next += period;
-    if (next < now - period) next = now;
-    // sleep most of the wait (timer resolution is 1 ms), spin the last 2 ms for the exact time
-    while (clock::now() + std::chrono::milliseconds(2) < next) Sleep(1);
-    while (clock::now() < next) _mm_pause();
-}
-
 }  // namespace app
 
 int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {

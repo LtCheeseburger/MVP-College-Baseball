@@ -919,6 +919,10 @@ private:
     std::vector<Query> counted_;  // since the last ClearReport
     std::deque<Report> reports_;
     bool tearing_ = false;
+    HANDLE latency_wait_ = nullptr;  // signalled when the swap chain takes another frame
+    uint32_t SwapFlags() const {
+        return DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT | (tearing_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
+    }
     uint64_t presents_ = 0;
     double fps_ = 0;
     std::chrono::steady_clock::time_point fps_t_ = std::chrono::steady_clock::now();
@@ -1030,7 +1034,7 @@ bool D3D12Backend::CreateSwapChain(HWND hwnd) {
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     sd.BufferCount = kFrames;
     sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    sd.Flags = tearing_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+    sd.Flags = SwapFlags();
     ComPtr<IDXGISwapChain1> sc1;
     if (FAILED(factory_->CreateSwapChainForHwnd(queue_.Get(), hwnd, &sd, nullptr, nullptr, &sc1))) {
         LOGE("d3d12: no swap chain");
@@ -1038,6 +1042,10 @@ bool D3D12Backend::CreateSwapChain(HWND hwnd) {
     }
     factory_->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
     sc1.As(&swap_);
+    // one frame queued at most: a present no longer blocks inside Present, the wait before drawing does, so a frame
+    // starts as soon as the display can take it and is shown at the next refresh
+    swap_->SetMaximumFrameLatency(1);
+    latency_wait_ = swap_->GetFrameLatencyWaitableObject();
     return true;
 }
 
@@ -3286,8 +3294,7 @@ void D3D12Backend::ResizeSwap() {
         if (f.fence) WaitFence(f.fence);
     }
     for (auto& b : bb_) b.Reset();
-    HRESULT hr = swap_->ResizeBuffers(kFrames, w, h, DXGI_FORMAT_B8G8R8A8_UNORM,
-                                      tearing_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
+    HRESULT hr = swap_->ResizeBuffers(kFrames, w, h, DXGI_FORMAT_B8G8R8A8_UNORM, SwapFlags());
     if (FAILED(hr)) LOGE("d3d12: resizing the swap chain to %ux%u failed (%08X)", w, h, unsigned(hr));
     CreateBackBufferViews();
     bb_w_ = w;
@@ -3548,6 +3555,18 @@ void D3D12Backend::RenderUi() {
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
     if (app::kGame.ui) app::kGame.ui(fps_);
+    if (app::Get().frame_stats & 2) {
+        std::string text = app::FrameStatsText();
+        if (!text.empty()) {
+            ImGui::SetNextWindowPos(ImVec2(8, 8));
+            ImGui::SetNextWindowBgAlpha(0.6f);
+            ImGui::Begin("##frame_stats", nullptr,
+                         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoInputs |
+                             ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
+            ImGui::TextUnformatted(text.c_str());
+            ImGui::End();
+        }
+    }
     ImGui::Render();
     ID3D12DescriptorHeap* uh[] = {ui_heap_.Get()};
     cl_->SetDescriptorHeaps(1, uh);
@@ -3668,6 +3687,11 @@ void D3D12Backend::Present(const Surface& front) {
     if (ramp_dirty_) UploadGammaRamp();
     Transition(lut_.Get(), lut_state_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
+    if (latency_wait_) {
+        auto perf_latency = PerfClock::now();
+        WaitForSingleObjectEx(latency_wait_, 100, TRUE);
+        g_perf.swap += PerfMs(perf_latency);
+    }
     uint32_t bi = swap_->GetCurrentBackBufferIndex();
     DrawFrame(t, bi);
     Submit(false);
@@ -3678,9 +3702,13 @@ void D3D12Backend::Present(const Surface& front) {
     present_fence_[presents_ % (kFrames + 1)].store(fence_value_);
     DeliverReports();
     bool vsync = app::Get().vsync;
+    // vsync: as many refreshes as the limit fits in a whole number of (60 on 120 Hz is 2), else 1 and the limiter
+    // paces; on a variable refresh display 1 shows each frame the moment it is done
+    uint32_t interval = vsync ? std::max(app::SwapInterval(), 1u) : 0;
     auto perf_swap = PerfClock::now();
-    swap_->Present(vsync ? 1 : 0, !vsync && tearing_ ? DXGI_PRESENT_ALLOW_TEARING : 0);
+    swap_->Present(interval, !vsync && tearing_ ? DXGI_PRESENT_ALLOW_TEARING : 0);
     g_perf.swap += PerfMs(perf_swap);
+    app::NoteHostPresent();
 
     presents_++;
     presents_seen_.store(presents_);

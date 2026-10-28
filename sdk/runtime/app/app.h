@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <mutex>
@@ -21,8 +22,10 @@ struct Settings {
     DisplayMode display_mode = DisplayMode::Borderless;
     uint32_t width = 0, height = 0;  // 0 is the desktop mode
     uint32_t render_percent = 100;   // of the output height, 25 to 200: past 100 the frame is averaged down, below it scaled up
+    uint32_t internal_height = 0;    // internal_resolution: 0 "native" follows render_percent, else 720/1080/1440 drawn whatever the window
     uint32_t fps_limit = 60;         // presentation pacing only, the guest keeps its 60 Hz blank clock; 0 off, else 30-1000
     bool vsync = true;               // independent of fps_limit: the swap waits for the monitor's refresh
+    uint32_t frame_stats = 0;        // 1 log each second, 2 overlay, 3 both: guest and host frame times min/avg/max
     uint32_t background_fps = 30;    // fps_limit while the window is not the active one, 0 unlimited
     bool mute_unfocused = true;      // no sound while the window is not the active one
     uint32_t aniso = 0;              // 0 as the game asks
@@ -120,8 +123,16 @@ struct GameInfo {
 };
 extern const GameInfo kGame;
 
-// sleeps out the rest of the frame for the fps cap, or the background cap while the window is not active
+// frame_pacing.cpp. Pace sleeps out the rest of the frame for the fps cap, or the background cap while the window is
+// not active, unless the display paces it: SwapInterval is the refreshes a vsync present waits for, 0 when the
+// limiter paces (or vsync off)
 void Pace();
+void SleepUntil(std::chrono::steady_clock::time_point t);  // to within a few microseconds, any thread
+double RefreshRate();       // Hz of the window's monitor, 0 unknown
+uint32_t SwapInterval();
+void NoteGuestFrame();      // each guest swap, after Pace
+void NoteHostPresent();     // each host present, after it returns
+std::string FrameStatsText();  // the overlay's lines for the last second
 bool Focused();   // any thread: the game window is the active one
 bool MuteNow();   // any thread: mute_unfocused and the window is not active
 
