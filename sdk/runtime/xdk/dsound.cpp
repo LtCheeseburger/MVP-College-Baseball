@@ -988,6 +988,7 @@ BUFFER(StopEx, 4) {
 }
 // (this, flags): 0 resumes, 1 pauses, 2 holds until IDirectSound_SynchPlayback
 BUFFER(Pause, 2) {
+    if (a[1] > 2) return 0x80070057u;  // E_INVALIDARG, the voice is left as it was
     v.paused = a[1] == 1;
     v.sync = a[1] == 2;
     return 0;
