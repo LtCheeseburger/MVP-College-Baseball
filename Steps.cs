@@ -1,0 +1,138 @@
+using System.Diagnostics;
+using Microsoft.Win32;
+
+namespace MVPSetup;
+
+/// <summary>The install steps besides the game data: port files, the game-code build, shortcuts, the uninstall entry.</summary>
+static class Steps
+{
+    /// <summary>
+    /// The port's own files beside setup (the release zip), or in a build folder with --port: the exe and its
+    /// splash, the compiler without its work folder, the C++ runtime and the notices. Never game data.
+    /// </summary>
+    public static List<(string From, string Rel)> PortFiles(string portDir)
+    {
+        var list = new List<(string, string)>();
+        void Add(string rel)
+        {
+            var p = Path.Combine(portDir, rel);
+            if (File.Exists(p)) list.Add((p, rel));
+        }
+        Add(Game.Exe);
+        foreach (var f in new[] { "splash.png", "splash.bmp", "README.md", "THIRD_PARTY.txt", "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll" }) Add(f);
+        var compiler = Path.Combine(portDir, "compiler");
+        if (Directory.Exists(compiler))
+            foreach (var f in Directory.EnumerateFiles(compiler, "*", SearchOption.AllDirectories))
+            {
+                var rel = Path.GetRelativePath(portDir, f);
+                if (!rel.StartsWith(Path.Combine("compiler", "work") + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) list.Add((f, rel));
+            }
+        return list;
+    }
+
+    public static void CopyPortFiles(string portDir, string installDir, IProgress<double>? progress)
+    {
+        var files = PortFiles(portDir);
+        for (var i = 0; i < files.Count; i++)
+        {
+            var dst = Path.Combine(installDir, files[i].Rel);
+            Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
+            File.Copy(files[i].From, dst, true);
+            progress?.Report((i + 1.0) / files.Count);
+        }
+        // setup stays beside the game for repair and uninstall
+        var self = Environment.ProcessPath!;
+        var target = Path.Combine(installDir, "Setup.exe");
+        if (!string.Equals(Path.GetFullPath(self), Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase)) File.Copy(self, target, true);
+    }
+
+    /// <summary>Runs the exe's own game-code build (its progress window); 0 start the game, 2 not now, 1 failed.</summary>
+    public static int BuildGameCode(string installDir)
+    {
+        using var p = Process.Start(new ProcessStartInfo(Path.Combine(installDir, Game.Exe), "--build-game-code") { WorkingDirectory = installDir })!;
+        p.WaitForExit();
+        return p.ExitCode;
+    }
+
+    static string StartMenuLink => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), Game.Product + ".lnk");
+    static string DesktopLink => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), Game.Product + ".lnk");
+
+    public static void CreateShortcuts(string installDir, bool startMenu, bool desktop)
+    {
+        // the launcher (Phase 5) takes over these links once it exists
+        var exe = Path.Combine(installDir, Game.Exe);
+        if (startMenu) Link(StartMenuLink, exe, installDir);
+        if (desktop) Link(DesktopLink, exe, installDir);
+    }
+
+    static void Link(string lnk, string target, string dir)
+    {
+        var shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")!)!;
+        dynamic link = ((dynamic)shell).CreateShortcut(lnk);
+        link.TargetPath = target;
+        link.WorkingDirectory = dir;
+        link.IconLocation = target + ",0";
+        link.Description = Game.Product;
+        link.Save();
+    }
+
+    public static void RegisterUninstall(string installDir, long bytes)
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(Game.UninstallKey);
+        var setup = Path.Combine(installDir, "Setup.exe");
+        key.SetValue("DisplayName", Game.Product);
+        key.SetValue("DisplayVersion", typeof(Steps).Assembly.GetName().Version?.ToString(3) ?? "0.1.0");
+        key.SetValue("DisplayIcon", Path.Combine(installDir, Game.Exe) + ",0");
+        key.SetValue("Publisher", "MVP06 Recomp");
+        key.SetValue("InstallLocation", installDir);
+        key.SetValue("UninstallString", $"\"{setup}\" --uninstall");
+        key.SetValue("ModifyPath", $"\"{setup}\" --repair");
+        key.SetValue("EstimatedSize", (int)Math.Min(int.MaxValue, bytes / 1024), RegistryValueKind.DWord);
+        key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
+    }
+
+    public static string? InstalledDir()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(Game.UninstallKey);
+        return key?.GetValue("InstallLocation") as string;
+    }
+
+    public static string UserDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), Game.UserFolder);
+
+    /// <summary>
+    /// Removes the install folder, links and uninstall entry; saves, settings and logs in Documents only when asked.
+    /// Setup can't delete the folder it runs from, so a copy in %TEMP% finishes the job.
+    /// </summary>
+    public static void Uninstall(string installDir, bool userData)
+    {
+        foreach (var l in new[] { StartMenuLink, DesktopLink })
+            if (File.Exists(l)) File.Delete(l);
+        Registry.CurrentUser.DeleteSubKeyTree(Game.UninstallKey, false);
+        if (userData && Directory.Exists(UserDir)) Directory.Delete(UserDir, true);
+        var self = Path.GetFullPath(Environment.ProcessPath!);
+        if (self.StartsWith(Path.GetFullPath(installDir) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        {
+            var temp = Path.Combine(Path.GetTempPath(), "MVP06-Setup-Uninstall.exe");
+            File.Copy(self, temp, true);
+            Process.Start(new ProcessStartInfo(temp, $"--remove-folder \"{installDir}\" --wait {Environment.ProcessId}") { UseShellExecute = false });
+            return;
+        }
+        RemoveFolder(installDir);
+    }
+
+    public static void RemoveFolder(string dir)
+    {
+        for (var i = 0; i < 20 && Directory.Exists(dir); i++)
+        {
+            try { Directory.Delete(dir, true); }
+            catch (IOException) { Thread.Sleep(500); }
+            catch (UnauthorizedAccessException) { Thread.Sleep(500); }
+        }
+    }
+
+    public static long FreeBytes(string dir)
+    {
+        var root = Path.GetPathRoot(Path.GetFullPath(dir))!;
+        return new DriveInfo(root).AvailableFreeSpace;
+    }
+}
