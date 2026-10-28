@@ -1,12 +1,16 @@
 #include "kernel/modvfs.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <map>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "core/log.h"
@@ -96,6 +100,79 @@ std::vector<uint8_t> PackLiteral(const std::vector<uint8_t>& u) {
     }
     out.push_back(uint8_t(0xFC | (u.size() - p)));
     out.insert(out.end(), u.begin() + p, u.end());
+    return out;
+}
+
+// RefPack with matches (greedy, hash chains over a 128 KB window): loose members go back to the game at about the
+// size the disc had, which matters for archives it loads whole into its heap
+std::vector<uint8_t> Pack(const std::vector<uint8_t>& u) {
+    constexpr size_t kWindow = 131072, kMaxLen = 1028, kChain = 16, kGood = 64, kHash = 1 << 16;
+    std::vector<uint8_t> out = {0x10, 0xFB, uint8_t(u.size() >> 16), uint8_t(u.size() >> 8), uint8_t(u.size())};
+    std::vector<int32_t> head(kHash, -1), prev(u.size(), -1);
+    auto hash = [&](size_t i) { return (uint32_t(u[i]) << 16 ^ uint32_t(u[i + 1]) << 8 ^ u[i + 2]) * 2654435761u >> 16; };
+    auto insert = [&](size_t i) {
+        if (i + 2 >= u.size()) return;
+        uint32_t h = hash(i);
+        prev[i] = head[h];
+        head[h] = int32_t(i);
+    };
+    size_t lit = 0, p = 0;  // literals start at lit
+    while (p < u.size()) {
+        size_t best = 0, best_off = 0;
+        if (p + 2 < u.size()) {
+            size_t limit = std::min(kMaxLen, u.size() - p);
+            int32_t c = head[hash(p)];
+            for (size_t n = 0; c >= 0 && n < kChain && p - size_t(c) <= kWindow; n++, c = prev[c]) {
+                size_t len = 0;
+                while (len < limit && u[c + len] == u[p + len]) len++;
+                size_t off = p - size_t(c);
+                // each form's reach: 3+ within 1 KB, 4+ within 16 KB, 5+ within 128 KB
+                bool fits = off <= 1024 ? len >= 3 : off <= 16384 ? len >= 4 : len >= 5;
+                if (fits && len > best) {
+                    best = len;
+                    best_off = off;
+                    if (len >= kGood) break;
+                }
+            }
+        }
+        if (!best) {
+            insert(p++);
+            continue;
+        }
+        // literals before the match: runs of 4..112, the last 0..3 ride in the match
+        while (p - lit > 3) {
+            size_t n = std::min<size_t>(112, (p - lit) / 4 * 4);
+            out.push_back(uint8_t(0xE0 + ((n - 4) >> 2)));
+            out.insert(out.end(), u.begin() + lit, u.begin() + lit + n);
+            lit += n;
+        }
+        size_t l = p - lit, o = best_off - 1, n = best;
+        if (best_off <= 1024 && n <= 10) {
+            out.push_back(uint8_t((o >> 3 & 0x60) | (n - 3) << 2 | l));
+            out.push_back(uint8_t(o));
+        } else if (best_off <= 16384 && n <= 67) {
+            out.push_back(uint8_t(0x80 | (n - 4)));
+            out.push_back(uint8_t(l << 6 | o >> 8));
+            out.push_back(uint8_t(o));
+        } else {
+            out.push_back(uint8_t(0xC0 | (o >> 16 & 1) << 4 | ((n - 5) >> 8 & 3) << 2 | l));
+            out.push_back(uint8_t(o >> 8));
+            out.push_back(uint8_t(o));
+            out.push_back(uint8_t(n - 5));
+        }
+        out.insert(out.end(), u.begin() + lit, u.begin() + p);
+        for (size_t i = 0; i < n; i++) insert(p + i);
+        p += n;
+        lit = p;
+    }
+    while (u.size() - lit > 3) {
+        size_t n = std::min<size_t>(112, (u.size() - lit) / 4 * 4);
+        out.push_back(uint8_t(0xE0 + ((n - 4) >> 2)));
+        out.insert(out.end(), u.begin() + lit, u.begin() + lit + n);
+        lit += n;
+    }
+    out.push_back(uint8_t(0xFC | (u.size() - lit)));
+    out.insert(out.end(), u.begin() + lit, u.end());
     return out;
 }
 
@@ -242,7 +319,319 @@ private:
     std::vector<uint8_t> bytes_;
 };
 
+// docs/LOOSE_ASSETS.md: an archive extracted to a folder ("x.big" -> "x_big/") is served to the game as the archive
+std::string ReadText(const fs::path& p) {
+    std::ifstream in(p, std::ios::binary);
+    return std::string(std::istreambuf_iterator<char>(in), {});
+}
+
+// _big.json is written by setup and Workshop, so only its own keys are read: a string array or a number after "key":
+std::vector<std::string> JsonStrings(const std::string& s, const char* key) {
+    std::vector<std::string> out;
+    size_t p = s.find("\"" + std::string(key) + "\"");
+    if (p == std::string::npos || (p = s.find('[', p)) == std::string::npos) return out;
+    for (p++; p < s.size() && s[p] != ']'; p++) {
+        if (s[p] != '"') continue;
+        std::string v;
+        for (p++; p < s.size() && s[p] != '"'; p++) {
+            if (s[p] == '\\' && p + 1 < s.size()) {
+                char c = s[++p];
+                v += c == 'n' ? '\n' : c == 't' ? '\t' : c;  // member names hold no \u escapes
+            } else {
+                v += s[p];
+            }
+        }
+        out.push_back(std::move(v));
+    }
+    return out;
+}
+
+long JsonNumber(const std::string& s, const char* key, long fallback) {
+    size_t p = s.find("\"" + std::string(key) + "\"");
+    if (p == std::string::npos || (p = s.find(':', p)) == std::string::npos) return fallback;
+    return std::strtol(s.c_str() + p + 1, nullptr, 10);
+}
+
+// "foo.big" <-> "foo_big"
+std::string FolderName(const std::string& file) {
+    size_t dot = file.rfind('.');
+    return dot == std::string::npos ? file : file.substr(0, dot) + "_" + file.substr(dot + 1);
+}
+
+fs::path FindNoCase(const fs::path& dir, const std::string& name) {
+    std::error_code ec;
+    if (fs::exists(dir / name, ec)) return dir / name;
+    std::string want = Upper(name);
+    for (auto& e : fs::directory_iterator(dir, ec))
+        if (Upper(e.path().filename().string()) == want) return e.path();
+    return {};
+}
+
+class LooseBig : public Virtual {
+public:
+    uint64_t Size() const override { return size_; }
+
+    size_t Read(uint64_t pos, void* dst, size_t len) override {
+        auto* out = static_cast<uint8_t*>(dst);
+        size_t done = 0;
+        while (done < len && pos < size_) {
+            size_t n;
+            if (pos < head_.size()) {
+                n = std::min<uint64_t>(len - done, head_.size() - pos);
+                std::memcpy(out + done, head_.data() + pos, n);
+            } else {
+                // the entry holding pos, or the alignment gap before the next one
+                auto it = std::upper_bound(entries_.begin(), entries_.end(), pos,
+                                           [](uint64_t v, const Entry& e) { return v < e.offset; });
+                const Entry* e = it == entries_.begin() ? nullptr : &*(it - 1);
+                if (e && pos < e->offset + e->size) {
+                    n = std::min<uint64_t>(len - done, e->offset + e->size - pos);
+                    n = ReadEntry(const_cast<Entry&>(*e), pos - e->offset, out + done, n);
+                    if (!n) break;
+                } else {
+                    uint64_t next = it == entries_.end() ? size_ : it->offset;
+                    n = std::min<uint64_t>(len - done, next - pos);
+                    std::memset(out + done, 0, n);
+                }
+            }
+            done += n;
+            pos += n;
+        }
+        return done;
+    }
+
+    ~LooseBig() override {
+        if (fp_) std::fclose(fp_);
+    }
+
+    bool Build(const fs::path& folder, const std::string& label, const std::vector<const Replacement*>& reps) {
+        std::string meta = ReadText(folder / "_big.json");
+        std::vector<std::string> order = JsonStrings(meta, "order");
+        std::vector<std::string> packed_list = JsonStrings(meta, "refpack");
+        uint64_t align = uint64_t(std::max(1L, JsonNumber(meta, "align", 4)));
+        std::vector<std::string> packed;
+        for (auto& s : packed_list) packed.push_back(Upper(s));
+
+        // every loose member, by upper case name with backslashes; a folder named like an archive is a nested one
+        std::vector<std::pair<std::string, fs::path>> found;
+        std::error_code ec;
+        for (auto it = fs::recursive_directory_iterator(folder, ec); it != fs::recursive_directory_iterator(); it.increment(ec)) {
+            if (ec) break;
+            fs::path rel = fs::relative(it->path(), folder, ec);
+            std::string name = rel.generic_string();
+            std::replace(name.begin(), name.end(), '/', '\\');
+            if (it->is_directory(ec)) {
+                if (fs::exists(it->path() / "_big.json", ec)) {
+                    size_t us = name.rfind('_');
+                    if (us != std::string::npos && name.find('\\', us) == std::string::npos) {
+                        found.push_back({Upper(name.substr(0, us) + "." + name.substr(us + 1)), it->path()});
+                        it.disable_recursion_pending();
+                    }
+                }
+                continue;
+            }
+            if (name == "_big.json") continue;
+            found.push_back({Upper(name), it->path()});
+        }
+        // a name the disc repeats (identical placeholder entries) is one file, listed again
+        std::map<std::string, fs::path> taken;
+        auto take = [&](const std::string& name) -> fs::path {
+            std::string up = Upper(name);
+            std::replace(up.begin(), up.end(), '/', '\\');
+            if (auto it = taken.find(up); it != taken.end()) return it->second;
+            for (auto& f : found)
+                if (f.first == up && !f.second.empty()) return taken[up] = std::exchange(f.second, fs::path());
+            return {};
+        };
+        // the disc's member order first (with its spelling), then members added since
+        for (const std::string& name : order) {
+            fs::path p = take(name);
+            if (p.empty()) {
+                LOGW("loose: %s member %s is missing, left out", label.c_str(), name.c_str());
+                continue;
+            }
+            entries_.push_back({name, p});
+        }
+        std::sort(found.begin(), found.end());
+        for (auto& [name, p] : found)
+            if (!p.empty()) entries_.push_back({name, p});
+
+        for (Entry& e : entries_) {
+            std::string up = Upper(e.name);
+            e.pack = std::find(packed.begin(), packed.end(), up) != packed.end();
+            if (fs::is_directory(e.path, ec)) {
+                auto child = std::make_shared<LooseBig>();
+                if (!child->Build(e.path, label + "\\" + e.name, {})) return false;
+                e.child = child;
+                e.size = child->Size();
+                e.pack = false;
+            } else {
+                e.size = fs::file_size(e.path, ec);
+            }
+            for (const Replacement* r : reps) {
+                if (r->entry != up) continue;
+                if (r->patch) {
+                    std::vector<uint8_t> data;
+                    if (e.child || !LoadFile(e.path, data) || data.empty() || !r->patch(data)) {
+                        LOGE("mods: %s entry %s left as it was, the patch did not apply", label.c_str(), e.name.c_str());
+                        continue;
+                    }
+                    e.bytes = std::move(data);
+                } else {
+                    e.bytes = r->bytes;  // a mod's payload is the entry as stored
+                    e.pack = false;
+                    LOGR("mods: %s entry %s replaced (%zu bytes)", label.c_str(), e.name.c_str(), r->bytes.size());
+                }
+                e.child.reset();
+                e.loaded = true;
+                e.size = e.bytes.size();
+            }
+            // the 3-byte RefPack size field: anything larger goes to the game unpacked
+            if (e.pack && e.size >= (1u << 24)) {
+                LOGW("loose: %s entry %s too large to store packed, served unpacked", label.c_str(), e.name.c_str());
+                e.pack = false;
+            }
+        }
+        // packing is most of the cost of opening a loose archive: spread it over the cores
+        std::vector<Entry*> to_pack;
+        for (Entry& e : entries_)
+            if (e.pack) to_pack.push_back(&e);
+        std::atomic<size_t> next{0};
+        std::atomic<bool> failed{false};
+        auto work = [&] {
+            for (size_t i; (i = next++) < to_pack.size();) {
+                Entry& e = *to_pack[i];
+                if (!e.loaded && !LoadFile(e.path, e.bytes)) failed = true;
+                e.bytes = Pack(e.bytes);
+                e.loaded = true;
+                e.size = e.bytes.size();
+            }
+        };
+        size_t threads = std::min<size_t>(to_pack.size() / 8, std::max(1u, std::thread::hardware_concurrency()) - 1);
+        std::vector<std::thread> pool;
+        for (size_t i = 0; i < threads; i++) pool.emplace_back(work);
+        work();
+        for (std::thread& t : pool) t.join();
+        if (failed) return false;
+
+        // BIGF: "BIGF", LE total size, BE count, BE header size; entries BE offset, BE size, name; then "L234" and 1
+        head_ = {'B', 'I', 'G', 'F', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        uint64_t dir_end = 16;
+        for (const Entry& e : entries_) dir_end += 8 + e.name.size() + 1;
+        uint64_t pos = (dir_end + 8 + align - 1) / align * align;
+        for (Entry& e : entries_) {
+            e.offset = pos;
+            pos = (pos + e.size + align - 1) / align * align;
+        }
+        size_ = entries_.empty() ? dir_end + 8 : entries_.back().offset + entries_.back().size;
+        if (size_ > 0xFFFFFFFFull) {
+            LOGE("loose: %s is over 4 GB as an archive", label.c_str());
+            return false;
+        }
+        for (const Entry& e : entries_) {
+            uint8_t rec[8];
+            PutBE32(rec, uint32_t(e.offset));
+            PutBE32(rec + 4, uint32_t(e.size));
+            head_.insert(head_.end(), rec, rec + 8);
+            head_.insert(head_.end(), e.name.begin(), e.name.end());
+            head_.push_back(0);
+        }
+        head_.insert(head_.end(), {'L', '2', '3', '4', 0, 0, 0, 1});
+        uint32_t total = uint32_t(size_);
+        std::memcpy(&head_[4], &total, 4);
+        PutBE32(&head_[8], uint32_t(entries_.size()));
+        PutBE32(&head_[12], uint32_t(head_.size()));
+        return true;
+    }
+
+private:
+    struct Entry {
+        std::string name;  // as the archive spells it
+        fs::path path;     // loose file, or the nested archive's folder
+        uint64_t offset = 0, size = 0;
+        bool pack = false;    // packed again (RefPack) as the disc stored it
+        bool loaded = false;  // served from bytes
+        std::vector<uint8_t> bytes;
+        std::shared_ptr<LooseBig> child;
+    };
+
+    static bool LoadFile(const fs::path& p, std::vector<uint8_t>& out) {
+        std::ifstream in(p, std::ios::binary);
+        if (!in) return false;
+        out.assign(std::istreambuf_iterator<char>(in), {});
+        return true;
+    }
+
+    size_t ReadEntry(Entry& e, uint64_t at, uint8_t* dst, size_t n) {
+        if (e.child) return e.child->Read(at, dst, n);
+        std::lock_guard<std::mutex> lock(lock_);
+        if (e.loaded) {
+            if (at >= e.bytes.size()) return 0;
+            n = std::min<uint64_t>(n, e.bytes.size() - at);
+            std::memcpy(dst, e.bytes.data() + at, n);
+            return n;
+        }
+        if (fp_path_ != e.path) {
+            if (fp_) std::fclose(fp_);
+            fp_ = std::fopen(e.path.string().c_str(), "rb");
+            fp_path_ = e.path;
+        }
+        if (!fp_) return 0;
+        _fseeki64(fp_, int64_t(at), SEEK_SET);
+        return std::fread(dst, 1, n, fp_);
+    }
+
+    std::vector<uint8_t> head_;
+    std::vector<Entry> entries_;
+    uint64_t size_ = 0;
+    std::mutex lock_;
+    FILE* fp_ = nullptr;  // the last loose file read
+    fs::path fp_path_;
+};
+
 }  // namespace
+
+fs::path LooseFolder(const fs::path& host) {
+    std::error_code ec;
+    if (!host.has_filename() || !fs::is_directory(host.parent_path(), ec)) return {};
+    fs::path dir = FindNoCase(host.parent_path(), FolderName(host.filename().string()));
+    return !dir.empty() && fs::is_directory(dir, ec) ? dir : fs::path();
+}
+
+std::shared_ptr<Virtual> OpenLoose(const fs::path& host) {
+    fs::path folder = LooseFolder(host);
+    if (folder.empty()) return nullptr;
+    // archives don't change while the game runs, and some are opened many times
+    static std::mutex lock;
+    static std::map<std::string, std::shared_ptr<Virtual>> built;
+    std::string key = Upper(folder.string());
+    std::lock_guard<std::mutex> guard(lock);
+    if (auto it = built.find(key); it != built.end()) return it->second;
+
+    std::string path = Upper(host.string());
+    std::vector<const Replacement*> hits;
+    for (const Replacement& r : Replacements()) {
+        std::string tail = "\\" + r.archive;
+        if (path.size() >= tail.size() && path.compare(path.size() - tail.size(), tail.size(), tail) == 0) hits.push_back(&r);
+    }
+    std::shared_ptr<Virtual> view;
+    for (const Replacement* r : hits)
+        if (r->entry.empty() && !r->patch) view = std::make_shared<BytesView>(r->bytes);
+    if (!view) {
+        auto big = std::make_shared<LooseBig>();
+        auto start = std::chrono::steady_clock::now();
+        if (!big->Build(folder, host.filename().string(), hits)) {
+            LOGE("loose: cannot serve %s from %s", host.string().c_str(), folder.string().c_str());
+            return nullptr;
+        }
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
+        LOGR("loose: %s served from %s (%llu bytes, %lld ms)", host.filename().string().c_str(),
+             folder.filename().string().c_str(), (unsigned long long)big->Size(), (long long)ms);
+        view = big;
+    }
+    built[key] = view;
+    return view;
+}
 
 void AddPatch(const char* archive, const char* entry, Patch patch) {
     Replacement r;

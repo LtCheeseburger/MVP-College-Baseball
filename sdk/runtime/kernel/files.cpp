@@ -333,9 +333,32 @@ bool ReadGameFile(const std::string& xbox_path, std::vector<uint8_t>& out) {
         return MountedDisc()->Read(*t.entry, 0, out.data(), t.entry->size) == t.entry->size;
     }
     std::ifstream f(t.host, std::ios::binary);
-    if (!f) return false;
+    if (!f) {
+        auto vf = t.host.empty() ? nullptr : modvfs::OpenLoose(t.host);
+        if (!vf) return false;
+        out.resize(vf->Size());
+        return vf->Read(0, out.data(), out.size()) == out.size();
+    }
     out.assign(std::istreambuf_iterator<char>(f), {});
     return true;
+}
+
+// an archive installed as a loose folder: read only, served by modvfs
+static uint32_t OpenLoose(const std::string& host, const std::string& name, uint32_t handle_out, uint32_t iosb) {
+    auto vf = modvfs::OpenLoose(host);
+    if (!vf) {
+        LOG_FIRST(200, "missing %s", name.c_str());
+        IoStatus(iosb, kObjectNameNotFound, 5);
+        return kObjectNameNotFound;
+    }
+    auto f = std::make_shared<File>();
+    f->host = modvfs::LooseFolder(host);  // for its times
+    f->xbox = Normalize(name);
+    f->vf = vf;
+    W32(handle_out, NewHandle(f));
+    IoStatus(iosb, kSuccess, 1);
+    LOG_FIRST(400, "open %s (loose)", name.c_str());
+    return kSuccess;
 }
 
 // exports
@@ -392,11 +415,7 @@ KERNEL_EXPORT(190, NtCreateFile, 9) {
             info = exists ? 3 : 2;
             break;
         case 1:  // open
-            if (!exists) {
-                LOG_FIRST(200, "missing %s", name.c_str());
-                IoStatus(iosb, kObjectNameNotFound, 5);
-                return kObjectNameNotFound;
-            }
+            if (!exists) return OpenLoose(host, name, handle_out, iosb);
             mode = "r+b";
             break;
         case 2:  // create
@@ -461,6 +480,7 @@ KERNEL_EXPORT(202, NtOpenFile, 6) {
     if (t.disc) return OpenOnDisc(t.entry, name, handle_out, iosb, 1, options);
     const std::string& host = t.host;
     std::error_code ec;
+    if (!host.empty() && !fs::exists(host, ec) && !IsSavePath(name)) return OpenLoose(host, name, handle_out, iosb);
     if (host.empty() || !fs::exists(host, ec)) {
         LOG_FIRST(200, "missing %s", name.c_str());
         if (IsSavePath(name)) LOGD("save: open %s: not found", name.c_str());
@@ -502,13 +522,13 @@ static uint64_t Offset(File& f, uint32_t off) {
 static uint32_t Transfer(const Args& a, bool write, uint32_t pages) {
     uint32_t h = a[0], event = a[1], apc = a[2], apc_ctx = a[3], iosb = a[4], buf = a[5], len = a[6], off = a[7];
     auto f = FileFromHandle(h);
-    if (!f || (!f->fp && !f->entry)) return kInvalidHandle;
+    if (!f || (!f->fp && !f->entry && !f->vf)) return kInvalidHandle;
     if (write && (f->entry || f->vf)) return kAccessDenied;
     ResetEvent(*f);
     std::lock_guard<std::mutex> lock(f->io);
     uint64_t pos = Offset(*f, off);
     if (write) SaveChanging(*f);
-    if (f->fp) Seek(f->fp, pos);
+    if (f->fp && !f->vf) Seek(f->fp, pos);
     uint32_t n = 0;
     while (n < len) {
         uint32_t at = pages ? R32(pages + n / 0x1000 * 8) + n % 0x1000 : buf + n;
@@ -538,7 +558,7 @@ KERNEL_EXPORT(211, NtQueryInformationFile, 5) {
     auto f = FileFromHandle(h);
     if (!f) return kInvalidHandle;
     std::error_code ec;
-    uint64_t size = f->dir ? 0 : f->entry ? f->entry->size : fs::file_size(f->host, ec);
+    uint64_t size = f->dir || f->vf ? 0 : f->entry ? f->entry->size : fs::file_size(f->host, ec);
     if (f->fp) {
         std::fflush(f->fp);
         size = fs::file_size(f->host, ec);
@@ -742,6 +762,12 @@ KERNEL_EXPORT(210, NtQueryFullAttributesFile, 2) {
     std::string name = ReadAnsiString(R32(a[0] + 4));
     Target t = Resolve(name, R32(a[0]));
     std::error_code ec;
+    if (!t.disc && !t.host.empty() && !fs::exists(t.host, ec)) {
+        if (auto vf = modvfs::OpenLoose(t.host)) {
+            FillNetworkInfo(a[1], ToFileTime(fs::last_write_time(modvfs::LooseFolder(t.host), ec)), vf->Size(), false);
+            return kSuccess;
+        }
+    }
     if (t.disc ? !t.entry : t.host.empty() || !fs::exists(t.host, ec)) {
         LOG_FIRST(200, "missing %s", name.c_str());
         return kObjectNameNotFound;
