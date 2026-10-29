@@ -39,7 +39,7 @@ sealed class LauncherWindow : Window
 
     UIElement ModsTab()
     {
-        var mods = new ModList(user.Dir);
+        var mods = new ModList(installDir);
         var p = new DockPanel { Margin = new Thickness(16) };
         var head = new StackPanel();
         head.Children.Add(Line("Mods", 16, true));
@@ -385,7 +385,7 @@ sealed class LauncherWindow : Window
     {
         var newest = user.Saves().FirstOrDefault();
         if (newest == null || user.ModsOf(newest.Slot) is not { } had) return true;
-        var on = new ModList(user.Dir).Mods.Where(m => m.Enabled && m.Error == null).ToList();
+        var on = new ModList(installDir).Mods.Where(m => m.Enabled && m.Error == null).ToList();
         var was = had.Where(m => m.AffectsSaves).Select(m => $"{m.Id} {m.Version}").ToHashSet();
         var now = on.Where(m => m.AffectsSaves).Select(m => $"{m.Id} {m.Version}").ToHashSet();
         if (was.SetEquals(now)) return true;

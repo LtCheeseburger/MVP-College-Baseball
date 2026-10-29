@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace MVPSetup;
 
 /// <summary>
-/// The mods folder as the runtime reads it (docs/MVPMOD.md, sdk/runtime/kernel/mods.cpp): every *.mvpmod and every
+/// The mods folder beside MVP06.exe, as the runtime reads it (docs/MVPMOD.md, sdk/runtime/kernel/mods.cpp): every *.mvpmod and every
 /// folder holding mod.json, turned on and ordered by mods.json. Later in the order wins. The launcher writes
 /// mods.json; the game reads it at its next start.
 /// </summary>
@@ -33,9 +33,9 @@ sealed class ModList
     public string Dir { get; }
     public List<Mod> Mods { get; } = [];  // in load order
 
-    public ModList(string userDir)
+    public ModList(string installDir)
     {
-        Dir = System.IO.Path.Combine(userDir, "mods");
+        Dir = System.IO.Path.Combine(installDir, "mods");
         Reload();
     }
 
