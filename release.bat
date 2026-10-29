@@ -4,8 +4,8 @@ cd /d "%~dp0"
 set "OUT=out\build\release"
 set /p VER=<VERSION
 set "ZIP=MVP-27-College-Baseball-v%VER%.zip"
-rem setup comes from MVP Workshop (src/MVPSetup), which shares the install code with the editor
-if not defined WORKSHOP set "WORKSHOP=E:\Tool Source\MVP-Tool"
+rem setup and the launcher are launcher\ here; they use MVP Workshop's install code from the pinned submodule
+if not exist "external\MVP-Workshop\src\MVPWorkshop.Core\MVPWorkshop.Core.csproj" git submodule update --init external/MVP-Workshop || (echo fetching the MVP-Workshop submodule failed & exit /b 1)
 set "SEVENZIP=7z"
 where 7z >nul 2>nul || set "SEVENZIP=%ProgramFiles%\7-Zip\7z.exe"
 rem the Visual C++ runtime beside the executable, so a fresh Windows install needs nothing more
@@ -37,7 +37,7 @@ for %%f in (msvcp140 vcruntime140 vcruntime140_1) do copy /y "%VCRUNTIME%\%%f.dl
 rem the compiler folder without its work folder: no game code goes in the zip, the first start builds it
 robocopy "%OUT%\compiler" "%PORT%\compiler" /e /xd work /njh /njs /nfl /ndl >nul
 if errorlevel 8 (echo copying the compiler failed & exit /b 1)
-dotnet publish "%WORKSHOP%\src\MVPSetup" -c Release -r win-x64 -o "%PKG%" -p:DebugType=none -nologo -v q || (echo building Setup.exe failed: set WORKSHOP to the MVP Workshop folder & exit /b 1)
+dotnet publish launcher -c Release -r win-x64 -o "%PKG%" -p:DebugType=none -nologo -v q || (echo building Setup.exe failed & exit /b 1)
 rem the launcher's updater (PortUpdater in MVP Workshop) installs "Port Files" from this zip: Launcher.exe (setup's own
 rem exe) so the launcher updates itself, the version it compares with the release tag (v<VERSION>), and the list of
 rem every port file with its size and SHA-256, which the update checks and uses to remove files a release dropped

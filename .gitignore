@@ -30,3 +30,5 @@ settings.toml
 # test material containing game data
 /docs/m0/
 *.zip.sha256
+/launcher/bin/
+/launcher/obj/

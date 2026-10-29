@@ -1,0 +1,3 @@
+[submodule "external/MVP-Workshop"]
+	path = external/MVP-Workshop
+	url = https://github.com/LtCheeseburger/MVP-Workshop.git

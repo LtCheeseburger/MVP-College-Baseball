@@ -9,7 +9,7 @@
     <RootNamespace>MVPSetup</RootNamespace>
     <Product>MVP 06 NCAA Baseball Recomp Setup</Product>
     <Version>0.1.0</Version>
-    <ApplicationIcon>..\MVPWorkshop.App\Assets\MvpWorkshop.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\Launcher.ico</ApplicationIcon>
     <!-- one file for the release zip: dotnet publish -c Release -r win-x64 -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
@@ -19,7 +19,8 @@
   <ItemGroup>
     <Resource Include="Assets/BarlowCondensed-Bold.ttf" />
     <Resource Include="Assets/BarlowCondensed-BlackItalic.ttf" />
-    <ProjectReference Include="..\MVPWorkshop.Core\MVPWorkshop.Core.csproj" />
+    <!-- the install formats are shared with MVP Workshop: pinned as the external/MVP-Workshop submodule -->
+    <ProjectReference Include="..\external\MVP-Workshop\src\MVPWorkshop.Core\MVPWorkshop.Core.csproj" />
     <Using Include="System.IO" />
   </ItemGroup>
 </Project>
