@@ -14,6 +14,8 @@ static class Game
     public const string UserFolder = "MVP06 Recomp";    // Documents\<this>: saves, settings, logs
     public const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\MVP06Recomp";
     public const string GameFolder = "game";            // beside the exe; the runtime also accepts "assets"
+    public const string SettingsFile = "mvp06-settings.toml";
+    public const string Launcher = "Launcher.exe";      // setup's own exe, copied beside the game: launcher, repair, uninstall
 
     public static string DefaultInstallDir =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", Product);

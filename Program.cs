@@ -4,6 +4,7 @@ using System.Windows;
 namespace MVPSetup;
 
 // Setup.exe                 install; the port's files are in "Port Files" beside it, as in the release zip
+// Launcher.exe              the same exe copied beside the installed game: the launcher
 // Setup.exe --port <dir>    install with the port's files from a build folder (development)
 // Setup.exe --repair        check the install against its manifest and restore from the disc image
 // Setup.exe --uninstall     remove the install (Apps & features)
@@ -27,7 +28,8 @@ static class Program
             Steps.RemoveFolder(folder);
             return 0;
         }
-        var mode = args.Contains("--uninstall") ? "uninstall" : args.Contains("--repair") ? "repair" : "install";
+        var mode = args.Contains("--uninstall") ? "uninstall" : args.Contains("--repair") ? "repair"
+            : Steps.InstallDirOfThis() != null && Arg("--port") == null && !args.Contains("--quiet") ? "launcher" : "install";
         var portDir = Arg("--port") ?? Path.Combine(AppContext.BaseDirectory, PortFolder);
         if (mode == "install" && !File.Exists(Path.Combine(portDir, Game.Exe)))
         {
@@ -38,6 +40,7 @@ static class Program
         if (args.Contains("--quiet")) return Quiet(mode, portDir, Arg("--source"), Arg("--dir") ?? Steps.InstalledDir() ?? Game.DefaultInstallDir,
             !args.Contains("--no-shortcuts"), args.Contains("--build"), args.Contains("--delete-saves"));
         var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
+        if (mode == "launcher") return app.Run(new LauncherWindow(Steps.InstallDirOfThis()!));
         return app.Run(new SetupWindow(mode, portDir));
     }
 

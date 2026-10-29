@@ -40,9 +40,9 @@ static class Steps
             File.Copy(files[i].From, dst, true);
             progress?.Report((i + 1.0) / files.Count);
         }
-        // setup stays beside the game for repair and uninstall
+        // setup stays beside the game as its launcher, which also repairs and uninstalls
         var self = Environment.ProcessPath!;
-        var target = Path.Combine(installDir, "Setup.exe");
+        var target = Path.Combine(installDir, Game.Launcher);
         if (!string.Equals(Path.GetFullPath(self), Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase)) File.Copy(self, target, true);
     }
 
@@ -59,19 +59,19 @@ static class Steps
 
     public static void CreateShortcuts(string installDir, bool startMenu, bool desktop)
     {
-        // the launcher (Phase 5) takes over these links once it exists
-        var exe = Path.Combine(installDir, Game.Exe);
-        if (startMenu) Link(StartMenuLink, exe, installDir);
-        if (desktop) Link(DesktopLink, exe, installDir);
+        var launcher = Path.Combine(installDir, Game.Launcher);
+        var icon = Path.Combine(installDir, Game.Exe);
+        if (startMenu) Link(StartMenuLink, launcher, icon, installDir);
+        if (desktop) Link(DesktopLink, launcher, icon, installDir);
     }
 
-    static void Link(string lnk, string target, string dir)
+    static void Link(string lnk, string target, string icon, string dir)
     {
         var shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")!)!;
         dynamic link = ((dynamic)shell).CreateShortcut(lnk);
         link.TargetPath = target;
         link.WorkingDirectory = dir;
-        link.IconLocation = target + ",0";
+        link.IconLocation = icon + ",0";  // the game's icon, not setup's
         link.Description = Game.Product;
         link.Save();
     }
@@ -79,7 +79,7 @@ static class Steps
     public static void RegisterUninstall(string installDir, long bytes)
     {
         using var key = Registry.CurrentUser.CreateSubKey(Game.UninstallKey);
-        var setup = Path.Combine(installDir, "Setup.exe");
+        var setup = Path.Combine(installDir, Game.Launcher);
         key.SetValue("DisplayName", Game.Product);
         key.SetValue("DisplayVersion", typeof(Steps).Assembly.GetName().Version?.ToString(3) ?? "0.1.0");
         key.SetValue("DisplayIcon", Path.Combine(installDir, Game.Exe) + ",0");
@@ -89,6 +89,13 @@ static class Steps
         key.SetValue("ModifyPath", $"\"{setup}\" --repair");
         key.SetValue("EstimatedSize", (int)Math.Min(int.MaxValue, bytes / 1024), RegistryValueKind.DWord);
         key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
+    }
+
+    /// <summary>The install this exe sits in (as Launcher.exe beside the game), else null.</summary>
+    public static string? InstallDirOfThis()
+    {
+        var dir = Path.GetDirectoryName(Environment.ProcessPath!)!;
+        return File.Exists(Path.Combine(dir, Game.Exe)) ? dir : null;
     }
 
     public static string? InstalledDir()

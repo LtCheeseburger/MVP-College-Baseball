@@ -38,7 +38,7 @@ sealed class SetupWindow : Window
         Closing += (_, _) => cancel.Cancel();
         switch (mode)
         {
-            case "repair": installDir = Steps.InstalledDir() ?? AppContext.BaseDirectory; ShowSource(); break;
+            case "repair": installDir = Steps.InstallDirOfThis() ?? Steps.InstalledDir() ?? AppContext.BaseDirectory; ShowSource(); break;
             case "uninstall": ShowUninstall(); break;
             default: ShowFolder(); break;
         }
@@ -235,13 +235,13 @@ sealed class SetupWindow : Window
         }
         var startMenu = Box("Start menu shortcut");
         var desktop = Box("Desktop shortcut");
-        var launch = Box($"Start {Game.Title} now");  // the launcher takes this over once it exists
+        var launch = Box("Open the launcher");
         var error = Error();
         Buttons("Finish", () =>
         {
             try { Steps.CreateShortcuts(installDir, startMenu.IsChecked == true, desktop.IsChecked == true); }
             catch (Exception e) { Show(error, $"The shortcuts couldn't be made: {e.Message}"); return; }
-            if (launch.IsChecked == true) Process.Start(new ProcessStartInfo(Path.Combine(installDir, Game.Exe)) { WorkingDirectory = installDir });
+            if (launch.IsChecked == true) Process.Start(new ProcessStartInfo(Path.Combine(installDir, Game.Launcher)) { WorkingDirectory = installDir });
             Close();
         });
     }
@@ -302,7 +302,7 @@ sealed class SetupWindow : Window
 
     void ShowUninstall()
     {
-        installDir = Steps.InstalledDir() ?? AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+        installDir = Steps.InstallDirOfThis() ?? Steps.InstalledDir() ?? AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
         Clear();
         Text($"Uninstall {Game.Product}", true);
         Text($"This removes {installDir}, its shortcuts and its entry in Apps & features.");
