@@ -28,5 +28,11 @@ uint32_t QuitText();
 
 // settings file options, game_info.cpp
 extern bool g_xbox_720p;  // the game's 1280x720 mode on a widescreen output; read at boot
+// frame_aspect: the 720p frame's width over height in hundredths (356 = 32:9, 237 = 21:9); 0 follows the output.
+// Wider than 16:9 widens the game's frame buffers, camera and HUD (ultrawide.cpp); read at boot.
+extern uint32_t g_frame_aspect;
+// ultrawide_menus: the menus fill an ultrawide frame too; off (default) they stay 16:9, pillarboxed (ultrawide.cpp)
+extern bool g_ultrawide_menus;
+float FrameAspect();
 
 }  // namespace game

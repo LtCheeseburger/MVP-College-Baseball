@@ -290,6 +290,8 @@ sealed partial class LauncherWindow : Window
             new("width", "Width (0 = desktop)", "0", Min: 0, Max: 7680),
             new("height", "Height (0 = desktop)", "0", Min: 0, Max: 4320),
             new("xbox_720p", "Widescreen 720p mode", "true", Bool: true, Help: "The game's own 720p layout"),
+            new("frame_aspect", "Frame aspect x100 (0 = the display's)", "0", Min: 0, Max: 400, Help: "Wider than 177 is ultrawide: 237 = 21:9, 356 = 32:9"),
+            new("ultrawide_menus", "Ultrawide menus", "false", Bool: true, Help: "Off: the menus stay 16:9, pillarboxed"),
             new("internal_resolution", "Internal resolution", "native", ["native", "720p", "1080p", "1440p"]),
             new("render_percent", "Render scale % (native)", "100", Min: 25, Max: 200),
             new("frame_limit", "Frame limit (0 = off)", "60", Min: 0, Max: 1000),
