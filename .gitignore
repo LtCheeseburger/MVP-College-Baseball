@@ -32,3 +32,6 @@ settings.toml
 *.zip.sha256
 /launcher/bin/
 /launcher/obj/
+
+# Python authoring tools and tests
+__pycache__/
