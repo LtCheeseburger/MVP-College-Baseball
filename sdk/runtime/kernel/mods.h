@@ -41,4 +41,7 @@ bool FromMod(const std::filesystem::path& p);
 // a mod asks for this added archive member to be RefPack-compressed (mod.json "refpack")
 bool Packed(const std::filesystem::path& p);
 
+// the active set as written beside each save: {"mods":[{"id","version","affectsSaves"}...]}
+std::string SaveRecord();
+
 }  // namespace kernel::mods

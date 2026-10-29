@@ -4,6 +4,7 @@
 #include <cctype>
 #include <chrono>
 #include <condition_variable>
+#include <fstream>
 #include <ctime>
 #include <cwctype>
 #include <map>
@@ -13,6 +14,7 @@
 
 #include "app/app.h"
 #include "core/log.h"
+#include "kernel/mods.h"
 
 namespace fs = std::filesystem;
 
@@ -24,7 +26,7 @@ using Clock = std::chrono::steady_clock;
 // a slot counts as completely saved once nothing has written to it for this long and no handle that wrote is open
 constexpr auto kSettle = std::chrono::seconds(3);
 
-fs::path g_saves, g_backups, g_history, g_lastgood;
+fs::path g_saves, g_backups, g_history, g_lastgood, g_savemods;
 std::mutex g_lock;          // g_slots
 std::mutex g_commit;        // one last-good copy at a time, from the worker or Flush
 std::condition_variable g_wake;
@@ -261,6 +263,7 @@ void Configure(const fs::path& saves, const fs::path& user) {
     g_backups = user / (L"backups" + suffix);
     g_history = user / (L"save_history" + suffix);
     g_lastgood = user / (L"save_lastgood" + suffix);
+    g_savemods = user / (L"save_mods" + suffix);
     static std::once_flag started;
     std::call_once(started, [] { std::thread(Worker).detach(); });
 }
@@ -326,7 +329,21 @@ void BeforeChange(const fs::path& host, bool writer) {
 
 void Closed(const fs::path& host) {
     std::wstring key;
-    if (SlotOf(host, &key).empty()) return;
+    fs::path slot = SlotOf(host, &key);
+    if (slot.empty()) return;
+    // the mods this save was written with (docs/MVPMOD.md 5), beside the slot's copies: the launcher warns when a
+    // save's mods that change game data differ from the ones turned on
+    std::string record = mods::SaveRecord();
+    fs::path side = g_savemods / slot;
+    side += L".json";
+    std::error_code ec;
+    std::ifstream old(side, std::ios::binary);
+    std::string had((std::istreambuf_iterator<char>(old)), {});
+    old.close();
+    if (had != record) {
+        fs::create_directories(side.parent_path(), ec);
+        std::ofstream(side, std::ios::binary | std::ios::trunc) << record;
+    }
     std::lock_guard<std::mutex> lock(g_lock);
     Slot& s = g_slots[key];
     if (s.writers > 0) s.writers--;

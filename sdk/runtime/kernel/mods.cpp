@@ -668,4 +668,22 @@ bool Packed(const fs::path& p) {
     return Rel(p, rel) && g_packed.count(rel);
 }
 
+std::string SaveRecord() {
+    auto esc = [](const std::string& v) {
+        std::string o;
+        for (char c : v) {
+            if (c == '"' || c == '\\') o += '\\';
+            if (uint8_t(c) >= 0x20) o += c;
+        }
+        return o;
+    };
+    std::string out = "{\"format\": 1, \"mods\": [";
+    for (size_t i = 0; i < g_mods.size(); i++) {
+        const Mod& m = *g_mods[i];
+        out += std::string(i ? ", " : "") + "{\"id\": \"" + esc(m.id) + "\", \"version\": \"" + esc(m.version) +
+               "\", \"affectsSaves\": " + (m.affects_saves ? "true" : "false") + "}";
+    }
+    return out + "]}\n";
+}
+
 }  // namespace kernel::mods
