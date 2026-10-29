@@ -1,5 +1,7 @@
 #include "kernel/xsh.h"
 
+#include "kernel/mods.h"
+
 #include <algorithm>
 #include <cstring>
 #include <fstream>
@@ -39,15 +41,17 @@ void Put16(uint8_t* p, uint16_t v) {
     p[1] = uint8_t(v >> 8);
 }
 
-bool ReadAll(const fs::path& p, std::vector<uint8_t>& out, size_t limit = SIZE_MAX) {
-    std::ifstream in(p, std::ios::binary);
-    if (!in) return false;
-    out.resize(std::min<uint64_t>(limit, [&] {
-        std::error_code ec;
-        return fs::file_size(p, ec);
-    }()));
-    in.read(reinterpret_cast<char*>(out.data()), std::streamsize(out.size()));
-    return in.gcount() == std::streamsize(out.size());
+// through kernel::mods, so a mod's image in one slot is used with the game's xsh.meta and other images
+bool ReadAll(const fs::path& p, std::vector<uint8_t>& out, size_t limit = SIZE_MAX) { return mods::Load(p, out, limit); }
+
+uint64_t FileSize(const fs::path& p, std::error_code& ec) {
+    mods::Node n;
+    if (!mods::Stat(p, n) || n.dir) {
+        ec = std::make_error_code(std::errc::no_such_file_or_directory);
+        return 0;
+    }
+    ec.clear();
+    return n.size;
 }
 
 bool ReadMeta(const fs::path& dir, Meta& m) {
@@ -159,14 +163,14 @@ bool ImagePixels(const fs::path& dir, const Image& img, uint8_t header[16], std:
     fs::path file = dir / img.file;
     std::error_code ec;
     if (!img.dds) {
-        length = size_t(fs::file_size(file, ec));
+        length = size_t(FileSize(file, ec));
         if (ec) return false;
         return !pixels || ReadAll(file, *pixels);
     }
     int slot = header[0], ow = U16(header + 4), oh = U16(header + 6), omips = U16(header + 14) >> 12;
     std::vector<uint8_t> f;
     if (!ReadAll(file, f, pixels ? SIZE_MAX : 148)) return false;
-    uint64_t file_size = fs::file_size(file, ec);
+    uint64_t file_size = FileSize(file, ec);
     int w = 0, h = 0, levels = 0;
     size_t at = 0;
     int type = DdsType(f, w, h, levels, at);
@@ -257,8 +261,7 @@ bool Assemble(const fs::path& dir, std::vector<uint8_t>* out, uint64_t& size) {
 }  // namespace
 
 bool IsFolder(const fs::path& dir) {
-    std::error_code ec;
-    return fs::is_regular_file(dir / "xsh.meta", ec);
+    return mods::IsFile(dir / "xsh.meta");
 }
 
 bool Size(const fs::path& dir, uint64_t& size) { return Assemble(dir, nullptr, size); }

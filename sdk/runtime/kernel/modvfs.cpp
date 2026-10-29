@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <map>
 #include <mutex>
 #include <string>
@@ -14,6 +15,7 @@
 #include <vector>
 
 #include "core/log.h"
+#include "kernel/mods.h"
 #include "kernel/xsh.h"
 
 namespace fs = std::filesystem;
@@ -22,7 +24,7 @@ namespace kernel::modvfs {
 
 namespace {
 
-// M0 prototype: MVP06_M0_MOD names a folder holding mod.txt, one "archive|entry|payload" line per replaced BIG entry
+// a change to one BIG entry: a game patch, or (archive-mode installs) a mod's member
 struct Replacement {
     std::string archive;  // upper case, backslashes, relative to the game folder
     std::string entry;    // upper case
@@ -177,30 +179,8 @@ std::vector<uint8_t> Pack(const std::vector<uint8_t>& u) {
     return out;
 }
 
-std::vector<Replacement>& Replacements() {
-    static std::vector<Replacement> list;
-    static std::once_flag once;
-    std::call_once(once, [] {
-        for (const Replacement& r : Patches()) list.push_back(r);
-        const char* dir = std::getenv("MVP06_M0_MOD");
-        if (!dir || !*dir) return;
-        std::ifstream manifest(fs::path(dir) / "mod.txt");
-        std::string line;
-        while (std::getline(manifest, line)) {
-            while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
-            size_t a = line.find('|'), b = line.find('|', a + 1);
-            if (a == std::string::npos || b == std::string::npos) continue;
-            Replacement r;
-            r.archive = Upper(line.substr(0, a));
-            r.entry = Upper(line.substr(a + 1, b - a - 1));
-            std::ifstream in(fs::path(dir) / line.substr(b + 1), std::ios::binary);
-            r.bytes.assign(std::istreambuf_iterator<char>(in), {});
-            LOGR("mods: %s / %s <- %zu bytes", line.substr(0, a).c_str(), line.substr(a + 1, b - a - 1).c_str(), r.bytes.size());
-            list.push_back(std::move(r));
-        }
-    });
-    return list;
-}
+// the game's own patches; mods come from kernel::mods
+const std::vector<Replacement>& Replacements() { return Patches(); }
 
 // the original archive, its header patched to point replaced entries at new payloads appended after the old end
 class BigView : public Virtual {
@@ -322,8 +302,9 @@ private:
 
 // docs/LOOSE_ASSETS.md: an archive extracted to a folder ("x.big" -> "x_big/") is served to the game as the archive
 std::string ReadText(const fs::path& p) {
-    std::ifstream in(p, std::ios::binary);
-    return std::string(std::istreambuf_iterator<char>(in), {});
+    std::vector<uint8_t> d;
+    if (!mods::Load(p, d)) return {};
+    return std::string(d.begin(), d.end());
 }
 
 // _big.json is written by setup and Workshop, so only its own keys are read: a string array or a number after "key":
@@ -357,15 +338,6 @@ long JsonNumber(const std::string& s, const char* key, long fallback) {
 std::string FolderName(const std::string& file) {
     size_t dot = file.rfind('.');
     return dot == std::string::npos ? file : file.substr(0, dot) + "_" + file.substr(dot + 1);
-}
-
-fs::path FindNoCase(const fs::path& dir, const std::string& name) {
-    std::error_code ec;
-    if (fs::exists(dir / name, ec)) return dir / name;
-    std::string want = Upper(name);
-    for (auto& e : fs::directory_iterator(dir, ec))
-        if (Upper(e.path().filename().string()) == want) return e.path();
-    return {};
 }
 
 class LooseBig : public Virtual {
@@ -413,31 +385,31 @@ public:
         std::vector<std::string> packed;
         for (auto& s : packed_list) packed.push_back(Upper(s));
 
-        // every loose member, by upper case name with backslashes; a folder named like an archive is a nested one
+        // every loose member, by upper case name with backslashes; a folder named like an archive is a nested one.
+        // Walked through kernel::mods, so mod members are found and removed ones are not.
         std::vector<std::pair<std::string, fs::path>> found;
-        std::error_code ec;
-        for (auto it = fs::recursive_directory_iterator(folder, ec); it != fs::recursive_directory_iterator(); it.increment(ec)) {
-            if (ec) break;
-            fs::path rel = fs::relative(it->path(), folder, ec);
-            std::string name = rel.generic_string();
-            std::replace(name.begin(), name.end(), '/', '\\');
-            if (it->is_directory(ec)) {
-                // a texture pack as a folder keeps its own name
-                if (xsh::IsFolder(it->path())) {
-                    found.push_back({Upper(name), it->path()});
-                    it.disable_recursion_pending();
-                } else if (fs::exists(it->path() / "_big.json", ec)) {
-                    size_t us = name.rfind('_');
-                    if (us != std::string::npos && name.find('\\', us) == std::string::npos) {
-                        found.push_back({Upper(name.substr(0, us) + "." + name.substr(us + 1)), it->path()});
-                        it.disable_recursion_pending();
+        std::function<void(const fs::path&, const std::string&)> walk = [&](const fs::path& dir, const std::string& prefix) {
+            for (const mods::Child& c : mods::List(dir)) {
+                fs::path p = dir / fs::u8path(c.name);
+                std::string name = prefix + c.name;
+                if (c.dir) {
+                    // a texture pack as a folder keeps its own name
+                    if (xsh::IsFolder(p)) {
+                        found.push_back({Upper(name), p});
+                    } else if (mods::IsFile(p / "_big.json")) {
+                        size_t us = name.rfind('_');
+                        if (us != std::string::npos && name.find('\\', us) == std::string::npos)
+                            found.push_back({Upper(name.substr(0, us) + "." + name.substr(us + 1)), p});
+                    } else {
+                        walk(p, name + "\\");
                     }
+                    continue;
                 }
-                continue;
+                if (prefix.empty() && name == "_big.json") continue;
+                found.push_back({Upper(name), p});
             }
-            if (name == "_big.json") continue;
-            found.push_back({Upper(name), it->path()});
-        }
+        };
+        walk(folder, "");
         // a name the disc repeats (identical placeholder entries) is one file, listed again
         std::map<std::string, fs::path> taken;
         auto take = [&](const std::string& name) -> fs::path {
@@ -457,24 +429,27 @@ public:
             }
             entries_.push_back({name, p});
         }
-        std::sort(found.begin(), found.end());
+        // a mod's whole "foo.big" sorts before the game's "foo_big/" and wins: one member per name
+        std::stable_sort(found.begin(), found.end(), [](auto& a, auto& b) { return a.first < b.first; });
         for (auto& [name, p] : found)
-            if (!p.empty()) entries_.push_back({name, p});
+            if (!p.empty() && taken.emplace(name, p).second) entries_.push_back({name, p});
 
         for (Entry& e : entries_) {
             std::string up = Upper(e.name);
-            e.pack = std::find(packed.begin(), packed.end(), up) != packed.end();
+            e.pack = std::find(packed.begin(), packed.end(), up) != packed.end() || mods::Packed(e.path);
             if (xsh::IsFolder(e.path)) {
                 e.xsh = true;
                 if (!xsh::Size(e.path, e.size)) return false;
-            } else if (fs::is_directory(e.path, ec)) {
+            } else if (mods::IsDir(e.path)) {
                 auto child = std::make_shared<LooseBig>();
                 if (!child->Build(e.path, label + "\\" + e.name, {})) return false;
                 e.child = child;
                 e.size = child->Size();
                 e.pack = false;
             } else {
-                e.size = fs::file_size(e.path, ec);
+                mods::Node n;
+                if (!mods::Stat(e.path, n)) return false;
+                e.size = n.size;
             }
             for (const Replacement* r : reps) {
                 if (r->entry != up) continue;
@@ -564,16 +539,16 @@ private:
         std::shared_ptr<LooseBig> child;
     };
 
-    static bool LoadFile(const fs::path& p, std::vector<uint8_t>& out) {
-        std::ifstream in(p, std::ios::binary);
-        if (!in) return false;
-        out.assign(std::istreambuf_iterator<char>(in), {});
-        return true;
-    }
+    static bool LoadFile(const fs::path& p, std::vector<uint8_t>& out) { return mods::Load(p, out); }
 
     size_t ReadEntry(Entry& e, uint64_t at, uint8_t* dst, size_t n) {
         if (e.child) return e.child->Read(at, dst, n);
         std::lock_guard<std::mutex> lock(lock_);
+        // a mod's member sits in its zip, not on disk: read it whole the first time
+        if (!e.loaded && mods::FromMod(e.path)) {
+            if (!mods::Load(e.path, e.bytes)) return 0;
+            e.loaded = true;
+        }
         if (e.loaded) {
             if (at >= e.bytes.size()) return 0;
             n = std::min<uint64_t>(n, e.bytes.size() - at);
@@ -602,13 +577,19 @@ private:
 
 fs::path LooseFolder(const fs::path& host) {
     if (xsh::IsFolder(host)) return host;
-    std::error_code ec;
-    if (!host.has_filename() || !fs::is_directory(host.parent_path(), ec)) return {};
-    fs::path dir = FindNoCase(host.parent_path(), FolderName(host.filename().string()));
-    return !dir.empty() && fs::is_directory(dir, ec) ? dir : fs::path();
+    if (!host.has_filename() || !mods::IsDir(host.parent_path())) return {};
+    fs::path dir = mods::Find(host.parent_path(), FolderName(host.filename().string()));
+    return !dir.empty() && mods::IsDir(dir) ? dir : fs::path();
 }
 
 std::shared_ptr<Virtual> OpenLoose(const fs::path& host) {
+    // a whole file from a mod (a disc file, a whole .big or .xsh)
+    if (mods::FromMod(host)) {
+        std::vector<uint8_t> bytes;
+        if (!mods::Load(host, bytes)) return nullptr;
+        LOGR("mods: %s served from a mod (%zu bytes)", host.filename().string().c_str(), bytes.size());
+        return std::make_shared<BytesView>(bytes);
+    }
     // a texture pack outside any archive, installed as a folder of the same name
     if (xsh::IsFolder(host)) {
         std::vector<uint8_t> bytes;
@@ -659,13 +640,40 @@ void AddPatch(const char* archive, const char* entry, Patch patch) {
 
 std::shared_ptr<Virtual> Open(const fs::path& host) {
     auto& all = Replacements();
-    if (all.empty()) return nullptr;
     std::string path = Upper(host.string());
     std::vector<const Replacement*> hits;
     for (const Replacement& r : all) {
         std::string tail = "\\" + r.archive;
         if (path.size() >= tail.size() && path.compare(path.size() - tail.size(), tail.size(), tail) == 0) hits.push_back(&r);
     }
+    // an archive installed packed: mod members under its x_big/ path replace entries (no additions or removals)
+    std::vector<Replacement> modded;
+    if (mods::Active() && host.has_filename()) {
+        fs::path dir = host.parent_path() / FolderName(host.filename().string());
+        for (const fs::path& f : mods::ModFilesUnder(dir)) {
+            Replacement r;
+            // f is spelled in lower case from the game folder down: cut the folder off by length
+            std::string base = dir.lexically_normal().generic_string(), entry = f.generic_string();
+            while (!base.empty() && base.back() == '/') base.pop_back();
+            entry = entry.substr(std::min(entry.size(), base.size() + 1));
+            std::replace(entry.begin(), entry.end(), '/', '\\');
+            r.entry = Upper(entry);
+            if (!mods::Load(f, r.bytes)) continue;
+            // the game's patch for that entry runs on the mod's bytes, and the patch itself then drops out
+            for (auto it = hits.begin(); it != hits.end();)
+                if ((*it)->patch && (*it)->entry == r.entry) {
+                    if (!(*it)->patch(r.bytes)) LOGE("mods: %s entry %s: the patch did not apply", host.filename().string().c_str(), entry.c_str());
+                    it = hits.erase(it);
+                } else {
+                    ++it;
+                }
+            modded.push_back(std::move(r));
+        }
+        if (!modded.empty())
+            LOGW("mods: %s is installed packed: mod members replace entries, added or removed ones are ignored",
+                 host.filename().string().c_str());
+    }
+    for (const Replacement& r : modded) hits.push_back(&r);
     if (hits.empty()) return nullptr;
     for (const Replacement* r : hits)
         if (r->entry.empty() && !r->patch) {

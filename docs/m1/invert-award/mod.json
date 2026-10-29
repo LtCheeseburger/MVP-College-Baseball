@@ -1,0 +1,10 @@
+{
+  "format": 1,
+  "id": "invert-award",
+  "name": "M1 test: inverted award texture",
+  "version": "1.0.0",
+  "game": {
+    "xbeSha1": "2f57040bab2c8b2eb33ebc7aa93209ad30dd103f"
+  },
+  "layout": 1
+}

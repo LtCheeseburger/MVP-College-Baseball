@@ -9,6 +9,7 @@
 #include "kernel/disc.h"
 #include "kernel/kernel.h"
 #include "kernel/exports.h"
+#include "kernel/mods.h"
 #include "kernel/modvfs.h"
 #include "kernel/xsh.h"
 #include "kernel/save_safety.h"
@@ -77,7 +78,7 @@ struct File : Object {
     std::shared_ptr<modvfs::Virtual> vf;  // host file with mod entries swapped in, read only
     bool dir = false;
     uint64_t pos = 0;
-    std::vector<fs::directory_entry> entries;
+    std::vector<std::string> entries;  // names, game folders through kernel::mods
     std::vector<const Disc::Entry*> disc_entries;
     size_t next = 0;
     bool listed = false;
@@ -115,9 +116,15 @@ void FillNetworkInfo(uint32_t out, uint64_t t, uint64_t size, bool dir) {
 }
 
 void FillNetworkInfo(uint32_t out, const fs::path& p) {
-    std::error_code ec;
-    bool dir = fs::is_directory(p, ec);
-    FillNetworkInfo(out, ToFileTime(fs::last_write_time(p, ec)), dir ? 0 : fs::file_size(p, ec), dir);
+    mods::Node n;
+    mods::Stat(p, n);
+    FillNetworkInfo(out, ToFileTime(n.time), n.size, n.dir);
+}
+
+uint64_t TimeOf(const fs::path& p) {
+    mods::Node n;
+    mods::Stat(p, n);
+    return ToFileTime(n.time);
 }
 
 void FillNetworkInfo(uint32_t out, const Disc::Entry& e) {
@@ -333,15 +340,12 @@ bool ReadGameFile(const std::string& xbox_path, std::vector<uint8_t>& out) {
         out.resize(t.entry->size);
         return MountedDisc()->Read(*t.entry, 0, out.data(), t.entry->size) == t.entry->size;
     }
-    std::ifstream f(t.host, std::ios::binary);
-    if (!f) {
-        auto vf = t.host.empty() ? nullptr : modvfs::OpenLoose(t.host);
-        if (!vf) return false;
-        out.resize(vf->Size());
-        return vf->Read(0, out.data(), out.size()) == out.size();
-    }
-    out.assign(std::istreambuf_iterator<char>(f), {});
-    return true;
+    if (t.host.empty()) return false;
+    if (!mods::FromMod(t.host) && mods::Load(t.host, out)) return true;
+    auto vf = modvfs::OpenLoose(t.host);
+    if (!vf) return false;
+    out.resize(vf->Size());
+    return vf->Read(0, out.data(), out.size()) == out.size();
 }
 
 // an archive installed as a loose folder: read only, served by modvfs
@@ -353,7 +357,7 @@ static uint32_t OpenLoose(const std::string& host, const std::string& name, uint
         return kObjectNameNotFound;
     }
     auto f = std::make_shared<File>();
-    f->host = modvfs::LooseFolder(host);  // for its times
+    f->host = mods::FromMod(host) ? fs::path(host) : modvfs::LooseFolder(host);  // for its times
     f->xbox = Normalize(name);
     f->vf = vf;
     W32(handle_out, NewHandle(f));
@@ -379,10 +383,13 @@ KERNEL_EXPORT(190, NtCreateFile, 9) {
         IoStatus(iosb, kObjectPathNotFound, 0);
         return kObjectPathNotFound;
     }
-    std::error_code ec;
-    bool exists = fs::exists(host, ec);
-    bool is_dir = exists && fs::is_directory(host, ec);
     bool want_dir = options & 1;
+    // a file a mod supplies is read only, served by modvfs
+    if (disposition == 1 && !want_dir && mods::FromMod(host)) return OpenLoose(host, name, handle_out, iosb);
+    std::error_code ec;
+    mods::Node node;
+    bool exists = mods::Stat(host, node);
+    bool is_dir = exists && node.dir;
     // a texture pack installed as a folder opens as the file it stands for
     if (is_dir && !want_dir && disposition == 1 && xsh::IsFolder(host)) return OpenLoose(host, name, handle_out, iosb);
     uint32_t info = 1;  // FILE_OPENED
@@ -483,8 +490,9 @@ KERNEL_EXPORT(202, NtOpenFile, 6) {
     if (t.disc) return OpenOnDisc(t.entry, name, handle_out, iosb, 1, options);
     const std::string& host = t.host;
     std::error_code ec;
-    if (!host.empty() && !fs::exists(host, ec) && !IsSavePath(name)) return OpenLoose(host, name, handle_out, iosb);
-    if (host.empty() || !fs::exists(host, ec)) {
+    if (!host.empty() && !(options & 1) && mods::FromMod(host)) return OpenLoose(host, name, handle_out, iosb);
+    if (!host.empty() && !mods::Exists(host) && !IsSavePath(name)) return OpenLoose(host, name, handle_out, iosb);
+    if (host.empty() || !mods::Exists(host)) {
         LOG_FIRST(200, "missing %s", name.c_str());
         if (IsSavePath(name)) LOGD("save: open %s: not found", name.c_str());
         IoStatus(iosb, kObjectNameNotFound, 5);
@@ -494,7 +502,7 @@ KERNEL_EXPORT(202, NtOpenFile, 6) {
     auto f = std::make_shared<File>();
     f->host = host;
     f->xbox = Normalize(name);
-    f->dir = fs::is_directory(host, ec);
+    f->dir = mods::IsDir(host);
     if (!f->dir) {
         f->fp = std::fopen(host.c_str(), "r+b");
         if (!f->fp) f->fp = std::fopen(host.c_str(), "rb");
@@ -571,7 +579,7 @@ KERNEL_EXPORT(211, NtQueryInformationFile, 5) {
     std::memset(HostPtr(out), 0, len);
     switch (cls) {
         case 4: {  // FileBasicInformation
-            uint64_t t = f->entry ? MountedDisc()->Time() : ToFileTime(fs::last_write_time(f->host, ec));
+            uint64_t t = f->entry ? MountedDisc()->Time() : TimeOf(f->host);
             for (int i = 0; i < 4; i++) W64(out + i * 8, t);
             W32(out + 0x20, f->dir ? 0x10 : 0x80);
             IoStatus(iosb, kSuccess, 0x28);
@@ -590,7 +598,7 @@ KERNEL_EXPORT(211, NtQueryInformationFile, 5) {
             return kSuccess;
         case 34:  // FileNetworkOpenInformation
             if (f->entry) FillNetworkInfo(out, *f->entry);
-            else if (f->vf) FillNetworkInfo(out, ToFileTime(fs::last_write_time(f->host, ec)), size, false);
+            else if (f->vf) FillNetworkInfo(out, TimeOf(f->host), size, false);
             else FillNetworkInfo(out, f->host);
             IoStatus(iosb, kSuccess, 0x38);
             return kSuccess;
@@ -730,10 +738,8 @@ KERNEL_EXPORT(207, NtQueryDirectoryFile, 10) {
             for (const Disc::Entry& e : f->entry->children)
                 if (WildMatch(pat, e.name)) f->disc_entries.push_back(&e);
         } else {
-            std::error_code ec;
-            for (auto& e : fs::directory_iterator(f->host, ec))
-                if (WildMatch(pat, e.path().filename().string())) f->entries.push_back(e);
-            std::sort(f->entries.begin(), f->entries.end());
+            for (const mods::Child& c : mods::List(f->host))
+                if (WildMatch(pat, c.name)) f->entries.push_back(c.name);
         }
         f->next = 0;
         f->listed = true;
@@ -743,13 +749,13 @@ KERNEL_EXPORT(207, NtQueryDirectoryFile, 10) {
         return f->next == 0 ? kNoSuchFile : kNoMoreFiles;
     }
     size_t i = f->next++;
-    std::string fname = f->entry ? f->disc_entries[i]->name : f->entries[i].path().filename().string();
+    std::string fname = f->entry ? f->disc_entries[i]->name : f->entries[i];
     uint32_t need = 0x40 + uint32_t(fname.size());
     if (len < need) return kBufferTooSmall;
     std::memset(HostPtr(out), 0, need);
     // times, sizes and attributes sit at the same place
     if (f->entry) FillNetworkInfo(out + 8, *f->disc_entries[i]);
-    else FillNetworkInfo(out + 8, f->entries[i].path());
+    else FillNetworkInfo(out + 8, f->host / fs::u8path(fname));
     // FILE_DIRECTORY_INFORMATION has EndOfFile before AllocationSize, the reverse of the network info
     W32(out + 0x38, R32(out + 8 + 0x30));
     uint64_t alloc = R64(out + 8 + 0x20), eof = R64(out + 8 + 0x28);
@@ -766,13 +772,14 @@ KERNEL_EXPORT(210, NtQueryFullAttributesFile, 2) {
     std::string name = ReadAnsiString(R32(a[0] + 4));
     Target t = Resolve(name, R32(a[0]));
     std::error_code ec;
-    if (!t.disc && !t.host.empty() && (!fs::exists(t.host, ec) || xsh::IsFolder(t.host))) {
+    if (!t.disc && !t.host.empty() && (mods::FromMod(t.host) || !mods::Exists(t.host) || xsh::IsFolder(t.host))) {
         if (auto vf = modvfs::OpenLoose(t.host)) {
-            FillNetworkInfo(a[1], ToFileTime(fs::last_write_time(modvfs::LooseFolder(t.host), ec)), vf->Size(), false);
+            fs::path from = mods::FromMod(t.host) ? fs::path(t.host) : modvfs::LooseFolder(t.host);
+            FillNetworkInfo(a[1], TimeOf(from), vf->Size(), false);
             return kSuccess;
         }
     }
-    if (t.disc ? !t.entry : t.host.empty() || !fs::exists(t.host, ec)) {
+    if (t.disc ? !t.entry : t.host.empty() || !mods::Exists(t.host)) {
         LOG_FIRST(200, "missing %s", name.c_str());
         return kObjectNameNotFound;
     }

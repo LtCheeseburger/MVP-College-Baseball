@@ -29,7 +29,10 @@
 #include "gpu/screenshot.h"
 #include "image_symbols.h"
 #include "kernel/kernel.h"
+#include "kernel/mods.h"
 #include "kernel/save_safety.h"
+
+extern const char kImageSha1[];  // written by CMake
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 
@@ -300,6 +303,20 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
     if (!app::FindGame(game)) return 1;
     if (std::wcsstr(GetCommandLineW(), L"--build-game-code")) return app::BuildGameCode(game);
     if (!app::PrepareGameCode(game)) return 1;
+
+    // .mvpmod mods (docs/MVPMOD.md): mods\mods.json, plus --mod <file or folder> for this run, or --no-mods
+    {
+        int argc = 0;
+        wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+        std::vector<std::filesystem::path> extra;
+        bool none = false;
+        for (int i = 1; argv && i < argc; i++) {
+            if (std::wcscmp(argv[i], L"--no-mods") == 0) none = true;
+            else if (std::wcscmp(argv[i], L"--mod") == 0 && i + 1 < argc) extra.push_back(std::filesystem::absolute(argv[++i]));
+        }
+        LocalFree(argv);
+        kernel::mods::Init(game.dir, app::UserDir() / "mods", extra, none, kImageSha1);
+    }
 
     bool splash = app::OpenSplash(), handover = app::StartHandover();
 
