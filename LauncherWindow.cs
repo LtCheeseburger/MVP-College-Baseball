@@ -209,7 +209,7 @@ sealed class LauncherWindow : Window
         var ok = Check(out var problem, out var note);
         status.Text = ok ? note : problem;
         if (!ok) status.Foreground = Brushes.Firebrick;
-        var play = Btn("Play", () => Start(""), primary: true);
+        var play = Btn("Play", () => { if (ModsMatchSaves()) Start(""); }, primary: true);
         play.IsEnabled = ok;
         p.Children.Add(Row(play));
 
@@ -380,6 +380,22 @@ sealed class LauncherWindow : Window
         return new ScrollViewer { Content = p, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     }
 
+    // docs/MVPMOD.md 5: the newest save's mods that change game data against the ones turned on now; true to go ahead
+    bool ModsMatchSaves()
+    {
+        var newest = user.Saves().FirstOrDefault();
+        if (newest == null || user.ModsOf(newest.Slot) is not { } had) return true;
+        var on = new ModList(user.Dir).Mods.Where(m => m.Enabled && m.Error == null).ToList();
+        var was = had.Where(m => m.AffectsSaves).Select(m => $"{m.Id} {m.Version}").ToHashSet();
+        var now = on.Where(m => m.AffectsSaves).Select(m => $"{m.Id} {m.Version}").ToHashSet();
+        if (was.SetEquals(now)) return true;
+        string List(IEnumerable<string> l) => l.Any() ? string.Join(", ", l) : "none";
+        return MessageBox.Show(this,
+            $"Your latest save, {newest.Name}, was made with different mods that change game data (rosters, database).\n\n" +
+            $"Then: {List(was)}\nNow: {List(now)}\n\nIt may not load the same way. Play anyway?",
+            Title, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes;
+    }
+
     // ---- Saves ----
 
     UIElement SavesTab()
@@ -392,7 +408,11 @@ sealed class LauncherWindow : Window
         {
             var list = new ListView { MaxHeight = 160, Margin = new Thickness(0, 0, 0, 12) };
             foreach (var s in saves)
-                list.Items.Add($"{s.Name}    {s.Changed:g}" + (s.History > 0 ? $"    ({s.History} earlier versions kept)" : ""));
+            {
+                var mods = user.ModsOf(s.Slot);
+                var with = mods is { Count: > 0 } ? "    mods: " + string.Join(", ", mods.Select(m => $"{m.Id} {m.Version}")) : "";
+                list.Items.Add($"{s.Name}    {s.Changed:g}" + (s.History > 0 ? $"    ({s.History} earlier versions kept)" : "") + with);
+            }
             p.Children.Add(list);
         }
 

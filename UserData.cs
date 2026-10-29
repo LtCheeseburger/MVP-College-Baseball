@@ -19,6 +19,22 @@ sealed class UserData(string installDir)
     public string BackupsDir => Path.Combine(Dir, "backups");
     public string LastGoodDir => Path.Combine(Dir, "save_lastgood");
     public string HistoryDir => Path.Combine(Dir, "save_history");
+    public string SaveModsDir => Path.Combine(Dir, "save_mods");
+
+    public sealed record SaveMod(string Id, string Version, bool AffectsSaves);
+
+    /// <summary>The mods a save was last written with (the runtime's save_mods\&lt;slot&gt;.json); null when unknown.</summary>
+    public List<SaveMod>? ModsOf(string slot)
+    {
+        try
+        {
+            var path = Path.Combine(SaveModsDir, slot + ".json");
+            if (!File.Exists(path)) return null;
+            if (System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))?["mods"] is not System.Text.Json.Nodes.JsonArray arr) return null;
+            return arr.Select(m => new SaveMod(m?["id"]?.GetValue<string>() ?? "", m?["version"]?.GetValue<string>() ?? "", m?["affectsSaves"]?.GetValue<bool>() == true)).ToList();
+        }
+        catch (Exception e) when (e is IOException or System.Text.Json.JsonException or InvalidOperationException) { return null; }
+    }
 
     public sealed record Save(string Name, string Slot, DateTime Changed, int History);
     public sealed record Backup(string Folder, DateTime Time, string Why, long Bytes);
