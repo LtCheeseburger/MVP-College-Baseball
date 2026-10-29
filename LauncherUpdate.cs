@@ -9,16 +9,16 @@ namespace MVPSetup;
 // The launcher's updater: a banner when a newer release is on GitHub, installed with one click (PortUpdater)
 sealed partial class LauncherWindow
 {
-    readonly Border updateBanner = new() { Visibility = Visibility.Collapsed, Padding = new Thickness(30, 14, 30, 14), BorderThickness = new Thickness(0, 0, 0, 1) };
+    readonly Border updateBanner = new() { Visibility = Visibility.Collapsed, Padding = new Thickness(30, 12, 30, 12), BorderThickness = new Thickness(0, 1, 0, 0) };
     readonly TextBlock updateText = new() { TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center, FontSize = 15 };
-    readonly WrapPanel updateButtons = new() { VerticalAlignment = VerticalAlignment.Center };
+    readonly StackPanel updateButtons = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) };
     readonly ProgressBar updateBar = new() { Height = 6, Maximum = 1, Margin = new Thickness(0, 8, 0, 0), Visibility = Visibility.Collapsed };
     PortRelease? pending;
     bool updating;
 
     string InstalledVersion => PortUpdater.InstalledVersion(installDir);
 
-    /// <summary>Under the header: the banner, then a check once the window is up.</summary>
+    /// <summary>Along the bottom of the window (the tabs sit up in the header): the banner, then a check once the window is up.</summary>
     void SetUpUpdates()
     {
         updateBanner.Background = Ink("#2A0D14");
@@ -33,7 +33,7 @@ sealed partial class LauncherWindow
         updateBanner.Child = body;
         if (Content is DockPanel root)
         {
-            DockPanel.SetDock(updateBanner, Dock.Top);
+            DockPanel.SetDock(updateBanner, Dock.Bottom);
             root.Children.Insert(1, updateBanner);
         }
 
@@ -49,7 +49,12 @@ sealed partial class LauncherWindow
     {
         updateText.Text = text;
         updateButtons.Children.Clear();
-        foreach (var (label, click) in buttons) updateButtons.Children.Add(Btn(label, click));
+        foreach (var (label, click) in buttons)
+        {
+            var b = Btn(label, click);
+            b.Margin = new Thickness(8, 0, 0, 0);
+            updateButtons.Children.Add(b);
+        }
         updateBanner.Visibility = Visibility.Visible;
     }
 
