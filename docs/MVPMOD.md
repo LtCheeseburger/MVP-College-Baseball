@@ -156,6 +156,16 @@ with an identity zip mod, `frontend.big` and `awards.big` are byte-identical; a 
 (packed again), adds one (unpacked), removes one, changes one texture slot (other members and textures unchanged) and
 replaces `FEENG.LOC`; a wrong-release mod is left off; the later of two mods wins.
 
+**Workshop (M2, 2026-10-28):** mods are made by opening the loose install in MVP Workshop and editing there.
+`MVPWorkshop.Core/Editing/MvpModExporter.cs` packs the session's edits: only files that differ from the install, at
+their loose paths; members unpacked; a texture contributes only its changed DDS images (the whole folder with
+`xsh.meta` when its layout changed); `.big` refused; `mod.json` filled in (xbe SHA-1 from the install's
+`default.xbe`, layout 1). App: on a loose install **Export Mod** (Ctrl+E) asks for name/id/version/author/description/
+affects-saves and saves a `.mvpmod`; **Test in Game** writes the edits as `%TEMP%\MVP-Workshop	est-mod` and starts
+`MVP06.exe --mod` beside the install. Disc and packed folders keep the old mod-output export. Tested headless: an edited
+member and one DDS slot exported as exactly two files, and the runtime loaded the `.mvpmod` with the member's bytes.
+Not yet clicked through in the app. Adding new files (members, textures) isn't possible from Workshop yet.
+
 **Launcher (M3, 2026-10-28):** MVP Workshop `src/MVPSetup` Mods tab (`ModList.cs` + `LauncherWindow.ModsTab`):
 lists the mods folder, turn on/off, order (lower wins), add `.mvpmod`, remove, shows files overridden between mods,
 missing `requires`, declared conflicts and refused mods (same checks as the runtime), "Play without mods" (`--no-mods`).
