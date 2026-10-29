@@ -38,5 +38,12 @@ rem the compiler folder without its work folder: no game code goes in the zip, t
 robocopy "%OUT%\compiler" "%PORT%\compiler" /e /xd work /njh /njs /nfl /ndl >nul
 if errorlevel 8 (echo copying the compiler failed & exit /b 1)
 dotnet publish "%WORKSHOP%\src\MVPSetup" -c Release -r win-x64 -o "%PKG%" -p:DebugType=none -nologo -v q || (echo building Setup.exe failed: set WORKSHOP to the MVP Workshop folder & exit /b 1)
+rem the launcher's updater (PortUpdater in MVP Workshop) installs "Port Files" from this zip: Launcher.exe (setup's own
+rem exe) so the launcher updates itself, the version it compares with the release tag (v<VERSION>), and the list of
+rem every port file with its size and SHA-256, which the update checks and uses to remove files a release dropped
+copy /y "%PKG%\Setup.exe" "%PORT%\Launcher.exe" >nul || exit /b 1
+>"%PORT%\version.txt" echo %VER%
+powershell -NoProfile -Command "$root = (Resolve-Path '%PORT%').Path; $files = Get-ChildItem -LiteralPath $root -Recurse -File | Where-Object Name -ne 'port-manifest.json' | ForEach-Object { [ordered]@{ path = $_.FullName.Substring($root.Length + 1).Replace('\','/'); size = $_.Length; sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLower() } }; [ordered]@{ format = 1; version = '%VER%'; files = @($files) } | ConvertTo-Json -Depth 4 | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $root 'port-manifest.json')" || (echo writing port-manifest.json failed & exit /b 1)
 "%SEVENZIP%" a "%ZIP%" ".\%PKG%\*" >nul || exit /b 1
+powershell -NoProfile -Command "'{0} *{1}' -f (Get-FileHash -Algorithm SHA256 -LiteralPath '%ZIP%').Hash.ToLower(), '%ZIP%' | Set-Content -Encoding ASCII -LiteralPath '%ZIP%.sha256'" || exit /b 1
 echo %ZIP%
