@@ -17,6 +17,8 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
   <ItemGroup>
+    <Resource Include="Assets/BarlowCondensed-Bold.ttf" />
+    <Resource Include="Assets/BarlowCondensed-BlackItalic.ttf" />
     <ProjectReference Include="..\MVPWorkshop.Core\MVPWorkshop.Core.csproj" />
     <Using Include="System.IO" />
   </ItemGroup>

@@ -11,7 +11,7 @@ namespace MVPSetup;
 /// Setup's one window: pick the folder, pick the game, install (copy the port, unpack the game), then shortcuts and launch;
 /// with --repair it checks an install against its manifest and restores from the image; with --uninstall it removes it.
 /// </summary>
-sealed class SetupWindow : Window
+sealed partial class SetupWindow : Window
 {
     // measured on the full install (2026-10-28): the loose game data, and what the game-code build needs besides
     const long GameBytes = 2_710_000_000;
@@ -22,19 +22,15 @@ sealed class SetupWindow : Window
     readonly StackPanel page = new() { Margin = new Thickness(24) };
     readonly CancellationTokenSource cancel = new();
     string isoPath = "";
-    string installDir = Game.DefaultInstallDir;
+    string installDir = "";
 
     public SetupWindow(string mode, string portDir)
     {
         this.mode = mode;
         this.portDir = portDir;
-        Title = mode switch { "repair" => $"{Game.Product}: Repair", "uninstall" => $"{Game.Product}: Uninstall", _ => $"{Game.Product} Setup" };
-        Width = 640;
-        SizeToContent = SizeToContent.Height;
-        ResizeMode = ResizeMode.CanMinimize;
+        Title = mode switch { "repair" => $"{Game.Product}: Repair", "uninstall" => $"{Game.Product}: Uninstall", _ => "MVP 27 College Baseball Setup" };
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        FontSize = 14;
-        Content = page;
+        BuildShell();
         Closing += (_, _) => cancel.Cancel();
         switch (mode)
         {
@@ -46,29 +42,30 @@ sealed class SetupWindow : Window
 
     // ---- building blocks ----
 
-    void Clear() => page.Children.Clear();
+    void Clear() { page.Children.Clear(); footer.Children.Clear(); }
 
     TextBlock Text(string s, bool heading = false)
     {
         var t = new TextBlock { Text = s, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) };
-        if (heading) { t.FontSize = 20; t.FontWeight = FontWeights.SemiBold; }
+        if (heading) { t.Text = s.ToUpperInvariant(); t.FontSize = 40; t.FontFamily = displayFont; t.FontWeight = FontWeights.Bold; }
+        else { t.Foreground = Ink("#A6B2BD"); t.LineHeight = 27; }
         page.Children.Add(t);
         return t;
     }
 
     Button Buttons(string primary, Action onPrimary, string? secondary = null, Action? onSecondary = null)
     {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
+        var row = new Grid { Margin = new Thickness(0, 24, 0, 0) };
         if (secondary != null)
         {
-            var b2 = new Button { Content = secondary, MinWidth = 100, Padding = new Thickness(12, 4, 12, 4), Margin = new Thickness(0, 0, 8, 0) };
+            var b2 = new Button { Content = secondary.ToUpperInvariant(), MinWidth = 140, Padding = new Thickness(20, 12, 20, 12), FontFamily = displayFont, FontSize = 23, HorizontalAlignment = HorizontalAlignment.Left };
             b2.Click += (_, _) => onSecondary!();
             row.Children.Add(b2);
         }
-        var b = new Button { Content = primary, MinWidth = 100, Padding = new Thickness(12, 4, 12, 4), IsDefault = true };
+        var b = new Button { Content = primary.ToUpperInvariant(), MinWidth = 220, Padding = new Thickness(20, 12, 20, 12), IsDefault = true, HorizontalAlignment = HorizontalAlignment.Right, Background = Ink("#C60020"), BorderBrush = Ink("#FF173E"), FontFamily = displayFont, FontWeight = FontWeights.Bold, FontSize = 26 };
         b.Click += (_, _) => onPrimary();
         row.Children.Add(b);
-        page.Children.Add(row);
+        footer.Children.Add(new Border { BorderBrush = Ink("#34424B"), BorderThickness = new Thickness(0,1,0,0), Child = row });
         return b;
     }
 
@@ -77,7 +74,7 @@ sealed class SetupWindow : Window
         var grid = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
         var browse = new Button { Content = "Browse…", Padding = new Thickness(12, 2, 12, 2), Margin = new Thickness(8, 0, 0, 0) };
         DockPanel.SetDock(browse, Dock.Right);
-        var box = new TextBox { Text = value, Padding = new Thickness(4) };
+        var box = new TextBox { Text = value, Padding = new Thickness(12), FontSize = 18, Background = Ink("#0C141A"), Foreground = Brushes.White, CaretBrush = Brushes.White, BorderBrush = Ink("#55616B") };
         grid.Children.Add(browse);
         grid.Children.Add(box);
         page.Children.Add(grid);
@@ -87,7 +84,7 @@ sealed class SetupWindow : Window
     TextBlock Error()
     {
         var t = Text("");
-        t.Foreground = Brushes.Firebrick;
+        t.Foreground = Ink("#FF7187");
         t.Visibility = Visibility.Collapsed;
         return t;
     }
@@ -103,25 +100,40 @@ sealed class SetupWindow : Window
     void ShowFolder()
     {
         Clear();
-        Text($"Install {Game.Product}", true);
+        SetStep(0);
+        Text("Install location", true);
         Text($"Pick where the game goes. It is installed for your Windows account only (no administrator rights needed); saves and settings stay in Documents\\{Game.UserFolder}.");
         var (box, browse) = PathRow(installDir);
         browse.Click += (_, _) =>
         {
             var dlg = new OpenFolderDialog { Title = "Install folder" };
-            if (dlg.ShowDialog(this) == true) box.Text = Path.Combine(dlg.FolderName, Game.Product);
+            if (dlg.ShowDialog(this) == true) box.Text = dlg.FolderName;
         };
         var need = NeededBytes();
-        var space = Text("");
+        var space = new TextBlock { Foreground = Ink("#B2BDC6"), FontSize = 18, LineHeight = 27 };
+        page.Children.Add(new Border { Child = space, Padding = new Thickness(20,14,20,14), Margin = new Thickness(0,24,0,12), BorderBrush = Ink("#303D45"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3) });
+        Button? next = null;
         void Measure()
         {
-            try { space.Text = $"Needs {need / 1e9:F1} GB; {Steps.FreeBytes(box.Text) / 1e9:F1} GB free on that drive."; }
-            catch { space.Text = $"Needs {need / 1e9:F1} GB."; }
+            bool valid = false;
+            var dir = box.Text.Trim().Trim('"');
+            space.Text = $"Space Required: {need / 1e9:F1} GB\nSpace Available: Choose an install folder";
+            try
+            {
+                if (Path.IsPathFullyQualified(dir))
+                {
+                    long free = Steps.FreeBytes(dir);
+                    space.Text = $"Space Required: {need / 1e9:F1} GB\nSpace Available: {free / 1e9:F1} GB";
+                    valid = free >= need;
+                }
+            }
+            catch { }
+            if (next != null) next.IsEnabled = valid;
         }
         box.TextChanged += (_, _) => Measure();
         Measure();
         var error = Error();
-        Buttons("Next", () =>
+        next = Buttons("Next", () =>
         {
             var dir = box.Text.Trim().Trim('"');
             try
@@ -135,6 +147,7 @@ sealed class SetupWindow : Window
             installDir = dir;
             ShowSource();
         }, "Cancel", Close);
+        Measure();
     }
 
     long NeededBytes() => GameBytes + BuildBytes + Steps.PortFiles(portDir).Sum(f => new FileInfo(f.From).Length);
@@ -174,9 +187,10 @@ sealed class SetupWindow : Window
     (TextBlock, ProgressBar) ProgressPage(string heading)
     {
         Clear();
+        SetStep(1);
         Text(heading, true);
         var label = Text("");
-        var bar = new ProgressBar { Height = 18, Maximum = 1, Margin = new Thickness(0, 0, 0, 8) };
+        var bar = new ProgressBar { Foreground = Ink("#E60024"), Background = Ink("#18232B"), Height = 18, Maximum = 1, Margin = new Thickness(0, 0, 0, 8) };
         page.Children.Add(bar);
         Buttons("Cancel", () => cancel.Cancel());
         return (label, bar);
@@ -225,7 +239,8 @@ sealed class SetupWindow : Window
     void ShowFinish()
     {
         Clear();
-        Text("Installed", true);
+        SetStep(2);
+        Text("Complete", true);
         Text($"{Game.Product} is installed in {installDir}. The first start builds the game's code for this PC, once; that takes a while.");
         CheckBox Box(string text)
         {

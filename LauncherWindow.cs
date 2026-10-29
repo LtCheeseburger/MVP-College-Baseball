@@ -11,7 +11,7 @@ namespace MVPSetup;
 /// The launcher (Launcher.exe beside the installed game, where the shortcuts point): checks the install, starts the
 /// game, edits its settings file and restores saves from the runtime's backups.
 /// </summary>
-sealed class LauncherWindow : Window
+sealed partial class LauncherWindow : Window
 {
     readonly string installDir;
     readonly UserData user;
@@ -22,17 +22,12 @@ sealed class LauncherWindow : Window
         this.installDir = installDir;
         user = new UserData(installDir);
         Title = Game.Product;
-        Width = 760;
-        Height = 620;
-        MinWidth = 560;
-        MinHeight = 480;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        FontSize = 14;
-        Content = tabs;
-        tabs.Items.Add(new TabItem { Header = "Play", Content = PlayTab() });
-        tabs.Items.Add(new TabItem { Header = "Settings", Content = SettingsTab() });
-        tabs.Items.Add(new TabItem { Header = "Saves", Content = SavesTab() });
-        tabs.Items.Add(new TabItem { Header = "Mods", Content = ModsTab() });
+        BuildShell();
+        SetUpUpdates();
+        tabs.Items.Add(new TabItem { Header = "HOME", Content = HomeTab() });
+        tabs.Items.Add(new TabItem { Header = "MODS", Content = ModsTab() });
+        tabs.Items.Add(new TabItem { Header = "SETTINGS", Content = SettingsTab() });
     }
 
     // ---- Mods (docs/MVPMOD.md: the launcher writes mods\mods.json, the game reads it at its next start) ----
@@ -40,16 +35,20 @@ sealed class LauncherWindow : Window
     UIElement ModsTab()
     {
         var mods = new ModList(installDir);
-        var p = new DockPanel { Margin = new Thickness(16) };
+        var p = new DockPanel { Margin = new Thickness(30) };
         var head = new StackPanel();
-        head.Children.Add(Line("Mods", 16, true));
+        head.Children.Add(Heading("MODS"));
         head.Children.Add(Line("Turned-on mods are used from the game's next start. When two mods change the same file, the one lower in the list wins. Mods never change the installed game files: turn a mod off and the game is as it was.", 13));
         DockPanel.SetDock(head, Dock.Top);
         p.Children.Add(head);
 
+        var order = new ListBox { Margin = new Thickness(0,0,0,12) };
+        var search = new TextBox { Margin = new Thickness(0,4,0,12), ToolTip = "Search installed mods" };
+        head.Children.Add(Line("Search installed mods", 13));
+        head.Children.Add(search);
         var list = new ListBox { Margin = new Thickness(0, 0, 0, 8), MinHeight = 140 };
         var details = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 13, Margin = new Thickness(0, 0, 0, 8) };
-        var problems = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = Brushes.DarkRed, Margin = new Thickness(0, 0, 0, 8) };
+        var problems = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = Ink("#FF7C8D"), Margin = new Thickness(0, 0, 0, 8) };
 
         void Changed()
         {
@@ -81,19 +80,28 @@ sealed class LauncherWindow : Window
         {
             var keep = (list.SelectedItem as ListBoxItem)?.Tag;
             list.Items.Clear();
+            order.Items.Clear();
             var overlaps = mods.Overlaps();
             foreach (var m in mods.Mods)
             {
+                var orderRow = new ListBoxItem { Content = $"{mods.Mods.IndexOf(m) + 1:00}   {(m.Enabled ? "●" : "○")}   {m.Name}", Tag = m, Padding = new Thickness(12,14,12,14) };
+                order.Items.Add(orderRow);
+                if (m == keep) order.SelectedItem = orderRow;
+                if (!m.Name.Contains(search.Text, StringComparison.OrdinalIgnoreCase) && !m.Description.Contains(search.Text, StringComparison.OrdinalIgnoreCase)) continue;
                 var row = new DockPanel { Margin = new Thickness(2) };
                 var box = new CheckBox { IsChecked = m.Enabled, IsEnabled = m.Error == null, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
                 box.Checked += (_, _) => { m.Enabled = true; Changed(); };
                 box.Unchecked += (_, _) => { m.Enabled = false; Changed(); };
                 row.Children.Add(box);
+                row.Children.Add(ModIcon(m));
                 var note = m.Error != null ? "can't be used" : !m.Enabled ? "off" : overlaps.Any(o => o.Losers.Contains(m)) ? "partly overridden" : "";
-                var status = new TextBlock { Text = note, Foreground = m.Error != null ? Brushes.DarkRed : Brushes.Gray, Margin = new Thickness(12, 0, 0, 0) };
+                var status = new TextBlock { Text = note, Foreground = m.Error != null ? Ink("#FF7C8D") : Ink("#A2B2BF"), Margin = new Thickness(12, 0, 0, 0) };
                 DockPanel.SetDock(status, Dock.Right);
                 row.Children.Add(status);
-                row.Children.Add(new TextBlock { Text = $"{m.Name}  {m.Version}", Foreground = m.Error != null ? Brushes.Gray : Brushes.Black });
+                var name = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+                name.Children.Add(new TextBlock { Text = m.Name, Foreground = Ink("#EDF0F3"), FontSize = 16, TextTrimming = TextTrimming.CharacterEllipsis });
+                name.Children.Add(new TextBlock { Text = $"v{m.Version}" + (m.Author != "" ? $"  |  {m.Author}" : ""), Foreground = Ink("#A2B2BF"), FontSize = 12 });
+                row.Children.Add(name);
                 var item = new ListBoxItem { Content = row, Tag = m };
                 list.Items.Add(item);
                 if (m == keep) list.SelectedItem = item;
@@ -105,6 +113,13 @@ sealed class LauncherWindow : Window
             ShowDetails();
         }
         list.SelectionChanged += (_, _) => ShowDetails();
+        search.TextChanged += (_, _) => Fill();
+        order.SelectionChanged += (_, _) =>
+        {
+            if (order.SelectedItem is not ListBoxItem { Tag: ModList.Mod selected }) return;
+            var item = list.Items.OfType<ListBoxItem>().FirstOrDefault(x => x.Tag == selected);
+            if (item != null) { list.SelectedItem = item; list.ScrollIntoView(item); }
+        };
 
         void Move(int by)
         {
@@ -149,12 +164,22 @@ sealed class LauncherWindow : Window
 
         var buttons = new StackPanel();
         buttons.Children.Add(problems);
-        buttons.Children.Add(details);
+
         buttons.Children.Add(Row(Btn("Add mod…", AddMod), Btn("Remove", RemoveMod), Btn("Move up", () => Move(-1)), Btn("Move down", () => Move(1))));
         buttons.Children.Add(Row(Btn("Refresh", () => { mods.Reload(); Fill(); }), Btn("Open mods folder", () => Open(mods.Dir)), Btn("Play without mods", () => Start("--no-mods"))));
         DockPanel.SetDock(buttons, Dock.Bottom);
         p.Children.Add(buttons);
-        p.Children.Add(list);
+        var columns = new Grid();
+        columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.25, GridUnitType.Star) });
+        columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
+        columns.ColumnDefinitions.Add(new ColumnDefinition());
+        columns.Children.Add(list);
+        var side = new DockPanel(); Grid.SetColumn(side, 2); columns.Children.Add(side);
+        var orderHead = new StackPanel(); orderHead.Children.Add(Heading("LOAD ORDER")); orderHead.Children.Add(Line("Lower mods take priority. Select a mod and use Move up / down.", 13));
+        DockPanel.SetDock(orderHead, Dock.Top); side.Children.Add(orderHead);
+        var info = Panel(details); DockPanel.SetDock(info, Dock.Bottom); side.Children.Add(info);
+        side.Children.Add(order);
+        p.Children.Add(columns);
         Fill();
         return p;
     }
@@ -180,7 +205,7 @@ sealed class LauncherWindow : Window
     static Button Btn(string text, Action click, bool primary = false)
     {
         var b = new Button { Content = text, Padding = new Thickness(16, 6, 16, 6), Margin = new Thickness(0, 0, 8, 8), MinWidth = 110 };
-        if (primary) { b.FontSize = 18; b.Padding = new Thickness(32, 10, 32, 10); b.IsDefault = true; }
+        if (primary) { b.Background = Ink("#C90023"); b.BorderBrush = Ink("#FF173B"); b.FontSize = 18; b.Padding = new Thickness(32, 10, 32, 10); b.IsDefault = true; }
         b.Click += (_, _) => click();
         return b;
     }
@@ -203,16 +228,6 @@ sealed class LauncherWindow : Window
     UIElement PlayTab()
     {
         var p = new StackPanel { Margin = new Thickness(16) };
-        p.Children.Add(Line(Game.Title, 24, true));
-        var status = Line("");
-        p.Children.Add(status);
-        var ok = Check(out var problem, out var note);
-        status.Text = ok ? note : problem;
-        if (!ok) status.Foreground = Brushes.Firebrick;
-        var play = Btn("Play", () => { if (ModsMatchSaves()) Start(""); }, primary: true);
-        play.IsEnabled = ok;
-        p.Children.Add(Row(play));
-
         p.Children.Add(Line("Game files", 16, true));
         var verifyLabel = Line("Checks every game file against the list made at install. A file you changed on purpose shows up as changed too.");
         var bar = new ProgressBar { Height = 14, Maximum = 1, Margin = new Thickness(0, 0, 0, 8), Visibility = Visibility.Collapsed };
@@ -232,6 +247,10 @@ sealed class LauncherWindow : Window
             verifyLabel.Text = bad.Count == 0 ? "Every game file matches the install." : $"{bad.Count} files are missing or changed, for example {bad[0].Path}. Repair restores them from your disc image.";
         });
         p.Children.Add(Row(verify, Btn("Repair…", Repair)));
+
+        p.Children.Add(Line("Updates", 16, true));
+        p.Children.Add(Line($"Version {InstalledVersion}. The launcher checks for a newer release each time it opens.", 13));
+        p.Children.Add(Row(Btn("Check for updates", () => _ = CheckForUpdates(quiet: false))));
 
         p.Children.Add(Line("Folders", 16, true));
         p.Children.Add(Row(Btn("Install folder", () => Open(installDir)), Btn("Saves and settings", () => Open(user.Dir)), Btn("Logs", () => Open(Path.Combine(user.Dir, "logs")))));
@@ -295,7 +314,7 @@ sealed class LauncherWindow : Window
             new("nintendo_buttons", "Nintendo controller buttons", "label", ["label", "position"]),
             new("screenshot_key", "Screenshot key (virtual key code, 123 = F12, 0 off)", "123", Min: 0, Max: 254),
         ]),
-        ("Saves", [
+        ("Save backups", [
             new("save_backups", "Backups of all saves kept (0 off)", "10", Min: 0, Max: 100),
             new("save_history", "Earlier versions kept per save", "5", Min: 2, Max: 20),
         ]),
@@ -313,9 +332,22 @@ sealed class LauncherWindow : Window
         p.Children.Add(Line("Changes take effect the next time the game starts. The game also saves these when you change them in its PC Options menu, so change them here while it's closed.", 13));
         var file = new SettingsFile(user.SettingsPath);
         var setters = new List<Action>();
+        var shell = new DockPanel { Margin = new Thickness(30,8,30,20) };
+        var categories = new StackPanel { Width = 210, Margin = new Thickness(0,0,28,0) };
+        DockPanel.SetDock(categories, Dock.Left); shell.Children.Add(categories);
+        var cards = new List<UIElement>();
+        var categoryButtons = new List<Button>();
         foreach (var (group, fields) in Fields)
         {
-            p.Children.Add(Line(group, 16, true));
+            var section = new StackPanel(); section.Children.Add(Heading(group.ToUpperInvariant()));
+            var card = Panel(section); card.Visibility = cards.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            cards.Add(card); p.Children.Add(card);
+            Button? category = null;
+            category = Btn(group, () => { foreach (var c in cards) c.Visibility = c == card ? Visibility.Visible : Visibility.Collapsed; foreach (var b in categoryButtons) { b.Background = Ink(b == category ? "#52101D" : "#131D24"); b.BorderBrush = Ink(b == category ? "#ED0026" : "#40515D"); } });
+            if (categoryButtons.Count == 0) { category.Background = Ink("#52101D"); category.BorderBrush = Ink("#ED0026"); }
+        categoryButtons.Add(category);
+            category.HorizontalAlignment = HorizontalAlignment.Stretch; category.Padding = new Thickness(12,16,12,16);
+            categories.Children.Add(category);
             var grid = new Grid { Margin = new Thickness(0, 0, 0, 12) };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(300) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -358,10 +390,11 @@ sealed class LauncherWindow : Window
                 Grid.SetColumn(editor, 1);
                 grid.Children.Add(editor);
             }
-            p.Children.Add(grid);
+            section.Children.Add(grid);
         }
         var saved = Line("");
-        p.Children.Add(Row(Btn("Save settings", () =>
+        var footer = new StackPanel();
+        footer.Children.Add(Row(Btn("Apply changes", () =>
         {
             if (GameRunning()) { saved.Text = "Close the game first: it would write its own settings over these."; return; }
             try
@@ -376,8 +409,10 @@ sealed class LauncherWindow : Window
             if (File.Exists(user.SettingsPath)) Process.Start(new ProcessStartInfo("notepad.exe", $"\"{user.SettingsPath}\""));
             else saved.Text = "There's no settings file yet; the game writes one on its first start.";
         })));
-        p.Children.Add(saved);
-        return new ScrollViewer { Content = p, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+        footer.Children.Add(saved);
+        DockPanel.SetDock(footer, Dock.Bottom); shell.Children.Add(footer);
+        shell.Children.Add(new ScrollViewer { Content = p, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        return shell;
     }
 
     // docs/MVPMOD.md 5: the newest save's mods that change game data against the ones turned on now; true to go ahead
@@ -443,3 +478,5 @@ sealed class LauncherWindow : Window
         Start($"--restore-backup \"{name}\"");
     }
 }
+
+
