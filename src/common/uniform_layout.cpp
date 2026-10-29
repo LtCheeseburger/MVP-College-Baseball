@@ -52,22 +52,11 @@ bool PatchLayout(std::vector<uint8_t>& bytes) {
         auto original = Fields(lines[label]);
         int y = 0;
         if (original.size() < 40 || !Number(original[4], y)) return false;
-        // Keep the artwork and animated group intact. The existing right-hand choice panel grows vertically;
-        // four native text boxes replace its single line. No exported game asset is stored in the repository.
-        for (size_t i = first + 1; i < end; ++i) {
-            auto f = Fields(lines[i]);
-            if (f.size() < 7) continue;
-            const auto type = f[0].substr(Indent(f[0]));
-            if (type == "BU:NEXT" || type == "BU:PREV") f[1] = "0";
-            if (type == "FC:FC1" || type.starts_with("FR:") ||
-                type == "SH:F4" || type == "SH:F5" || type == "SH:F6") {
-                f[4] = std::to_string(y - 52);
-                f[6] = "118";
-            }
-            if (type == "TX:JERSEYTITLE") f[4] = std::to_string(y + 72);
-            lines[i] = Join(f);
-        }
-        std::vector<std::string> rows;
+        // Bitmap frames keep their native texture size even when their FEL bounds grow. A native rectangle
+        // behind the rows supplies the larger panel; the hook hides the old frame/arrows after activation.
+        const std::string pad(Indent(original[0]), ' ');
+        std::vector<std::string> rows = {pad + "RT:UNIFORMBACK,1,0,358," + std::to_string(y - 46) +
+            ",274,106,1,1,1,1,1,012,020,044,0,1,1,000,000,000,0,0,220,-1,0,0,0"};
         constexpr const char* names[] = {"JERSEYNAME", "UNIFORMHAT", "UNIFORMJERSEY", "UNIFORMPANTS", "UNIFORMHELP"};
         for (unsigned row = 0; row < 5; ++row) {
             auto f = original;
@@ -77,12 +66,14 @@ bool PatchLayout(std::vector<uint8_t>& bytes) {
             f[5] = "256";
             f[6] = "18";
             f[13] = row == 4 ? "twc14_en.ffn" : "twc16_en.ffn";
-            // Leave alignment and native text-state colors as authored.
+            // Native unselected/disabled state colors were dark gray against a one-line highlight. All rows
+            // must stay readable on the expanded panel; the cursor and selected state still identify focus.
+            for (unsigned color = 16; color <= 30; ++color) f[color] = "235";
             rows.push_back(Join(f));
         }
         lines.erase(lines.begin() + std::ptrdiff_t(label));
         lines.insert(lines.begin() + std::ptrdiff_t(label), rows.begin(), rows.end());
-        first = end + 3;
+        first = end + 4;
         ++patched;
     }
     if (patched != 2) return false;  // another/custom screen layout: leave it completely unchanged

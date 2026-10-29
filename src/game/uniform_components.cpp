@@ -75,6 +75,7 @@ std::string Pack(X86Context& ctx, uint32_t team, uint32_t variant) {
 struct Control {
     unsigned side = 0;
     std::array<uint32_t, 5> labels{};
+    std::array<uint32_t, 4> obsolete{};
     GuestBuffer text{5 * 128};  // retained until control destruction, even if a text widget borrows its string
     std::optional<Selection> selection;
 };
@@ -91,6 +92,8 @@ Control* Get(uint32_t self) {
 void Refresh(X86Context& ctx, uint32_t self) {
     auto* control = Get(self);
     if (!control || !control->selection) return;
+    // Native activation can show these again. Hide the single-row frame/arrows/title after each refresh.
+    for (uint32_t widget : control->obsolete) Virtual(ctx, widget, 0x1C, {0});
     const auto labels = control->selection->Labels();
     for (unsigned row = 0; row < 5; ++row) {
         std::string value = row == 4 ? "Up/Down: part   Left/Right: change" :
@@ -115,13 +118,29 @@ bool Edit(X86Context& ctx, uint32_t self, int direction, bool row) {
     }
     return true;
 }
-bool MoveRow(X86Context& ctx, int direction) {
+uint32_t FocusedUniform(X86Context& ctx, uint32_t screen, uint32_t port) {
     // TeamSelect's own dispatcher resolves controller port -> focused home/away child. Other screens, side
     // assignment, difficulty and team pickers keep their original input handlers.
-    uint32_t screen = ctx.ecx, port = R32(ctx.esp + 4);
-    if (!(Virtual(ctx, screen, 0x160, {port}) & 0xFF)) return false;
+    if (!(Virtual(ctx, screen, 0x160, {port}) & 0xFF)) return 0;
     uint32_t child = Virtual(ctx, screen, 0x150, {port});
-    return Edit(ctx, child, direction, true);
+    return Get(child) ? child : 0;
+}
+bool MoveRow(X86Context& ctx, int direction) {
+    return Edit(ctx, FocusedUniform(ctx, ctx.ecx, R32(ctx.esp + 4)), direction, true);
+}
+bool UniformOwnsDirection(X86Context& ctx) {
+    // CNTRLSELECT receives the same press independently of TeamSelect. Its handler must not reassign this port
+    // while that port edits a uniform. The control's +208 owner is set by 0xAF7B0; the screen's +4C bit is set on
+    // activation (0xAF950) and cleared on exit (0xB2A90), so cached/inactive screens cannot block other menus.
+    const uint32_t selector = ctx.ecx, port = R32(ctx.esp + 4);
+    for (const auto& [self, control] : g_controls) {
+        if (!control->selection) continue;
+        const uint32_t screen = R32(self + 0x208);
+        if (!screen || !(*static_cast<uint8_t*>(kernel::HostPtr(screen + 0x4C)) & 1) ||
+            R32(screen + 0x200) != selector) continue;
+        if (FocusedUniform(ctx, screen, port) == self) return true;
+    }
+    return false;
 }
 
 void Release(X86Context& ctx, uint32_t self) {
@@ -225,6 +244,9 @@ X86_FUNC(sub_00515C70) {
     for (unsigned i = 0; i < 5; ++i) control->labels[i] = Find(ctx, group, names[i]);
     // HRD, mini-games and incompatible replacement FELs use the original single selector.
     if (!control->text.address || std::ranges::find(control->labels, 0u) != control->labels.end()) return;
+    const uint32_t selector = R32(self + 0x220);
+    control->obsolete = {Find(ctx, selector, "FC1"), Find(ctx, selector, "NEXT"),
+                         Find(ctx, selector, "PREV"), Find(ctx, group, "JERSEYTITLE")};
     g_controls[self] = std::move(control);
 }
 
@@ -315,6 +337,18 @@ X86_EXTERN_FUNC(__imp__sub_00566C40);
 X86_FUNC(sub_00566C40) {
     if (MoveRow(ctx, 1)) return kernel::Return(ctx, 1, 1);
     __imp__sub_00566C40(ctx, base);
+}
+// Keep the controller-assignment widget's unhandled return value: TeamSelect still receives this same press.
+// Only TeamSelect moves the row, regardless of which of the two independently dispatched handlers runs first.
+X86_EXTERN_FUNC(__imp__sub_000D3310);
+X86_FUNC(sub_000D3310) {
+    if (UniformOwnsDirection(ctx)) return kernel::Return(ctx, 0, 1);
+    __imp__sub_000D3310(ctx, base);
+}
+X86_EXTERN_FUNC(__imp__sub_000D3560);
+X86_FUNC(sub_000D3560) {
+    if (UniformOwnsDirection(ctx)) return kernel::Return(ctx, 0, 1);
+    __imp__sub_000D3560(ctx, base);
 }
 
 // Confirm this side. Keep only the preset in the native descriptor; component choices never enter a save.

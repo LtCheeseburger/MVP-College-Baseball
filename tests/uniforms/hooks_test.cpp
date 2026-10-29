@@ -22,6 +22,8 @@ X86_EXTERN_FUNC(sub_005389A0);
 X86_EXTERN_FUNC(sub_00538A00);
 X86_EXTERN_FUNC(sub_00566BD0);
 X86_EXTERN_FUNC(sub_00566C40);
+X86_EXTERN_FUNC(sub_000D3310);
+X86_EXTERN_FUNC(sub_000D3560);
 X86_EXTERN_FUNC(sub_00516050);
 X86_EXTERN_FUNC(sub_00515C60);
 X86_EXTERN_FUNC(sub_00272FE0);
@@ -40,12 +42,14 @@ std::vector<Piece> additions;
 bool missing_helmet = false;
 bool missing_letter = false;
 unsigned fallback_calls = 0;
+unsigned assignment_calls = 0;
+bool port_enabled = true;
 unsigned derived_releases = 0, derived_rebuilds = 0;
 uint32_t active_team[2] = {44, 44};
 const std::map<std::string, unsigned> rows = {{"JERSEYNAME", 0}, {"UNIFORMHAT", 1},
     {"UNIFORMJERSEY", 2}, {"UNIFORMPANTS", 3}, {"UNIFORMHELP", 4}};
 unsigned Tag(const std::string& tag) { unsigned hash = 0; for (unsigned char c : tag) hash = hash * 31 + c; return hash % 512; }
-void Run(X86Func* fn, uint32_t self, std::initializer_list<uint32_t> args = {}) {
+uint32_t Run(X86Func* fn, uint32_t self, std::initializer_list<uint32_t> args = {}) {
     X86Context ctx{};
     ctx.ecx = self; ctx.esp = 0x700000; ctx.ebx = 11; ctx.esi = 12; ctx.edi = 13; ctx.ebp = 14;
     W32(ctx.esp, 0xDEADBEEF);
@@ -53,6 +57,7 @@ void Run(X86Func* fn, uint32_t self, std::initializer_list<uint32_t> args = {}) 
     fn(ctx, memory.data());
     CHECK(ctx.esp == 0x700004 + args.size() * 4);
     CHECK(ctx.ebx == 11 && ctx.esi == 12 && ctx.edi == 13 && ctx.ebp == 14);
+    return ctx.eax;
 }
 void Init(unsigned side) {
     uint32_t self = kControl[side];
@@ -85,8 +90,8 @@ uint32_t CallGuest(X86Context& ctx, uint32_t fn, const uint32_t* args, size_t co
             displayed[ctx.ecx] = ReadCString(args[0]); return 0;
         case 0x107C: return ctx.ecx + 0x100 + rows.at(ReadCString(args[0])) * 0x100;
         case 0x103C: return 0;
-        case 0x1160: return 1;
-        case 0x1150: return focus;
+        case 0x1160: return port_enabled;
+        case 0x1150: return args[0] == 0 ? focus : 0x25000;
         case 0x2673B0: {
             std::string name = ReadCString(args[0]); ++loads[name];
             uint32_t handle = next_resource; next_resource += 0x1000;
@@ -114,6 +119,7 @@ uint32_t CallGuest(X86Context& ctx, uint32_t fn, const uint32_t* args, size_t co
 X86_FUNC(__imp__sub_00515C70) {
     unsigned side = ctx.ecx == kControl[0] ? 0 : 1;
     W32(ctx.ecx + 0x23C, side); W32(ctx.ecx + 0x218, 0x30000 + side * 0x1000);
+    W32(ctx.ecx + 0x208, 0x50000);
     W32(ctx.ecx + 0x238, active_team[side]); W32(kDesc[side], active_team[side]); W32(kDesc[side] + 4, side);
     kernel::Return(ctx, 0, 3);
 }
@@ -124,6 +130,9 @@ X86_FUNC(__imp__sub_00516050) { kernel::Return(ctx, 0, 0); }
 X86_FUNC(__imp__sub_00515C60) { kernel::Return(ctx, 0, 0); }
 #define FALLBACK(name) X86_FUNC(__imp__sub_##name) { ++fallback_calls; kernel::Return(ctx, 0, 1); }
 FALLBACK(00538970) FALLBACK(005389D0) FALLBACK(005389A0) FALLBACK(00538A00) FALLBACK(00566BD0) FALLBACK(00566C40)
+// Independent CNTRLSELECT dispatch changes the assignment before the next TeamSelect update.
+X86_FUNC(__imp__sub_000D3310) { ++assignment_calls; focus = 0x25000; kernel::Return(ctx, 0, 1); }
+X86_FUNC(__imp__sub_000D3560) { ++assignment_calls; focus = 0x25000; kernel::Return(ctx, 0, 1); }
 X86_FUNC(__imp__sub_00272FE0) {
     for (unsigned i = 0; i < 39; ++i) W32(ctx.ecx + 0x20 + 4 * i, 0);
     for (unsigned offset : {0xBCu, 0xC0u}) { live_resources.erase(R32(ctx.ecx + offset)); W32(ctx.ecx + offset, 0); }
@@ -144,9 +153,21 @@ int main() {
     W32(0x10204, kDesc[0] - 0xAC); W32(0x10208, kDesc[1] - 0xAC);
     for (unsigned offset : {0x68u, 0x7Cu, 0x3Cu, 0x160u, 0x150u}) W32(0x8000 + offset, 0x1000 + offset);
     W32(0x50000, 0x8000);
+    W32(0x50200, 0x52000); memory[0x5004C] = 1;
     for (unsigned side = 0; side < 2; ++side) for (unsigned i = 0; i < 6; ++i) W32(0x30000 + side * 0x1000 + i * 0x100, 0x8000);
     Init(0); Init(1);
     CHECK(displayed[0x30100].find("Home") != std::string::npos && displayed[0x31100].find("Away") != std::string::npos);
+    // Exercise both independent dispatch orders. The assignment widget must leave focus and the row alone.
+    Run(sub_00566C40, 0x50000, {0}); CHECK(Run(sub_000D3560, 0x52000, {0}) == 0);
+    CHECK(displayed[0x30200].starts_with("> ") && focus == kControl[0] && assignment_calls == 0);
+    CHECK(Run(sub_000D3310, 0x52000, {0}) == 0); Run(sub_00566BD0, 0x50000, {0});
+    CHECK(displayed[0x30100].starts_with("> ") && focus == kControl[0] && assignment_calls == 0);
+    // Home and away both keep their own focus; locked uniforms also consume the row input.
+    focus = kControl[1]; Run(sub_000D3560, 0x52000, {0}); Run(sub_00566C40, 0x50000, {0});
+    CHECK(displayed[0x31200].starts_with("> ") && focus == kControl[1]);
+    memory[focus + 0x210] = 1; Run(sub_000D3310, 0x52000, {0}); Run(sub_00566BD0, 0x50000, {0});
+    CHECK(displayed[0x31200].starts_with("> ") && assignment_calls == 0);
+    memory[focus + 0x210] = 0; focus = kControl[0];
     Run(sub_00566C40, 0x50000, {0}); Run(sub_00566C40, 0x50000, {0}); // Jersey row
     Run(sub_005389D0, focus, {0}); Run(sub_00538A00, focus, {0}); // press + release = one change
     CHECK(displayed[0x30300].find("Away") != std::string::npos && displayed[0x30200].find("Home") != std::string::npos);
@@ -188,6 +209,14 @@ int main() {
     CHECK(R32(kUniform[0] + 0xBC) == 0x55000 && live_resources.size() == 1); // incomplete font discarded
     Run(sub_00272FE0, kUniform[0]); CHECK(live_resources.empty());
     Run(sub_005389D0, 0x25000, {0}); CHECK(fallback_calls == 1); // other screens retain original behavior
+    focus = 0x25000;
+    Run(sub_000D3310, 0x52000, {0}); CHECK(assignment_calls == 1); // team/difficulty picker
+    focus = kControl[0]; Run(sub_000D3560, 0x52000, {1}); CHECK(assignment_calls == 2); // other port
+    focus = kControl[0]; Run(sub_000D3310, 0x53000, {0}); CHECK(assignment_calls == 3); // other widget
+    focus = kControl[0]; memory[0x5004C] = 0; Run(sub_000D3560, 0x52000, {0});
+    CHECK(assignment_calls == 4); // cached inactive screen
+    focus = kControl[0]; memory[0x5004C] = 1; port_enabled = false; Run(sub_000D3310, 0x52000, {0});
+    CHECK(assignment_calls == 5); port_enabled = true;
     Run(sub_00515C60, kControl[0]); Run(sub_00515C60, kControl[1]);
     CHECK(live_buffers.empty());
     std::cout << "production uniform hooks: ABI, selection, side isolation, fallback and cleanup passed\n";

@@ -93,13 +93,15 @@ Handwritten hooks target the supported Xbox MVP 06 image, SHA-256
 | `0x515C70`, `0x538830`, `0x515C60` | Uniform-control initialization, activation/team changes, destruction |
 | `0x516290`, `0x516370`, `0x516050` | Native label refresh, random preset shortcut, commit |
 | `0x538970/0x5389A0`, `0x5389D0/0x538A00` | Left/right press and release pairs |
-| `0x566BD0`, `0x566C40` | TeamSelect up/down dispatch, scoped to an enhanced uniform control |
+| `0x566BD0`, `0x566C40` | TeamSelect up/down row navigation, scoped to an enhanced uniform control |
+| `0xD3310`, `0xD3560` | Suppress independent controller reassignment only for the port editing an enhanced uniform on its active owning screen |
 | `0x27AAD0`, `0x272FE0` | Uniform resource configuration and reset/destruction |
 | `0x8C510`, `0x2673B0`, `0x423B10`, `0x2670E0` | Original descriptor creation, resource load, image lookup, resource release |
 | `0x25F140`, `0x25F230` | Release/rebuild derived cap/helmet copies and optional generated front torso |
 
 `src/common/uniform_layout.cpp` patches the two native uniform groups in `fes_teamselect.fel` as the existing
-mod-VFS opens it. It clones native text-box styling and uses existing fonts. Both groups must match; otherwise
+mod-VFS opens it. It uses native text boxes, fonts and a rectangle behind the four rows, and hides the original
+single-row frame, arrows and title. Both groups must match; otherwise
 the patch leaves the entire asset unchanged and the hooks retain the original controls.
 
 The committed native descriptor remains `{team, preset, asset}`. At player-resource load, a temporary descriptor
@@ -126,11 +128,19 @@ ctest --test-dir build/uniform-tests --output-on-failure
 The standalone test project uses the same toml++ v3.4.0 as the runtime. It tests preset/component behavior, same-team
 side isolation, wraparound and defaults, catalog rejection, exact component-slot coverage, all-or-nothing FEL
 patching, and the production hooks against a controlled guest-memory/API fixture. The hook checks cover argument
-cleanup, descriptor preservation, resource sharing/release and whole-component fallback. Python checks cover
+cleanup, paired press/release navigation, descriptor preservation, resource sharing/release and whole-component fallback. Python checks cover
 component-only export, source preservation, lettering, missing images, output refusal and cross-team/part paths.
 
-These checks are **not native gameplay acceptance**. Before marking the feature ready for merge, run the Windows
-build and verify the rendered pregame controls with keyboard/controller input, home/away and same-team choices,
-hat/helmet and pants behavior during batting/fielding (including distant players), jersey lettering, a standalone
-piece mod, backing out/changing teams, and a second matchup returning to defaults. No full-game or dynasty-season
-simulation is needed for this cosmetic feature. Native validation is currently pending.
+The input fixture also exercises the independent TeamSelect/CNTRLSELECT handlers in both dispatch orders, with
+other ports, unrelated widgets, inactive screens and locked controls.
+
+Windows validation on October 29, 2026 passed the release build and native checks of the four-row layout, preset
+reset, independently authored pieces, same-team side isolation, selected hat-pack helmets, jersey lettering,
+pants during batting/fielding (including distant players), and a new matchup returning to defaults. The native
+run exited normally with code 0. Input used the keyboard's native pad mapping; physical controllers and a complete
+Workshop installation workflow were not tested.
+
+That run exposed a second, independently dispatched controller-assignment handler receiving Up/Down. Its scoped
+fix passes the local suites, sanitizer checks and incremental Windows build. **The final native navigation,
+back/team-change retest remains pending** because the coordinated Windows test window was withdrawn. Keep the PR
+draft until that focused check passes. No full-game or dynasty-season simulation is needed for this input change.
