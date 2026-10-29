@@ -7,6 +7,7 @@ namespace game {
 bool g_xbox_720p = true;
 uint32_t g_frame_aspect = 0;
 bool g_ultrawide_menus = false;
+bool g_fitted_poll = false;
 
 float FrameAspect() {
     if (g_frame_aspect) return g_frame_aspect / 100.0f;
@@ -29,6 +30,7 @@ const app::GameInfo app::kGame = {
                 {"frame_aspect", nullptr, &game::g_frame_aspect},
                 {"ultrawide_menus", &game::g_ultrawide_menus, nullptr},
                 {"walkup_volume", nullptr, &game::g_walkup_volume},
+                {"fitted_poll", &game::g_fitted_poll, nullptr},
                 {"key_a", nullptr, &game::g_keys[0]},
                 {"key_b", nullptr, &game::g_keys[1]},
                 {"key_x", nullptr, &game::g_keys[2]},

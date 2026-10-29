@@ -321,6 +321,9 @@ sealed partial class LauncherWindow : Window
             new("save_backups", "Backups of all saves kept (0 off)", "10", Min: 0, Max: 100),
             new("save_history", "Earlier versions kept per save", "5", Min: 2, Max: 20),
         ]),
+        ("Dynasty", [
+            new("fitted_poll", "Poll fitted to the real Top 25", "false", Bool: true, Help: "Always on with an expanded (2027) database"),
+        ]),
         ("Textures and network", [
             new("custom_textures", "Replacement textures (textures\\replacement)", "false", Bool: true),
             new("dump_textures", "Dump textures", "false", Bool: true),

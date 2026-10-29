@@ -37,5 +37,8 @@ float FrameAspect();
 // walkup_volume: custom walk-up songs from walkup\ beside the exe (walkup.cpp), their volume in percent (default 100);
 // 0 turns them off and every batter keeps the game's own ditty
 extern uint32_t g_walkup_volume;
+// fitted_poll: the national poll fitted to the real Top 25 (poll.cpp) with the stock database too; an expanded
+// database always uses it
+extern bool g_fitted_poll;
 
 }  // namespace game

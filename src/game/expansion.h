@@ -127,4 +127,7 @@ constexpr uint32_t kStandingsScreenBytes = 0x62C + kStandingsRows * 4;
 // this (kBatterRows / 3,250 rounded up, plus room).
 constexpr uint32_t kSaveScale = (kBatterRows + 3249) / 3250 + 1;   // 4 for 7,675 rows
 
+// National poll rank of a team from the current poll vector (ranks.cpp): 1 = best, 0 = unknown.
+uint32_t PollRank(uint32_t team);
+
 }  // namespace expansion
