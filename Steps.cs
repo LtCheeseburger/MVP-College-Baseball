@@ -19,7 +19,8 @@ static class Steps
             if (File.Exists(p)) list.Add((p, rel));
         }
         Add(Game.Exe);
-        foreach (var f in new[] { "splash.png", "splash.bmp", "README.md", "THIRD_PARTY.txt", "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll" }) Add(f);
+        // version.txt and port-manifest.json: what the launcher's updater compares with releases and swaps by
+        foreach (var f in new[] { "splash.png", "splash.bmp", "README.md", "THIRD_PARTY.txt", "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll", "version.txt", "port-manifest.json" }) Add(f);
         var compiler = Path.Combine(portDir, "compiler");
         if (Directory.Exists(compiler))
             foreach (var f in Directory.EnumerateFiles(compiler, "*", SearchOption.AllDirectories))
