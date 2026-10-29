@@ -28,6 +28,7 @@ const app::GameInfo app::kGame = {
     .options = {{"xbox_720p", &game::g_xbox_720p, nullptr},
                 {"frame_aspect", nullptr, &game::g_frame_aspect},
                 {"ultrawide_menus", &game::g_ultrawide_menus, nullptr},
+                {"walkup_volume", nullptr, &game::g_walkup_volume},
                 {"key_a", nullptr, &game::g_keys[0]},
                 {"key_b", nullptr, &game::g_keys[1]},
                 {"key_x", nullptr, &game::g_keys[2]},

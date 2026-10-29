@@ -310,6 +310,7 @@ sealed partial class LauncherWindow : Window
         ]),
         ("Sound and controls", [
             new("mute_unfocused", "Mute in the background", "true", Bool: true),
+            new("walkup_volume", "Walk-up songs volume % (0 off)", "100", Min: 0, Max: 200, Help: "Songs from the walkup folder beside MVP06.exe"),
             new("rumble", "Rumble %", "100", Min: 0, Max: 100),
             new("deadzone_left", "Left stick deadzone %", "0", Min: 0, Max: 50),
             new("deadzone_right", "Right stick deadzone %", "0", Min: 0, Max: 50),

@@ -34,5 +34,8 @@ extern uint32_t g_frame_aspect;
 // ultrawide_menus: the menus fill an ultrawide frame too; off (default) they stay 16:9, pillarboxed (ultrawide.cpp)
 extern bool g_ultrawide_menus;
 float FrameAspect();
+// walkup_volume: custom walk-up songs from walkup\ beside the exe (walkup.cpp), their volume in percent (default 100);
+// 0 turns them off and every batter keeps the game's own ditty
+extern uint32_t g_walkup_volume;
 
 }  // namespace game
