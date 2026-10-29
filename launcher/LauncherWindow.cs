@@ -290,6 +290,8 @@ sealed partial class LauncherWindow : Window
             new("width", "Width (0 = desktop)", "0", Min: 0, Max: 7680),
             new("height", "Height (0 = desktop)", "0", Min: 0, Max: 4320),
             new("xbox_720p", "Widescreen 720p mode", "true", Bool: true, Help: "The game's own 720p layout"),
+            new("frame_aspect", "Frame aspect x100 (0 = the display's)", "0", Min: 0, Max: 400, Help: "Wider than 177 is ultrawide: 237 = 21:9, 356 = 32:9"),
+            new("ultrawide_menus", "Ultrawide menus", "false", Bool: true, Help: "Off: the menus stay 16:9, pillarboxed"),
             new("internal_resolution", "Internal resolution", "native", ["native", "720p", "1080p", "1440p"]),
             new("render_percent", "Render scale % (native)", "100", Min: 25, Max: 200),
             new("frame_limit", "Frame limit (0 = off)", "60", Min: 0, Max: 1000),
@@ -308,6 +310,7 @@ sealed partial class LauncherWindow : Window
         ]),
         ("Sound and controls", [
             new("mute_unfocused", "Mute in the background", "true", Bool: true),
+            new("walkup_volume", "Walk-up songs volume % (0 off)", "100", Min: 0, Max: 200, Help: "Songs from the walkup folder beside MVP06.exe"),
             new("rumble", "Rumble %", "100", Min: 0, Max: 100),
             new("deadzone_left", "Left stick deadzone %", "0", Min: 0, Max: 50),
             new("deadzone_right", "Right stick deadzone %", "0", Min: 0, Max: 50),
@@ -317,6 +320,9 @@ sealed partial class LauncherWindow : Window
         ("Save backups", [
             new("save_backups", "Backups of all saves kept (0 off)", "10", Min: 0, Max: 100),
             new("save_history", "Earlier versions kept per save", "5", Min: 2, Max: 20),
+        ]),
+        ("Dynasty", [
+            new("fitted_poll", "Poll fitted to the real Top 25", "false", Bool: true, Help: "Always on with an expanded (2027) database"),
         ]),
         ("Textures and network", [
             new("custom_textures", "Replacement textures (textures\\replacement)", "false", Bool: true),

@@ -618,9 +618,12 @@ void Render(float* out, uint32_t frames) {
     if (dsp::Loaded()) dsp::Run(bins.data(), frames);
     for (uint32_t i = 0; i < frames; i++) {
         const float* b = &bins[size_t(i) * kBins];
-        out[i * 2] = std::clamp(b[kFrontLeft] + kFold * (b[kCentre] + b[kBackLeft]), -1.0f, 1.0f);
-        out[i * 2 + 1] = std::clamp(b[kFrontRight] + kFold * (b[kCentre] + b[kBackRight]), -1.0f, 1.0f);
+        out[i * 2] = b[kFrontLeft] + kFold * (b[kCentre] + b[kBackLeft]);
+        out[i * 2 + 1] = b[kFrontRight] + kFold * (b[kCentre] + b[kBackRight]);
     }
+    // walk-ups: the host source (walkup.cpp) joins the mix before the clip
+    if (audio::ExtraMix extra = audio::g_extra_mix.load(std::memory_order_acquire)) extra(out, frames);
+    for (uint32_t i = 0; i < frames * 2; i++) out[i] = std::clamp(out[i], -1.0f, 1.0f);
 }
 
 int64_t NowMs() {

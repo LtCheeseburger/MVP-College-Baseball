@@ -723,7 +723,7 @@ private:
     void PostPass(const std::string& hlsl, ID3D12Resource* src, DXGI_FORMAT fmt, PostImage& dst, const uint32_t* con,
                   uint32_t words);
     ID3D12Resource* Upscale(Target& t);
-    void FrameViewport(float& x, float& y, float& w, float& h) const;
+    void FrameViewport(const Target& t, float& x, float& y, float& w, float& h) const;
     void RenderUi();
     void ReleaseOldTextures();
     void ResetFrame();
@@ -3362,9 +3362,18 @@ void D3D12Backend::UploadGammaRamp() {
     cl_->CopyTextureRegion(&dl, 0, 0, 0, &sl, nullptr);
 }
 
+// the share of the frame's width shown, from the left: g_present_width (a 16:9 menu in a wider frame), else all of it
+float FrameCropU(const Target& t) {
+    uint32_t pw = g_present_width.load(std::memory_order_relaxed);
+    return pw && t.gw > pw ? float(pw) / float(t.gw) : 1.0f;
+}
+
 // the frame's place in the window: 16:9 when the console reports a widescreen display, else 4:3, centered
-void D3D12Backend::FrameViewport(float& x, float& y, float& w, float& h) const {
+void D3D12Backend::FrameViewport(const Target& t, float& x, float& y, float& w, float& h) const {
+    // the console aspect, or the frame's own when the game draws wider than that (ultrawide 2560x720); a 640x480
+    // frame on a widescreen output stays 16:9, it is anamorphic. A cropped frame (FrameCropU) shows at the crop's shape.
     float aspect = app::Widescreen() ? 16.0f / 9.0f : 4.0f / 3.0f;
+    if (t.gw && t.gh) aspect = std::max(aspect, float(t.gw) * FrameCropU(t) / float(t.gh));
     w = std::min(float(bb_w_), float(bb_h_) * aspect);
     h = w / aspect;
     x = (float(bb_w_) - w) / 2;
@@ -3373,8 +3382,9 @@ void D3D12Backend::FrameViewport(float& x, float& y, float& w, float& h) const {
 
 void D3D12Backend::BlitFrame(Target& t, ID3D12Resource* post) {
     float vx, vy, vw, vh;
-    FrameViewport(vx, vy, vw, vh);
+    FrameViewport(t, vx, vy, vw, vh);
     float uv[4] = {0, 0, 1, 1};
+    if (!post) uv[2] = FrameCropU(t);  // the passes' images are cropped already (Upscale)
     D3D12_VIEWPORT vp{vx, vy, vw, vh, 0, 1};
     D3D12_RECT scissor{0, 0, LONG(bb_w_), LONG(bb_h_)};
     cl_->RSSetViewports(1, &vp);
@@ -3478,13 +3488,16 @@ ID3D12Resource* D3D12Backend::Upscale(Target& t) {
     constexpr uint32_t kMaxTaps = 4;
     const app::Settings& set = app::Get();
     float vx, vy, vw, vh;
-    FrameViewport(vx, vy, vw, vh);
+    FrameViewport(t, vx, vy, vw, vh);
     uint32_t ow = std::max(1u, uint32_t(std::lround(vw))), oh = std::max(1u, uint32_t(std::lround(vh)));
-    float ratio = std::max(float(t.w) / float(ow), float(t.h) / float(oh));
+    // a cropped frame (FrameCropU) is first scaled to the window from its crop, so every later pass sees what is shown
+    float crop_u = FrameCropU(t);
+    bool crop = crop_u < 1.0f;
+    float ratio = std::max(float(t.w) * crop_u / float(ow), float(t.h) / float(oh));
     bool larger = ratio > kLargerMin;
-    bool easu = !larger && set.fsr && (t.w < ow || t.h < oh);
+    bool easu = !larger && !crop && set.fsr && (t.w < ow || t.h < oh);
     bool rcas = set.sharpening > 0;
-    if (!larger && !easu && !rcas && !set.fxaa) return nullptr;
+    if (!larger && !crop && !easu && !rcas && !set.fxaa) return nullptr;
     Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     ID3D12Resource* src = t.res.Get();
     DXGI_FORMAT fmt = t.fmt;
@@ -3495,7 +3508,7 @@ ID3D12Resource* D3D12Backend::Upscale(Target& t) {
         if (!EnsurePostImage(up_, ow, oh)) return;
         Transition(up_.res.Get(), up_.state, D3D12_RESOURCE_STATE_RENDER_TARGET);
         SetBlitTarget(Cpu(rtv_heap_.Get(), up_.view, rtv_inc_), ow, oh);
-        float uv[4] = {0, 0, 1, 1};
+        float uv[4] = {0, 0, drawn ? 1.0f : crop_u, 1};
         uint32_t taps = larger ? std::clamp(uint32_t(std::ceil(ratio)), 2u, kMaxTaps) : 1;
         Blit(src, fmt, uv, {.taps = taps});
         Transition(up_.res.Get(), up_.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -3506,7 +3519,7 @@ ID3D12Resource* D3D12Backend::Upscale(Target& t) {
         sh = oh;
         drawn = true;
     };
-    if (larger) scale_to_window();
+    if (larger || crop) scale_to_window();
     if (set.fxaa) {
         if (ID3D12Resource* aa = Fxaa(src, fmt, sw, sh)) {
             src = aa;

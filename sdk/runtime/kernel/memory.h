@@ -7,7 +7,9 @@ constexpr uint32_t kPage = 0x1000;
 constexpr uint32_t kUserLow = 0x00010000;
 constexpr uint32_t kUserHigh = 0x7FFE0000;
 constexpr uint32_t kContiguousBase = 0x80000000;  // guest VA = kContiguousBase | physical
-constexpr uint32_t kPhysicalSize = 64u << 20;
+// 128 MB like a development kit: room for the game's frame buffers at ultrawide widths (2560x720 ran 64 MB out) and
+// for the bigger game heap of an expanded database (src/game/expansion.h)
+constexpr uint32_t kPhysicalSize = 128u << 20;
 constexpr uint32_t kWriteCombineBase = 0xF0000000;
 constexpr uint32_t kKernelDataBase = 0x80000000;   // first physical megabyte holds kernel variables
 constexpr uint32_t kKernelDataSize = 0x00100000;

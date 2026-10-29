@@ -68,6 +68,9 @@ inline std::atomic<uint64_t> g_perf_sync_late{0}, g_perf_sync_block{0};  // read
 
 // F3: save the next frame, every draw and target, under diag::CaptureDir
 inline std::atomic<bool> g_capture{false};
+// set by the game: only the frame's left g_present_width guest pixels are shown, at their own shape (a 16:9 menu
+// drawn into the left of a wider frame); 0 shows the whole frame
+inline std::atomic<uint32_t> g_present_width{0};
 inline std::function<uint64_t(const std::filesystem::path&)> g_ui_image;
 inline std::function<uint64_t(const uint8_t*,uint32_t,uint32_t,uint32_t)> g_ui_video;
 

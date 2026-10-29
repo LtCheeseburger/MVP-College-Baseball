@@ -5,6 +5,15 @@
 
 namespace game {
 bool g_xbox_720p = true;
+uint32_t g_frame_aspect = 0;
+bool g_ultrawide_menus = false;
+bool g_fitted_poll = false;
+
+float FrameAspect() {
+    if (g_frame_aspect) return g_frame_aspect / 100.0f;
+    app::Mode m = app::Output();
+    return m.height ? float(m.width) / float(m.height) : 16.0f / 9.0f;
+}
 }
 
 // what the runtime asks of the game; strings must be set, hooks may stay null
@@ -18,6 +27,10 @@ const app::GameInfo app::kGame = {
     .missing = L"Put the game in the assets folder: its disc image (.iso), or default.xbe with its folders beside it.",
     .images = {{"default.xbe", "MVP06"}},  // each recompiled xbe and its exe, for title launches
     .options = {{"xbox_720p", &game::g_xbox_720p, nullptr},
+                {"frame_aspect", nullptr, &game::g_frame_aspect},
+                {"ultrawide_menus", &game::g_ultrawide_menus, nullptr},
+                {"walkup_volume", nullptr, &game::g_walkup_volume},
+                {"fitted_poll", &game::g_fitted_poll, nullptr},
                 {"key_a", nullptr, &game::g_keys[0]},
                 {"key_b", nullptr, &game::g_keys[1]},
                 {"key_x", nullptr, &game::g_keys[2]},
