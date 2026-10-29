@@ -71,9 +71,7 @@ Workshop and modders can test without packing.
 | a plain disc file (`data/movies/intro.vp6`, `data/hist.dat`) | replaces it |
 | a member inside an `_big/` folder, at any nesting depth | replaces that member; a new name is **added** to the archive |
 | `.../x.xsh/NN_tag.dds` (or `.bin`) | replaces that one image; the rest of the texture comes from the game |
-| `.../x.xsh` as a **file** (native SHPX) | replaces the whole texture; wins over the game's folder |
 | a whole new `.../y.xsh/` folder **with** `xsh.meta` | a new texture (new logo, uniform). A mod that ships `xsh.meta` for an existing texture replaces that folder completely (its own image count and layout) |
-| `.../x.big` as a **file** | replaces the whole archive; the game's `x_big/` folder is then ignored |
 | a new `.../z_big/` folder **with** `_big.json` | a new nested archive. `_big.json` for an *existing* archive is refused (order and RefPack flags belong to the game) |
 
 Members a mod replaces keep the original's RefPack flag: mods ship them **unpacked** and the runtime packs them as it
@@ -85,8 +83,9 @@ archives) or in `mod.json` `"refpack": [paths]`. Large unpacked additions to arc
 At boot (`kernel::modvfs::Init`, before the first file is opened):
 1. Read `mods.json`, open each enabled mod (zip directory only, no extraction), check `mod.json` (section 2).
 2. Build one index: lower-case game path → (mod, zip entry). Later mods overwrite earlier ones. Each overwrite is a
-   **conflict** and is logged once: `mods: data/x_big/y.fel from fix-pack (over uniforms-2007)`. A whole-file
-   replacement (`x.big`, `x.xsh`) in a later mod hides every earlier mod's entries under that folder (logged).
+   **conflict** and is logged once: `mods: data/x_big/y.fel from fix-pack (over uniforms-2007)`. A packed
+   archive (`*.big`) or a whole `.xsh` file where the game has the folder is refused with a log line: ship members and
+   DDS images instead.
 3. Log the active set: `mods: 2 on - uniforms-2007 1.2.0, fix-pack 0.3.0`.
 
 ### One merged tree for every reader
@@ -114,9 +113,8 @@ bool Load(std::string_view path, std::vector<uint8_t>& out); // a zip entry or t
 - With no mods enabled the layer is a pass-through to the disk, so the unmodded path is the Phase 2/3 code as tested.
 - Modified times: a modded file reports the zip entry's time, so "is this newer" checks see a change.
 
-**Archive-mode installs** (packed `.big` still present, no `x_big/`): the M0 `BigView` path serves index entries
-under the matching `x_big/` path by appending them past the original end. Added and removed members and per-image
-texture slots are not supported there (logged). Setup always installs loose, so this is a fallback only.
+**Loose installs only.** The game is installed extracted down to the lowest level (members, DDS images), and mods
+are written against that layout. Packed `.big` files are not a target: mods are never applied to them.
 
 Failures never reach the game as broken data: a bad zip or `mod.json` disables that mod; an unreadable entry falls
 back to the next source; a bad DDS goes through the existing `textures: ... shown blank` rule.
@@ -150,7 +148,7 @@ Nothing is blocked.
 ## 8. M1 status (2026-10-28)
 Implemented in `sdk/runtime/kernel/`: `mods.{h,cpp}` (Init, mods.json, zip reader, mod.json checks, index, merged
 tree), `inflate.{h,cpp}` (deflate for zip entries), `modvfs.cpp` (LooseBig walks and reads through the tree; whole mod
-files; archive-mode fallback; `MVP06_M0_MOD` removed), `xsh.cpp` (images through the tree), `files.cpp` (opens,
+files; `MVP06_M0_MOD` removed), `xsh.cpp` (images through the tree), `files.cpp` (opens,
 attribute and directory queries, `ReadGameFile`), `app/main.cpp` (`--mod`, `--no-mods`).
 
 Tested outside the game (a test program on the real loose install, BASE `out\build\release\assets`): with no mods and
@@ -158,7 +156,13 @@ with an identity zip mod, `frontend.big` and `awards.big` are byte-identical; a 
 (packed again), adds one (unpacked), removes one, changes one texture slot (other members and textures unchanged) and
 replaces `FEENG.LOC`; a wrong-release mod is left off; the later of two mods wins.
 
-**In game (2026-10-28):** `--mod docs/m1/invert-splash` showed the modded splash (one DDS slot in a loose archive). **Not tested yet:** menus/match with mods, `mods.json` reading; `requires`/`conflicts`; archive-mode installs.
+**Launcher (M3, 2026-10-28):** MVP Workshop `src/MVPSetup` Mods tab (`ModList.cs` + `LauncherWindow.ModsTab`):
+lists the mods folder, turn on/off, order (lower wins), add `.mvpmod`, remove, shows files overridden between mods,
+missing `requires`, declared conflicts and refused mods (same checks as the runtime), "Play without mods" (`--no-mods`).
+Writes `mods.json` on every change. The runtime read a `mods.json` in that format correctly (offline test). The tab
+itself is built but not yet clicked through.
+
+**In game (2026-10-28):** `--mod docs/m1/invert-splash` showed the modded splash (one DDS slot in a loose archive). **Not tested yet:** menus/match with mods, `mods.json` reading; `requires`/`conflicts`. (Packed-archive support removed 2026-10-28: loose installs only.)
 In-game test mod: `docs/m1/invert-award` (scrambles award texture `aw00`):
 `MVP06.exe --mod "<repo>\docs\m1\invert-award"`. The log should show `mods: 1 on - invert-award 1.0.0`.
 `docs/m0` and `run_m0.bat` are obsolete.

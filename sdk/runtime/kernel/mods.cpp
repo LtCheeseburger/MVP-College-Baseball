@@ -423,6 +423,12 @@ void AddFile(const Mod& m, const std::string& entry) {
     fs::path disk = fs::u8path(g_game) / fs::u8path(rel);
     std::error_code ec;
     std::string leaf = rel.substr(rel.rfind('/') + 1);
+    // loose installs only: a mod ships members and DDS images, never a packed archive or a whole texture file
+    bool packed_big = leaf.size() > 4 && leaf.compare(leaf.size() - 4, 4, ".big") == 0;
+    if (packed_big || (fs::is_directory(disk, ec) && fs::exists(disk / "xsh.meta", ec))) {
+        LOGW("mods: %s: %s is packed; ship its members or DDS images instead, skipped", m.id.c_str(), spelled.c_str());
+        return;
+    }
     if (leaf == "_big.json" && fs::exists(disk, ec)) {
         LOGW("mods: %s: %s belongs to the game (order and packing of an existing archive), skipped", m.id.c_str(),
              spelled.c_str());
@@ -660,17 +666,6 @@ bool FromMod(const fs::path& p) {
 bool Packed(const fs::path& p) {
     std::string rel;
     return Rel(p, rel) && g_packed.count(rel);
-}
-
-std::vector<fs::path> ModFilesUnder(const fs::path& dir) {
-    std::vector<fs::path> out;
-    std::string rel;
-    if (!Rel(dir, rel)) return out;
-    std::string prefix = rel + "/";
-    for (auto& [r, hit] : g_files)
-        if (r.compare(0, prefix.size(), prefix) == 0) out.push_back(fs::u8path(g_game) / fs::u8path(r));
-    std::sort(out.begin(), out.end());
-    return out;
 }
 
 }  // namespace kernel::mods

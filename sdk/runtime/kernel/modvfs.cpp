@@ -24,7 +24,7 @@ namespace kernel::modvfs {
 
 namespace {
 
-// a change to one BIG entry: a game patch, or (archive-mode installs) a mod's member
+// a change to one BIG entry: the game's own patch (mods come from kernel::mods, loose installs only)
 struct Replacement {
     std::string archive;  // upper case, backslashes, relative to the game folder
     std::string entry;    // upper case
@@ -646,34 +646,6 @@ std::shared_ptr<Virtual> Open(const fs::path& host) {
         std::string tail = "\\" + r.archive;
         if (path.size() >= tail.size() && path.compare(path.size() - tail.size(), tail.size(), tail) == 0) hits.push_back(&r);
     }
-    // an archive installed packed: mod members under its x_big/ path replace entries (no additions or removals)
-    std::vector<Replacement> modded;
-    if (mods::Active() && host.has_filename()) {
-        fs::path dir = host.parent_path() / FolderName(host.filename().string());
-        for (const fs::path& f : mods::ModFilesUnder(dir)) {
-            Replacement r;
-            // f is spelled in lower case from the game folder down: cut the folder off by length
-            std::string base = dir.lexically_normal().generic_string(), entry = f.generic_string();
-            while (!base.empty() && base.back() == '/') base.pop_back();
-            entry = entry.substr(std::min(entry.size(), base.size() + 1));
-            std::replace(entry.begin(), entry.end(), '/', '\\');
-            r.entry = Upper(entry);
-            if (!mods::Load(f, r.bytes)) continue;
-            // the game's patch for that entry runs on the mod's bytes, and the patch itself then drops out
-            for (auto it = hits.begin(); it != hits.end();)
-                if ((*it)->patch && (*it)->entry == r.entry) {
-                    if (!(*it)->patch(r.bytes)) LOGE("mods: %s entry %s: the patch did not apply", host.filename().string().c_str(), entry.c_str());
-                    it = hits.erase(it);
-                } else {
-                    ++it;
-                }
-            modded.push_back(std::move(r));
-        }
-        if (!modded.empty())
-            LOGW("mods: %s is installed packed: mod members replace entries, added or removed ones are ignored",
-                 host.filename().string().c_str());
-    }
-    for (const Replacement& r : modded) hits.push_back(&r);
     if (hits.empty()) return nullptr;
     for (const Replacement* r : hits)
         if (r->entry.empty() && !r->patch) {

@@ -40,7 +40,5 @@ bool Load(const std::filesystem::path& p, std::vector<uint8_t>& out, size_t limi
 bool FromMod(const std::filesystem::path& p);
 // a mod asks for this added archive member to be RefPack-compressed (mod.json "refpack")
 bool Packed(const std::filesystem::path& p);
-// every file mods supply under dir, as host paths (archive-mode fallback)
-std::vector<std::filesystem::path> ModFilesUnder(const std::filesystem::path& dir);
 
 }  // namespace kernel::mods
