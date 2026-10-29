@@ -17,8 +17,10 @@ static class Game
     public const string SettingsFile = "mvp06-settings.toml";
     public const string Launcher = "Launcher.exe";      // setup's own exe, copied beside the game: launcher, repair, uninstall
 
+    public const string InstallFolder = "MVP 06 Recomp";  // made inside the folder the player picks
+
     public static string DefaultInstallDir =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", Product);
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", InstallFolder);
 
     /// <summary>The source as a game copy, or why it isn't one: an Xbox image or a folder holding default.xbe.</summary>
     public static IGameSource? OpenSource(string path, out string? error, out IDisposable? owner)

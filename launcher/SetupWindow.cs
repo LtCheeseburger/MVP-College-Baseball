@@ -106,8 +106,11 @@ sealed partial class SetupWindow : Window
         var (box, browse) = PathRow(installDir);
         browse.Click += (_, _) =>
         {
-            var dlg = new OpenFolderDialog { Title = "Install folder" };
-            if (dlg.ShowDialog(this) == true) box.Text = dlg.FolderName;
+            var dlg = new OpenFolderDialog { Title = $"Install folder (a \"{Game.InstallFolder}\" folder is made in it)" };
+            if (dlg.ShowDialog(this) != true) return;
+            // the game gets its own folder inside the one picked, unless that already is it
+            var picked = Path.TrimEndingDirectorySeparator(dlg.FolderName);
+            box.Text = Path.GetFileName(picked).Equals(Game.InstallFolder, StringComparison.OrdinalIgnoreCase) ? picked : Path.Combine(picked, Game.InstallFolder);
         };
         var need = NeededBytes();
         var space = new TextBlock { Foreground = Ink("#B2BDC6"), FontSize = 18, LineHeight = 27 };
