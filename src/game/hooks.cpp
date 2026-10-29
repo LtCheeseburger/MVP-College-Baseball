@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "kernel/memory.h"
 #include "common/game_hooks.h"
+#include "game/expansion.h"
 #include "xdk/hle.h"
 #include <cstring>
 
@@ -35,9 +36,11 @@ X86_FUNC(sub_00586810) {
 // cache size. The Xbox sizes the heap at 40 MB, 0.8 MB less in its 720p mode for the bigger frame buffers. Quitting a
 // match back to the menus ran that heap out (a 60 KB allocation failed in 0x325E60 and the game's out-of-memory
 // assert ended the process). The host renderer keeps its own frame buffers and the XBE image and virtual allocations
-// are not in the contiguous range here, so the heap gets 8 MB more when the contiguous range has room for it.
+// are not in the contiguous range here, so the heap gets 8 MB more when the contiguous range has room for it, and an
+// expanded database (expansion.h) expansion::kExtraHeap more for its bigger tables and buffers.
 X86_FUNC(sub_00317590) {
-    constexpr uint32_t kHdtv720p = 0x02, kXboxHeap = 0x2800000, kExtra = 0x800000, kKeepFree = 0x1000000;
+    constexpr uint32_t kHdtv720p = 0x02, kXboxHeap = 0x2800000, kKeepFree = 0x1000000;
+    const uint32_t kExtra = 0x800000 + (expansion::Active() ? expansion::kExtraHeap : 0);
     constexpr uint32_t kGetVideoFlags = 0x31D913, kAllocContiguous = 0x31EAF8, kHeapInit = 0x41AA3D,
                        kSetFileCache = 0x31ED24;
     bool hd = kernel::CallGuest(ctx, kGetVideoFlags, {}) & kHdtv720p;

@@ -39,3 +39,18 @@ endif()
 add_xbe_image(MVP06 default.xbe game.toml ${GAME_PARTITIONS} game)
 target_link_libraries(MVP06 PRIVATE mfplat mfreadwrite mfuuid)
 target_sources(MVP06 PRIVATE MVP06.rc)  # icon resource 1, LoadIconW in the runtime
+
+# expanded databases (src/game/expansion.cpp): copies of recompiled functions with single constants changed, made from
+# generated/game after each recompile by tools/expansion/clone_func.py
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(EXPANSION_GEN ${CMAKE_CURRENT_BINARY_DIR}/expansion_gen.cpp)
+add_custom_command(
+    OUTPUT ${EXPANSION_GEN}
+    COMMAND Python3::Interpreter -I tools/expansion/clone_func.py generated/game tools/expansion/expansion_spec.json
+            ${EXPANSION_GEN}
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/generated/game/codegen.stamp tools/expansion/clone_func.py
+            tools/expansion/expansion_spec.json
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Expansion: copying edited game functions"
+    VERBATIM)
+target_sources(MVP06 PRIVATE ${EXPANSION_GEN})

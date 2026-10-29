@@ -318,13 +318,14 @@ X86_FUNC(sub_00083B00) {
 // class. Every SMARTOPTIONS subclass expects its own rows (OPTIONS_ONLINE's keeps a value per row inside its 0x298
 // bytes, the plain one looks its setting ids up), so ours is made as they make their base: the game's allocator with
 // the factory's heap, then the base constructor with the factory's arguments, 1, the cancel prompt and our rows.
-X86_EXTERN_FUNC(__imp__sub_00112BC0);
+// the factory's switch in expansion_gen.cpp: with an expanded database its copy allocates a bigger Standings screen
+X86_EXTERN_FUNC(sub_00112BC0_gen);
 X86_FUNC(sub_00112BC0) {
     // MVP06_TRACE_FE logs each screen made, for tests that wait for a menu
     static const bool trace = std::getenv("MVP06_TRACE_FE") != nullptr;
     if (trace) LOGR("FE screen %s", kernel::ReadCString(kernel::R32(ctx.esp + 4), 32).c_str());
     if (FlowContext() != kContextOnline || kernel::ReadCString(kernel::R32(ctx.esp + 4), 16) != "SMARTOPTIONS") {
-        __imp__sub_00112BC0(ctx, base);
+        sub_00112BC0_gen(ctx, base);
         return;
     }
     uint32_t screen = kernel::CallGuest(ctx, kGameNew, {kListScreenSize, kernel::R32(ctx.ecx + 8)});

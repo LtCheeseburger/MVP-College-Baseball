@@ -1,0 +1,1366 @@
+{
+ "includes": [
+  "x86_recomp_shared.h",
+  "game/expansion.h"
+ ],
+ "edits": [
+  {
+   "at": "90092",
+   "old": "0x208u",
+   "new": "expansion::kTeamDwordBytes",
+   "note": "per-team dwords"
+  },
+  {
+   "at": "900CF",
+   "old": "0x208u",
+   "new": "expansion::kTeamDwordBytes",
+   "note": "per-team dwords"
+  },
+  {
+   "at": "90AF4",
+   "old": "0x208u",
+   "new": "expansion::kTeamDwordBytes",
+   "note": "per-team dwords"
+  },
+  {
+   "at": "90B18",
+   "old": "0x208u",
+   "new": "expansion::kTeamDwordBytes",
+   "note": "per-team dwords"
+  },
+  {
+   "at": "90B6B",
+   "old": "0x208u",
+   "new": "expansion::kTeamDwordBytes",
+   "note": "per-team dwords"
+  },
+  {
+   "at": "90B8D",
+   "old": "0x208u",
+   "new": "expansion::kTeamDwordBytes",
+   "note": "per-team dwords"
+  },
+  {
+   "at": "98A4C",
+   "old": "0x208u",
+   "new": "expansion::kTeamDwordBytes",
+   "note": "per-team dwords"
+  },
+  {
+   "at": "98A6A",
+   "old": "0x208u",
+   "new": "expansion::kTeamDwordBytes",
+   "note": "per-team dwords"
+  },
+  {
+   "at": "8432A",
+   "old": "0x208u",
+   "new": "expansion::kTeamDwordBytes",
+   "note": "per-team dwords"
+  },
+  {
+   "at": "9010D",
+   "old": "0x1860u",
+   "new": "expansion::kTeamRecordBytes",
+   "note": "per-team 0x30 records"
+  },
+  {
+   "at": "90174",
+   "old": "0x1860u",
+   "new": "expansion::kTeamRecordBytes",
+   "note": "per-team 0x30 records"
+  },
+  {
+   "at": "9019A",
+   "old": "0x1860u",
+   "new": "expansion::kTeamRecordBytes",
+   "note": "per-team 0x30 records"
+  },
+  {
+   "at": "973A4",
+   "old": "0x1860u",
+   "new": "expansion::kTeamRecordBytes",
+   "note": "per-team 0x30 records"
+  },
+  {
+   "at": "99680",
+   "old": "0x1860u",
+   "new": "expansion::kTeamRecordBytes",
+   "note": "per-team 0x30 records"
+  },
+  {
+   "at": "90127",
+   "old": "0x82u",
+   "new": "expansion::kDbTeams",
+   "note": "per-team records cleared"
+  },
+  {
+   "at": "98907",
+   "old": "0x10u",
+   "new": "expansion::kConferenceRows",
+   "note": "conf.dat rows"
+  },
+  {
+   "at": "9356A",
+   "old": "0x82u",
+   "new": "expansion::kTeamRows",
+   "note": "tstat.dat pool"
+  },
+  {
+   "at": "935AB",
+   "old": "0x82u",
+   "new": "expansion::kTeamRows",
+   "note": "tstat.dat rows"
+  },
+  {
+   "at": "990DF",
+   "old": "0x12C000u",
+   "new": "expansion::kDbBlock",
+   "note": "database block"
+  },
+  {
+   "at": "99165",
+   "old": "0x12C000u",
+   "new": "expansion::kDbBlock",
+   "note": "database block"
+  },
+  {
+   "at": "99174",
+   "old": "0x12C000u",
+   "new": "expansion::kDbBlock",
+   "note": "database block"
+  },
+  {
+   "at": "990F9",
+   "old": "0x12BC00u",
+   "new": "expansion::kDbArchiveTop",
+   "note": "archive at the block's top"
+  },
+  {
+   "at": "93B0E",
+   "all": true,
+   "old": "0xCB2u",
+   "new": "expansion::kBatterRows",
+   "note": "batter table capacity"
+  },
+  {
+   "at": "93EDE",
+   "all": true,
+   "old": "0x708u",
+   "new": "expansion::kPitcherRows",
+   "note": "pitcher table capacity"
+  },
+  {
+   "at": "9F821",
+   "old": "0xCB2u",
+   "new": "expansion::kBatterRows",
+   "note": "loop over every batter row"
+  },
+  {
+   "at": "4F2D04",
+   "old": "0xCB2u",
+   "new": "expansion::kBatterRows",
+   "note": "new players fill the batter table"
+  },
+  {
+   "at": "4F2D37",
+   "old": "0xCB2u",
+   "new": "expansion::kBatterRows",
+   "note": "new players fill the batter table"
+  },
+  {
+   "at": "4ECE67",
+   "old": "0x708u",
+   "new": "expansion::kPitcherRows",
+   "note": "room for a new pitcher"
+  },
+  {
+   "at": "4D1909",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4DE98E",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4DE9FB",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4E0D2F",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4E3EDC",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4E4188",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4E4319",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4E5C86",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4E9156",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4EB48F",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4EFF37",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4F13A8",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4F13D8",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4F157C",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4F16AD",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4F334B",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4F3379",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4F3AA4",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4F3ADE",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4F696F",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4F6A1C",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4F95F0",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4FA9C1",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4FD169",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4FEF50",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "4FF1E4",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "500A5A",
+   "old": "0xFu",
+   "new": "0x1Fu",
+   "note": "conference id: bits 6-10"
+  },
+  {
+   "at": "500EF1",
+   "funcs": [
+    "500E70"
+   ],
+   "note": "conference schedules past the holder are skipped",
+   "after": "if (!expansion::LoadConferenceSchedule(ctx.ebx)) { ctx.esp += 4; ctx.edi++; if (ctx.edi < X86_MEM32(ctx.esp + 0x10u)) goto loc_00500ED0; goto loc_00500F64; }"
+  },
+  {
+   "at": "A8A97",
+   "old": "X86_MEM32(ea) = (uint32_t)(ctx.eax);",
+   "new": "if (ctx.ecx < expansion::kSpinnerMemory) X86_MEM32(ea) = (uint32_t)(ctx.eax);",
+   "note": "spinner memory: only the first 17 items"
+  },
+  {
+   "at": "A8AB4",
+   "old": "ctx.eax = (uint32_t)(X86_MEM32(ea));",
+   "new": "ctx.eax = ctx.ecx < expansion::kSpinnerMemory ? (uint32_t)(X86_MEM32(ea)) : 0u;",
+   "note": "spinner memory: only the first 17 items"
+  },
+  {
+   "at": "4D94C2",
+   "old": "0x1F400u",
+   "new": "expansion::kSeasonHeap",
+   "note": "season sub-heap (schedules, standings)"
+  },
+  {
+   "at": "4D94E8",
+   "old": "0x1F400u",
+   "new": "expansion::kSeasonHeap",
+   "note": "season sub-heap (schedules, standings)"
+  },
+  {
+   "at": "4F320A",
+   "old": "(ctx.eax + ctx.eax * 8u)",
+   "new": "(ctx.eax * expansion::kIntrconfGamesPerTeam / 4u)",
+   "note": "inter-conference schedule capacity per team"
+  },
+  {
+   "at": "4EF97D",
+   "old": "(ctx.eax + ctx.eax * 8u)",
+   "new": "(ctx.eax * expansion::kIntrconfGamesPerTeam / 4u)",
+   "note": "inter-conference schedule capacity per team (boot copy)"
+  },
+  {
+   "at": "98CEB",
+   "old": "0x15FA0u",
+   "new": "expansion::kNodeMapBytes",
+   "note": "node-map object size"
+  },
+  {
+   "at": "94180",
+   "old": "0xEA6u",
+   "new": "expansion::kNodeMapNodes",
+   "note": "node-map pool size"
+  },
+  {
+   "at": "79341",
+   "old": "0xEA6u",
+   "new": "expansion::kNodeMapNodes",
+   "note": "node-map pool size"
+  },
+  {
+   "at": "4A44C5",
+   "old": "0xEA6u",
+   "new": "expansion::kNodeMapNodes",
+   "note": "node-map pool size"
+  },
+  {
+   "at": "79341",
+   "all": true,
+   "old": "0x15F9Cu",
+   "new": "expansion::kNodeMapCursor",
+   "note": "node-map cursor offset"
+  },
+  {
+   "at": "8A21B",
+   "old": "0x15F9Cu",
+   "new": "expansion::kNodeMapCursor",
+   "note": "node-map cursor offset"
+  },
+  {
+   "at": "98D0E",
+   "old": "0x15F9Cu",
+   "new": "expansion::kNodeMapCursor",
+   "note": "node-map cursor offset"
+  },
+  {
+   "at": "98D3E",
+   "old": "0x15F9Cu",
+   "new": "expansion::kNodeMapCursor",
+   "note": "node-map cursor offset"
+  },
+  {
+   "at": "991C1",
+   "old": "0x15F9Cu",
+   "new": "expansion::kNodeMapCursor",
+   "note": "node-map cursor offset"
+  },
+  {
+   "at": "8A20C",
+   "old": "0x57E4u",
+   "new": "expansion::kNodeMapPoolDwords",
+   "note": "node-map pool clear"
+  },
+  {
+   "at": "98D2F",
+   "old": "0x57E4u",
+   "new": "expansion::kNodeMapPoolDwords",
+   "note": "node-map pool clear"
+  },
+  {
+   "at": "991B5",
+   "old": "0x57E4u",
+   "new": "expansion::kNodeMapPoolDwords",
+   "note": "node-map pool clear"
+  },
+  {
+   "at": "79C08",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "85F3E",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "8B48A",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "91126",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "973F9",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "9751B",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "9FA9D",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "9FAC9",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "A0339",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "A0352",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "C5FEB",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "C6151",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "E7C9B",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "E7CBE",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "EC074",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "EC0A8",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "F8408",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "F8433",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4DD1C1",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4DD657",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4DD669",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4DD68B",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4DD694",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4DD6AB",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4DD6B4",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4DE26A",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4DE277",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E0D9F",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E0DB8",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E3E11",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E40DB",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E40F4",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E41CF",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E42E8",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E5927",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E7AA3",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E7AB0",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E8465",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E8502",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E8563",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E85FF",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E861D",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E868A",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E8726",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E9325",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E93E7",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E9487",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E9B16",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E9BE5",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4E9EC3",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4EA0B0",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4EFF8D",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4F1605",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4F174B",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4F32D0",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4F3300",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4F3A0F",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4F3A4A",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4F4595",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4F45AE",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4F4D7F",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "4F4D98",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "507476",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "5268A6",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "5268CD",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "5474AC",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "55779B",
+   "old": "(a & b)",
+   "new": "expansion::SideSlot(a)",
+   "note": "slot9: decode side slot"
+  },
+  {
+   "at": "79C0D",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "79CC5",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "85F43",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "8B48F",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "90586",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "905AE",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "9112C",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "973FF",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "97521",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "9FAA5",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "9FACF",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "A033E",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "A0358",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "C5FF0",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "C6158",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "E7CA0",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "E7CC3",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "EC07A",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "EC0AE",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "F840D",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "F8439",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4DD1CC",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4DE27D",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E0DA4",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E0DBE",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E3E16",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E40E0",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E40FA",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E41D4",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E42ED",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E592C",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E846A",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E8508",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E8570",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E8604",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E8622",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E868F",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E872B",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E932A",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E93ED",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E948D",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E9B1B",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E9BEA",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4E9EC9",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4EA0B5",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4EFF92",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4F160A",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4F1750",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4F32D7",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4F3306",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4F3A14",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4F3A50",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4F459A",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4F45B3",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4F4D84",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "4F4D9E",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "50747B",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "5261ED",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "5268AB",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "5268D2",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "52A87E",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "5474B1",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "5577A0",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team check"
+  },
+  {
+   "at": "905E9",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team value"
+  },
+  {
+   "at": "4DD304",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team value"
+  },
+  {
+   "at": "4DE252",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team value"
+  },
+  {
+   "at": "4DFCBA",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team value"
+  },
+  {
+   "at": "4E7A92",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team value"
+  },
+  {
+   "at": "4E7CE4",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team value"
+  },
+  {
+   "at": "4E7D0E",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team value"
+  },
+  {
+   "at": "503D9B",
+   "old": "0xFFu",
+   "new": "expansion::kNoSlot",
+   "note": "slot9: no-team value"
+  },
+  {
+   "at": "4E7CF2",
+   "old": "X86_MEM8(ea) = (uint8_t)(((uint8_t)ctx.eax));",
+   "new": "expansion::StoreSlot(base, ea, ctx.eax);",
+   "note": "slot9: store side slot"
+  },
+  {
+   "at": "4E7D1C",
+   "old": "X86_MEM8(ea) = (uint8_t)(((uint8_t)ctx.eax));",
+   "new": "expansion::StoreSlot(base, ea, ctx.eax);",
+   "note": "slot9: store side slot"
+  },
+  {
+   "at": "4DFCCF",
+   "old": "X86_MEM8(ea) = (uint8_t)(((uint8_t)ctx.eax));",
+   "new": "expansion::StoreSlot(base, ea, ctx.eax);",
+   "note": "slot9: store side slot"
+  },
+  {
+   "at": "4DD309",
+   "old": "X86_MEM8(ea) = (uint8_t)(((uint8_t)ctx.eax));",
+   "new": "expansion::StoreSlot(base, ea, ctx.eax);",
+   "note": "slot9: store side slot"
+  },
+  {
+   "at": "4DDE95",
+   "old": "(uint8_t)(((uint8_t)ctx.ecx))",
+   "new": "expansion::KeepSlotBit(X86_MEM8(ea), ctx.ecx)",
+   "note": "slot9: hits write keeps slot bit 8"
+  },
+  {
+   "at": "4DD599",
+   "old": "(uint8_t)(((uint8_t)ctx.eax))",
+   "new": "expansion::KeepSlotBit(X86_MEM8(ea), ctx.eax)",
+   "note": "slot9: hits load keeps slot bit 8"
+  },
+  {
+   "at": "4DD216",
+   "old": "(uint8_t)(X86_MEM8(ea))",
+   "new": "(uint8_t)(X86_MEM8(ea) & expansion::kHitsMask)",
+   "note": "slot9: hits read"
+  },
+  {
+   "at": "E7F15",
+   "old": "(uint8_t)(X86_MEM8(ea))",
+   "new": "(uint8_t)(X86_MEM8(ea) & expansion::kHitsMask)",
+   "note": "slot9: hits read"
+  },
+  {
+   "at": "E8080",
+   "old": "(uint8_t)(X86_MEM8(ea))",
+   "new": "(uint8_t)(X86_MEM8(ea) & expansion::kHitsMask)",
+   "note": "slot9: hits read"
+  },
+  {
+   "at": "118491",
+   "old": "0x65Cu",
+   "new": "expansion::kStandingsScreenBytes",
+   "note": "standings screen: room for 32 rows"
+  },
+  {
+   "at": "4D79AB",
+   "old": "0x5DC0u",
+   "new": "(0x5DC0u * expansion::kSaveScale)",
+   "note": "rollover lists (departures 1,500 x 16 bytes etc., 0x4D79A0): scaled with the player table"
+  },
+  {
+   "at": "4D79DE",
+   "old": "0x15E0u",
+   "new": "(0x15E0u * expansion::kSaveScale)",
+   "note": "rollover lists (departures 1,500 x 16 bytes etc., 0x4D79A0): scaled with the player table"
+  },
+  {
+   "at": "4D79F8",
+   "old": "0x190u",
+   "new": "(0x190u * expansion::kSaveScale)",
+   "note": "rollover lists (departures 1,500 x 16 bytes etc., 0x4D79A0): scaled with the player table"
+  }
+ ],
+ "wrapped": [
+  "112BC0"
+ ]
+}
