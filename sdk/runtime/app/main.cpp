@@ -304,7 +304,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
     if (std::wcsstr(GetCommandLineW(), L"--build-game-code")) return app::BuildGameCode(game);
     if (!app::PrepareGameCode(game)) return 1;
 
-    // .mvpmod mods (docs/MVPMOD.md): mods\mods.json, plus --mod <file or folder> for this run, or --no-mods
+    // .mvpmod mods (docs/MVPMOD.md): mods\mods.json beside the exe, plus --mod <file or folder> for this run, or --no-mods
     {
         int argc = 0;
         wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -315,7 +315,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
             else if (std::wcscmp(argv[i], L"--mod") == 0 && i + 1 < argc) extra.push_back(std::filesystem::absolute(argv[++i]));
         }
         LocalFree(argv);
-        kernel::mods::Init(game.dir, app::UserDir() / "mods", extra, none, kImageSha1);
+        kernel::mods::Init(game.dir, app::ExeDir() / "mods", extra, none, kImageSha1);
     }
 
     bool splash = app::OpenSplash(), handover = app::StartHandover();

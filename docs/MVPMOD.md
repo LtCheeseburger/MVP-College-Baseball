@@ -54,8 +54,9 @@ Workshop and modders can test without packing.
 | `affectsSaves` | no | `true` for roster/database mods: the launcher warns before loading a save made with another set. |
 
 ## 3. Where mods live and which are on
-- `Documents\MVP06 Recomp\mods\` (`app::UserDir()`; `portable.txt` moves it beside the exe). Every `*.mvpmod` and
-  every sub-folder holding `mod.json` there is a mod.
+- `mods\` beside `MVP06.exe` (`app::ExeDir()`, whatever `portable.txt` says; changed 2026-10-28 from
+  `Documents\MVP06 Recomp\mods`). Every `*.mvpmod` and every sub-folder holding `mod.json` there is a mod. Save
+  records (`save_mods\`) stay in the user folder with the saves.
 - `mods\mods.json`, written by the launcher (and by hand if needed):
   ```json
   { "format": 1, "order": [ { "id": "uniforms-2007", "enabled": true }, { "id": "fix-pack", "enabled": false } ] }
