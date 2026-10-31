@@ -1,3 +1,7 @@
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
 #include "kernel/mods.h"
 
 #include <algorithm>
@@ -16,6 +20,8 @@
 namespace fs = std::filesystem;
 
 namespace kernel::mods {
+static std::recursive_mutex g_mount_mutex;
+std::unique_lock<std::recursive_mutex> Lock() { return std::unique_lock<std::recursive_mutex>(g_mount_mutex); }
 
 namespace {
 
@@ -475,6 +481,7 @@ void Remove(const Mod& m, const std::string& path) {
 
 void Init(const fs::path& game_dir, const fs::path& mods_dir, const std::vector<fs::path>& extra, bool none,
           const std::string& xbe_sha1) {
+    auto mount_guard = Lock();
     g_game = Lower(fs::absolute(game_dir).lexically_normal().generic_string());
     while (g_game.size() > 1 && g_game.back() == '/') g_game.pop_back();
 
@@ -574,9 +581,11 @@ void Init(const fs::path& game_dir, const fs::path& mods_dir, const std::vector<
     LOGR("mods: %zu on - %s (%zu files)", g_mods.size(), list.c_str(), g_files.size());
 }
 
-bool Active() { return !g_mods.empty(); }
+bool Active() {
+    auto mount_guard = Lock(); return !g_mods.empty(); }
 
 bool Stat(const fs::path& p, Node& out) {
+    auto mount_guard = Lock();
     std::string rel;
     if (!Rel(p, rel)) return DiskStat(p, out);
     if (auto it = g_files.find(rel); it != g_files.end()) {
@@ -595,21 +604,26 @@ bool Stat(const fs::path& p, Node& out) {
 }
 
 bool Exists(const fs::path& p) {
+    auto mount_guard = Lock();
     Node n;
     return Stat(p, n);
 }
 
 bool IsFile(const fs::path& p) {
+    auto mount_guard = Lock();
     Node n;
     return Stat(p, n) && !n.dir;
 }
 
 bool IsDir(const fs::path& p) {
+    auto mount_guard = Lock();
     Node n;
     return Stat(p, n) && n.dir;
 }
 
 std::vector<Child> List(const fs::path& dir) {
+    auto mount_guard = Lock();
+    RecordList(dir);
     std::map<std::string, Child> all;
     std::string rel;
     bool game = Rel(dir, rel);
@@ -634,6 +648,7 @@ std::vector<Child> List(const fs::path& dir) {
 }
 
 fs::path Find(const fs::path& dir, const std::string& name) {
+    auto mount_guard = Lock();
     std::error_code ec;
     std::string rel;
     if (!Rel(dir, rel)) {
@@ -651,6 +666,8 @@ fs::path Find(const fs::path& dir, const std::string& name) {
 }
 
 bool Load(const fs::path& p, std::vector<uint8_t>& out, size_t limit) {
+    auto mount_guard = Lock();
+    RecordOpen(p);
     std::string rel;
     if (!Rel(p, rel)) return ReadDisk(p, out, limit);
     if (auto it = g_files.find(rel); it != g_files.end()) return it->second.mod->Read(it->second.entry, out, limit);
@@ -659,16 +676,19 @@ bool Load(const fs::path& p, std::vector<uint8_t>& out, size_t limit) {
 }
 
 bool FromMod(const fs::path& p) {
+    auto mount_guard = Lock();
     std::string rel;
     return Rel(p, rel) && g_files.count(rel);
 }
 
 bool Packed(const fs::path& p) {
+    auto mount_guard = Lock();
     std::string rel;
     return Rel(p, rel) && g_packed.count(rel);
 }
 
 std::string SaveRecord() {
+    auto mount_guard = Lock();
     auto esc = [](const std::string& v) {
         std::string o;
         for (char c : v) {
@@ -685,5 +705,7 @@ std::string SaveRecord() {
     }
     return out + "]}\n";
 }
+
+#include "workshop_reload.inc"
 
 }  // namespace kernel::mods

@@ -39,3 +39,6 @@ endif()
 add_xbe_image(MVP06 default.xbe game.toml ${GAME_PARTITIONS} game)
 target_link_libraries(MVP06 PRIVATE mfplat mfreadwrite mfuuid)
 target_sources(MVP06 PRIVATE MVP06.rc)  # icon resource 1, LoadIconW in the runtime
+
+# Explicit runtime capabilities for Workshop; format is the packaging schema.
+configure_file(config/port-manifest.json port-manifest.json COPYONLY)

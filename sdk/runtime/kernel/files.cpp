@@ -369,6 +369,7 @@ static uint32_t OpenLoose(const std::string& host, const std::string& name, uint
 // exports
 
 KERNEL_EXPORT(190, NtCreateFile, 9) {
+    auto mount_guard = mods::Lock();
     uint32_t handle_out = a[0], access = a[1], attrs = a[2], iosb = a[3], disposition = a[7], options = a[8];
     (void)access;
     uint32_t root;
@@ -472,6 +473,7 @@ KERNEL_EXPORT(190, NtCreateFile, 9) {
     f->host = host;
     f->xbox = Normalize(name);
     f->fp = fp;
+    mods::RecordOpen(host);
     f->save_writer = save_writer;
     f->delete_on_close = options & 0x1000;  // FILE_DELETE_ON_CLOSE
     if (disposition == 1) f->vf = modvfs::Open(host);
@@ -482,6 +484,7 @@ KERNEL_EXPORT(190, NtCreateFile, 9) {
 }
 
 KERNEL_EXPORT(202, NtOpenFile, 6) {
+    auto mount_guard = mods::Lock();
     // same as create with FILE_OPEN
     uint32_t handle_out = a[0], attrs = a[2], iosb = a[3], options = a[5];
     uint32_t root;
@@ -504,6 +507,7 @@ KERNEL_EXPORT(202, NtOpenFile, 6) {
     f->xbox = Normalize(name);
     f->dir = mods::IsDir(host);
     if (!f->dir) {
+        mods::RecordOpen(host);
         f->fp = std::fopen(host.c_str(), "r+b");
         if (!f->fp) f->fp = std::fopen(host.c_str(), "rb");
         if (!f->fp) return kAccessDenied;
@@ -532,6 +536,7 @@ static uint64_t Offset(File& f, uint32_t off) {
 
 // pages is the FILE_SEGMENT_ELEMENT array for scatter and gather, 0 for one buffer
 static uint32_t Transfer(const Args& a, bool write, uint32_t pages) {
+    auto mount_guard = mods::Lock();
     uint32_t h = a[0], event = a[1], apc = a[2], apc_ctx = a[3], iosb = a[4], buf = a[5], len = a[6], off = a[7];
     auto f = FileFromHandle(h);
     if (!f || (!f->fp && !f->entry && !f->vf)) return kInvalidHandle;

@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <mutex>
 
 // .mvpmod mods (docs/MVPMOD.md): the game's files as the game sees them, game/ on disk with enabled mods on top.
 // Every reader of game files (files.cpp, modvfs, xsh) goes through Stat/List/Load; paths outside the game folder,
@@ -14,6 +15,12 @@ namespace kernel::mods {
 void Init(const std::filesystem::path& game_dir, const std::filesystem::path& mods_dir,
           const std::vector<std::filesystem::path>& extra, bool none, const std::string& xbe_sha1);
 bool Active();
+// Serializes complete VFS transactions against Workshop mount publication.
+std::unique_lock<std::recursive_mutex> Lock();
+void RecordOpen(const std::filesystem::path& path);
+void RecordList(const std::filesystem::path& path);
+void ConfigureReload(const std::filesystem::path& request, const std::filesystem::path& mod, const std::string& sha);
+void PollReload();
 
 struct Node {
     bool dir = false;

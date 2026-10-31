@@ -309,13 +309,19 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
         int argc = 0;
         wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
         std::vector<std::filesystem::path> extra;
+        std::filesystem::path reload_request;
         bool none = false;
         for (int i = 1; argv && i < argc; i++) {
             if (std::wcscmp(argv[i], L"--no-mods") == 0) none = true;
             else if (std::wcscmp(argv[i], L"--mod") == 0 && i + 1 < argc) extra.push_back(std::filesystem::absolute(argv[++i]));
+            else if (std::wcscmp(argv[i], L"--workshop-reload") == 0 && i + 1 < argc) reload_request = std::filesystem::absolute(argv[++i]);
         }
         LocalFree(argv);
         kernel::mods::Init(game.dir, app::ExeDir() / "mods", extra, none, kImageSha1);
+        if (!reload_request.empty() && !extra.empty()) {
+            kernel::mods::ConfigureReload(reload_request, extra.back(), kImageSha1);
+            SetTimer(nullptr, 0, 250, [](HWND, UINT, UINT_PTR, DWORD) { kernel::mods::PollReload(); });
+        }
     }
 
     bool splash = app::OpenSplash(), handover = app::StartHandover();

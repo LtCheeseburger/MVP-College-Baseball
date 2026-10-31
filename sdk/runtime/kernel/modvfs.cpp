@@ -583,6 +583,8 @@ fs::path LooseFolder(const fs::path& host) {
 }
 
 std::shared_ptr<Virtual> OpenLoose(const fs::path& host) {
+    auto mount_guard = mods::Lock();
+    mods::RecordOpen(host);
     // a whole file from a mod (a disc file, a whole .big or .xsh)
     if (mods::FromMod(host)) {
         std::vector<uint8_t> bytes;
@@ -598,6 +600,7 @@ std::shared_ptr<Virtual> OpenLoose(const fs::path& host) {
     }
     fs::path folder = LooseFolder(host);
     if (folder.empty()) return nullptr;
+    mods::RecordOpen(folder);
     // archives don't change while the game runs, and some are opened many times
     static std::mutex lock;
     static std::map<std::string, std::shared_ptr<Virtual>> built;
@@ -639,6 +642,8 @@ void AddPatch(const char* archive, const char* entry, Patch patch) {
 }
 
 std::shared_ptr<Virtual> Open(const fs::path& host) {
+    auto mount_guard = mods::Lock();
+    mods::RecordOpen(host);
     auto& all = Replacements();
     std::string path = Upper(host.string());
     std::vector<const Replacement*> hits;
