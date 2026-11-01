@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <vector>
+#include <string>
 
 namespace input {
 struct Pad;
@@ -9,6 +10,9 @@ struct Pad;
 // host side hooks game_info.cpp hands the runtime
 namespace game {
 
+void WorkshopLaunchInit();
+void WorkshopLaunchPad(int port, input::Pad& p);
+bool WorkshopMenuSelection(const std::string& name);
 void KeyboardPad(int port, input::Pad& p);  // keyboard.cpp
 
 // rebindable keyboard buttons, keyboard.cpp: virtual key codes for A, B, X, Y, Start, Back, LT, RT, White, Black

@@ -56,6 +56,7 @@ X86_FUNC(sub_00517EE0) {
     ctx.ecx = keep;
     std::string name = text ? kernel::ReadCString(text + 0x10, 16) : std::string();
     LOGR("main menu: selected %s", name.c_str());
+    if (!game::WorkshopMenuSelection(name)) return kernel::Return(ctx, 1, 1);
     if (name == "QUIT") {
         ctx.ecx = screen;
         kernel::CallGuest(ctx, kQuitCheck, {cell, 0, 0, 0});

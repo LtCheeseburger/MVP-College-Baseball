@@ -30,11 +30,11 @@ const app::GameInfo app::kGame = {
                 {"key_black", nullptr, &game::g_keys[9]}},  // game settings kept in the settings file
     .load = nullptr,                      // reads more from the settings file's toml::table
     .save = nullptr,                      // writes more into it
-    .init = nullptr,                      // after the settings load, before the window and boot
+    .init = game::WorkshopLaunchInit,                      // after the settings load, before the window and boot
     .loaded = nullptr,                    // image in memory, before its entry point runs
     .window = nullptr,          // load UI fonts before renderer boot
     .message = nullptr,                   // window messages first; true takes one
     .ui = nullptr,                        // ImGui drawing each frame
-    .pad = game::KeyboardPad,             // changes a polled pad: the keyboard as the first controller
+    .pad = game::WorkshopLaunchPad,             // changes a polled pad: the keyboard as the first controller
     .rumble = nullptr,                    // changes a rumble before it is set
 };
