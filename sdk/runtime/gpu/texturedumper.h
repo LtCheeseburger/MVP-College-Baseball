@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <vector>
 #include <filesystem>
+#include <string>
+#include <utility>
 
 #include <dxgiformat.h>
 
@@ -31,6 +33,10 @@ enum class Lookup { None, Loading, Ready };
 // latches the texture settings, the render thread's, and lists the pack again once its files changed.
 // true then: every pack image loads anew, GPU copies made before are stale
 bool Update();
+bool StageWorkshop(const std::vector<std::pair<uint64_t, std::filesystem::path>>& textures, const std::string& revision, std::string& error);
+void CommitWorkshop(const std::string& revision);
+bool WorkshopApplied(const std::string& revision);
+bool VerifyWorkshopDDS(const std::filesystem::path& folder);
 bool ReadUiImage(const std::filesystem::path& path, Image& out);
 // changes with any texture setting: every texture's key and pack image are looked up again
 uint32_t Generation();

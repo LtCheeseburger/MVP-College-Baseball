@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <functional>
 
 // .mvpmod mods (docs/MVPMOD.md): the game's files as the game sees them, game/ on disk with enabled mods on top.
 // Every reader of game files (files.cpp, modvfs, xsh) goes through Stat/List/Load; paths outside the game folder,
@@ -21,6 +22,11 @@ void RecordOpen(const std::filesystem::path& path);
 void RecordList(const std::filesystem::path& path);
 void ConfigureReload(const std::filesystem::path& request, const std::filesystem::path& mod, const std::string& sha);
 void PollReload();
+struct LiveTexture { uint64_t key; std::filesystem::path file; };
+using StageLiveTextures = std::function<bool(const std::vector<LiveTexture>&, const std::string&, std::string&)>;
+using CommitLiveTextures = std::function<void(const std::string&)>;
+using LiveTexturesApplied = std::function<bool(const std::string&)>;
+void ConfigureLiveTextures(StageLiveTextures stage, CommitLiveTextures commit, LiveTexturesApplied applied);
 
 struct Node {
     bool dir = false;

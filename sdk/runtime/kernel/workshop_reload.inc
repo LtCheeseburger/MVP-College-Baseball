@@ -4,6 +4,7 @@ fs::path g_reload_request, g_reload_mod;
 std::string g_reload_sha, g_reload_revision;
 std::unordered_set<std::string> g_opened;
 std::unordered_set<std::string> g_listed;
+#include "workshop_live.inc"
 
 std::string GameRelative(const fs::path& path) {
     auto text = Lower(fs::absolute(path).lexically_normal().generic_string());
@@ -73,6 +74,9 @@ void Reindex() {
 }
 } // namespace
 
+void ConfigureLiveTextures(StageLiveTextures stage, CommitLiveTextures commit, LiveTexturesApplied applied) {
+    auto guard = Lock(); g_stage_live = std::move(stage); g_commit_live = std::move(commit); g_live_applied = std::move(applied);
+}
 void RecordOpen(const fs::path& path) {
     auto guard = Lock();
     auto relative = GameRelative(path);
@@ -94,6 +98,12 @@ void ConfigureReload(const fs::path& request, const fs::path& mod, const std::st
 void PollReload() {
     auto guard = Lock();
     if (g_reload_request.empty()) return;
+    if (!g_pending_live.empty()) {
+        if (g_live_applied && g_live_applied(g_pending_live)) {
+            Acknowledge(g_pending_live, "applied", "Live textures committed at a render-frame boundary; VFS generation is active");
+            g_pending_live.clear();
+        } else return;
+    }
     std::string revision;
     try {
         std::vector<uint8_t> bytes; Json request;
@@ -134,12 +144,17 @@ void PollReload() {
                 for (auto& path : next) { changed.insert(Lower(path)); if (!std::strcmp(field,"remove")) topology.insert(Lower(path)); }
             }
         }
-        for (auto& path : topology) for (auto& listed : g_listed) if (listed.empty() || Related(path, listed)) {
+        std::vector<LiveTexture> live; std::set<std::string> livePacks; std::string liveError;
+        bool validLive = g_stage_live && ReadLivePlan(target, live, livePacks, liveError);
+        if (g_stage_live && !liveError.empty()) { Acknowledge(revision, "restart-required", liveError); return; }
+        if (!validLive) livePacks.clear();
+        for (auto& path : topology) if (!LiveCovered(path, livePacks)) for (auto& listed : g_listed) if (listed.empty() || Related(path, listed)) {
             Acknowledge(revision, "restart-required", path + " changes a directory already enumerated by the game; the entire old layer remains active"); return;
         }
-        for (auto& path : changed) for (auto& opened : g_opened) if (Related(path, opened)) {
+        for (auto& path : changed) if (!LiveCovered(path, livePacks)) for (auto& opened : g_opened) if (Related(path, opened)) {
             Acknowledge(revision, "restart-required", path + " belongs to an asset/archive already opened by the game; the entire old layer remains active"); return;
         }
+        if (validLive && !g_stage_live(live, revision, liveError)) { Acknowledge(revision, "rejected", liveError); return; }
         // Readers hold the same recursive lock for complete open/read transactions.
         // The changed paths have never been opened, so there are no guest/GPU caches to invalidate.
         auto old = std::move(*current); *current = std::move(candidate);
@@ -151,7 +166,8 @@ void PollReload() {
             g_hidden = std::move(oldHidden); g_owned = std::move(oldOwned); g_packed = std::move(oldPacked); throw;
         }
         g_reload_mod = target;
-        Acknowledge(revision, "applied", std::to_string(changed.size()) + " unopened file(s) reloaded; already-open assets require restarting");
+        if (validLive) { g_commit_live(revision); g_pending_live = revision; }
+        else Acknowledge(revision, "applied", std::to_string(changed.size()) + " unopened file(s) reloaded; already-open nontexture assets require restarting");
     } catch (const std::exception& exception) {
         if (!revision.empty()) Acknowledge(revision, "rejected", exception.what());
         else LOGE("mods: Workshop reload: %s", exception.what());

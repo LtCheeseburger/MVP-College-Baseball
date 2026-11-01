@@ -26,6 +26,7 @@
 #include "core/input.h"
 #include "core/log.h"
 #include "gpu/backend.h"
+#include "gpu/texturedumper.h"
 #include "gpu/screenshot.h"
 #include "image_symbols.h"
 #include "kernel/kernel.h"
@@ -220,6 +221,13 @@ std::filesystem::path UserDir() {
     static const std::filesystem::path dir = [] {
         namespace fs = std::filesystem;
         std::error_code ec;
+        int count = 0; wchar_t** arguments = CommandLineToArgvW(GetCommandLineW(), &count);
+        for (int i = 1; arguments && i + 1 < count; i++) if (!std::wcscmp(arguments[i], L"--workshop-user-dir")) {
+            auto destination = fs::absolute(arguments[i + 1]); LocalFree(arguments);
+            fs::create_directories(destination);
+            return destination;
+        }
+        LocalFree(arguments);
         if (fs::exists(ExeDir() / "portable.txt", ec)) return ExeDir();
         fs::path docs;
         PWSTR known = nullptr;
@@ -269,6 +277,16 @@ void OpenGameWindow(bool apply) { SendMessageW(g_hwnd, kOpenWindow, apply, 0); }
 }  // namespace app
 
 int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
+    // No window, game data, settings or saves are opened by the synthetic renderer check.
+    {
+        int count = 0; wchar_t** arguments = CommandLineToArgvW(GetCommandLineW(), &count);
+        for (int index = 1; arguments && index + 1 < count; index++)
+            if (!std::wcscmp(arguments[index], L"--workshop-render-selftest")) {
+                auto directory = std::filesystem::path(arguments[index + 1]); LocalFree(arguments);
+                return gpu::texturedumper::VerifyWorkshopDDS(directory) ? 0 : 2;
+            }
+        LocalFree(arguments);
+    }
     SetUnhandledExceptionFilter(app::WriteCrashDump);
     std::signal(SIGABRT, [](int) { app::WriteCrashDump(nullptr); });
     timeBeginPeriod(1);
@@ -320,6 +338,19 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
         kernel::mods::Init(game.dir, app::ExeDir() / "mods", extra, none, kImageSha1);
         if (!reload_request.empty() && !extra.empty()) {
             kernel::mods::ConfigureReload(reload_request, extra.back(), kImageSha1);
+            kernel::mods::ConfigureLiveTextures(
+                [](const std::vector<kernel::mods::LiveTexture>& entries, const std::string& revision, std::string& error) {
+                    std::vector<std::pair<uint64_t, std::filesystem::path>> images;
+                    for (auto& entry : entries) images.emplace_back(entry.key, entry.file);
+                    return gpu::texturedumper::StageWorkshop(images, revision, error);
+                }, gpu::texturedumper::CommitWorkshop, [](const std::string& revision) {
+                    const bool applied = gpu::texturedumper::WorkshopApplied(revision);
+                    static std::string captured;
+                    if (applied && captured != revision && std::wcsstr(GetCommandLineW(), L"--workshop-texture-audit")) {
+                        captured = revision; gpu::screenshot::Request();
+                    }
+                    return applied;
+                });
             SetTimer(nullptr, 0, 250, [](HWND, UINT, UINT_PTR, DWORD) { kernel::mods::PollReload(); });
         }
     }

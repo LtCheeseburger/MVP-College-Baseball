@@ -42,3 +42,6 @@ target_sources(MVP06 PRIVATE MVP06.rc)  # icon resource 1, LoadIconW in the runt
 
 # Explicit runtime capabilities for Workshop; format is the packaging schema.
 configure_file(config/port-manifest.json port-manifest.json COPYONLY)
+
+# Runtime readiness requires a game DLL linked after the current executable.
+set_property(TARGET MVP06_code APPEND PROPERTY LINK_DEPENDS "$<TARGET_FILE:MVP06>")

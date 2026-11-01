@@ -492,7 +492,7 @@ Image Decode(const TextureDesc& d, const uint8_t* guest, const uint32_t* palette
 bool LatchSettings() {
     const app::Settings& s = app::Get();
     // texture dumping and replacement are turned off in this build, whatever the settings file says
-    constexpr bool kTextureFiles = false;
+    const bool kTextureFiles = std::wcsstr(GetCommandLineW(), L"--workshop-texture-audit") != nullptr;
     Latched now{kTextureFiles && s.custom_textures, kTextureFiles && s.dump_textures, s.texture_dump_format};
     if (now == g.set) return false;
     g.set = now;
@@ -544,18 +544,21 @@ bool UpdatePackFiles() {
 
 }  // namespace
 
+#include "workshop_gpu.inc"
+
 bool ReadUiImage(const std::filesystem::path& path, Image& out) { return ReadPng(path, out); }
 
 bool Update() {
     bool changed = LatchSettings();
+    bool workshop = UpdateWorkshop();
     bool reloaded = g.set.replacing && UpdatePackFiles();
-    if (changed || reloaded) g.generation++;
-    return reloaded;
+    if (changed || reloaded || workshop) g.generation++;
+    return reloaded || workshop;
 }
 
 uint32_t Generation() { return g.generation; }
 
-bool Replacing() { return g.set.replacing && !g.files.empty(); }
+bool Replacing() { return !g_workshop_images.empty() || (g.set.replacing && !g.files.empty()); }
 
 uint64_t Key(const TextureDesc& d, const FormatInfo& fi, const uint8_t* guest, const uint32_t* palette) {
     if (!Replacing() && !g.set.dumping) return 0;
@@ -585,6 +588,7 @@ void Dump(uint64_t key, const TextureDesc& d, const uint8_t* guest, const uint32
 }
 
 Lookup Take(uint64_t key, Image& out) {
+    if (auto found = g_workshop_images.find(key); found != g_workshop_images.end()) { out = found->second; return Lookup::Ready; }
     auto file = g.files.find(key);
     if (!g.set.replacing || file == g.files.end()) return Lookup::None;
     uint32_t revision = 0;
@@ -602,6 +606,24 @@ Lookup Take(uint64_t key, Image& out) {
     }
     Post([key, path = file->second, revision] { Load(key, path, revision); });
     return Lookup::Loading;
+}
+
+bool VerifyWorkshopDDS(const std::filesystem::path& folder) {
+    std::ofstream report(folder / "live-render.txt"); int failures = 0;
+    auto check = [&](const char* label, bool value) { report << (value ? "PASS " : "FAIL ") << label << '\n'; if (!value) failures++; };
+    std::string error; const std::string revision = "synthetic-frame"; constexpr uint64_t key = 0x6175d92eed39ad7dull;
+    check("native DDS decoder stages Workshop image", StageWorkshop({{key,folder / "original.dds"}}, revision, error));
+    CommitWorkshop(revision);
+    check("publication is not acknowledged before the render boundary", !WorkshopApplied(revision));
+    check("render boundary consumes staged generation", UpdateWorkshop() && WorkshopApplied(revision));
+    TextureDesc descriptor; descriptor.format = 0x0C; descriptor.width = 4; descriptor.height = 4; descriptor.levels = 1;
+    uint8_t pixels[8] = {};
+    check("native and Workshop content keys match", Key(descriptor, Format(0x0C), pixels, nullptr) == key);
+    Image image;
+    check("live replacement works independently of user texture-pack settings", Take(key,image) == Lookup::Ready && image.width == 4 && image.height == 4 && image.format == DXGI_FORMAT_BC1_UNORM);
+    check("clear generation stages", StageWorkshop({}, "clear", error)); CommitWorkshop("clear");
+    check("clear generation removes old renderer overrides", UpdateWorkshop() && WorkshopApplied("clear") && Take(key,image) == Lookup::None);
+    return failures == 0;
 }
 
 }  // namespace gpu::texturedumper

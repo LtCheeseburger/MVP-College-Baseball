@@ -1,3 +1,5 @@
+#include <windows.h>
+#include <shellapi.h>
 // The game in assets: its files, or a disc image (.iso) with this executable's xbe on it. The xbe must be the one
 // this executable was recompiled from; another release's would run its own data under this code.
 #ifndef WIN32_LEAN_AND_MEAN
@@ -28,6 +30,12 @@ namespace fs = std::filesystem;
 
 // the assets folder beside the exe; failing that, a "game" folder there holding the extracted files (default.xbe)
 fs::path FindAssets() {
+    int count = 0; wchar_t** arguments = CommandLineToArgvW(GetCommandLineW(), &count);
+    for (int i = 1; arguments && i + 1 < count; i++) if (!std::wcscmp(arguments[i], L"--workshop-game-dir")) {
+        auto assets = fs::absolute(arguments[i + 1]); LocalFree(arguments);
+        return assets;
+    }
+    LocalFree(arguments);
     std::error_code ec;
     for (const wchar_t* name : {L"assets", L"game"}) {
         fs::path p = ExeDir() / name;
