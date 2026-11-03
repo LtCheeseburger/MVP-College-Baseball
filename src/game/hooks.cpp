@@ -26,6 +26,7 @@ struct FullWidthQuad {
 
 namespace game {
 void EndStartupLoading() {g_startup_splash=false;}
+bool StartupSplashActive() { return g_startup_splash.load(); }
 }
 
 // The frontend logo cache reserves twenty 60,000-byte buffers. Resized native

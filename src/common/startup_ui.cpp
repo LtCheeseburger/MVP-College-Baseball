@@ -364,6 +364,7 @@ void BeginLicensing() {
 }
 bool StartupSubmenuActive() { return phase.load() == 6; }
 void StartupScreen(const char *n) {
+  if (!std::strcmp(n, "START") || !std::strcmp(n, "MAINMENU")) EndStartupLoading();
   if(!std::strcmp(n,"TRANNCAA") || !std::strcmp(n,"TEAMSMATCHUP") || !std::strcmp(n,"HUDRIGHT") || !std::strcmp(n,"MAINMENU") || !std::strcmp(n,"TEAMSELECT"))HideMatchupLoading();
   if(!std::strcmp(n,"HUDRIGHT") && dev::Env("MVP06_TEST_PAUSE") && pauseAuditGameplayAt==0)pauseAuditGameplayAt=Now();
   if(!std::strcmp(n,"HUDRIGHT") && dev::Env("MVP06_TEST_MATCHUP"))matchupAuditGameplay=true;

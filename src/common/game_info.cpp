@@ -8,6 +8,13 @@
 
 namespace game {
 bool g_xbox_720p = true;
+uint32_t g_frame_aspect = 0;
+bool g_ultrawide_menus = false;
+float FrameAspect() {
+    if (g_frame_aspect) return g_frame_aspect / 100.0f;
+    app::Mode mode = app::Output();
+    return mode.height ? float(mode.width) / float(mode.height) : 16.0f / 9.0f;
+}
 }
 
 // the UI overhaul draws and takes the pad only while mvp27-ui is on (overhaul.h)
@@ -35,6 +42,8 @@ const app::GameInfo app::kGame = {
     .missing = L"Put the game in the assets folder: its disc image (.iso), or default.xbe with its folders beside it.",
     .images = {{"default.xbe", "MVP06"}},  // each recompiled xbe and its exe, for title launches
     .options = {{"xbox_720p", &game::g_xbox_720p, nullptr},
+                {"frame_aspect", nullptr, &game::g_frame_aspect},
+                {"ultrawide_menus", &game::g_ultrawide_menus, nullptr},
                 {"walkup_volume", nullptr, &game::g_walkup_volume},
                 {"key_a", nullptr, &game::g_keys[0]},
                 {"key_b", nullptr, &game::g_keys[1]},

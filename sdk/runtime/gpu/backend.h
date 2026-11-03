@@ -68,6 +68,8 @@ inline std::atomic<uint64_t> g_perf_sync_late{0}, g_perf_sync_block{0};  // read
 
 // F3: save the next frame, every draw and target, under diag::CaptureDir
 inline std::atomic<bool> g_capture{false};
+// Guest pixels shown from the frame's left edge; zero presents the whole frame.
+inline std::atomic<uint32_t> g_present_width{0};
 inline std::function<uint64_t(const std::filesystem::path&)> g_ui_image;
 // Expose an already-live console texture to host UI (e.g. a player portrait).
 inline std::function<uint64_t(uint32_t)> g_ui_guest_image;
