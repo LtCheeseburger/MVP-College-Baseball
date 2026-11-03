@@ -35,6 +35,7 @@ const app::GameInfo app::kGame = {
     .missing = L"Put the game in the assets folder: its disc image (.iso), or default.xbe with its folders beside it.",
     .images = {{"default.xbe", "MVP06"}},  // each recompiled xbe and its exe, for title launches
     .options = {{"xbox_720p", &game::g_xbox_720p, nullptr},
+                {"walkup_volume", nullptr, &game::g_walkup_volume},
                 {"key_a", nullptr, &game::g_keys[0]},
                 {"key_b", nullptr, &game::g_keys[1]},
                 {"key_x", nullptr, &game::g_keys[2]},

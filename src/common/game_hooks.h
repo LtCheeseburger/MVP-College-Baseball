@@ -35,5 +35,6 @@ std::string PcOptionValue(uint32_t index);
 
 // settings file options, game_info.cpp
 extern bool g_xbox_720p;  // the game's 1280x720 mode on a widescreen output; read at boot
+extern uint32_t g_walkup_volume;  // custom walk-up volume %, 0 preserves stock ditties
 
 }  // namespace game
