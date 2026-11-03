@@ -21,6 +21,7 @@
 #include <toml++/toml.hpp>
 
 #include "app/app.h"
+#include "app/translated_patches.h"
 #include "core/input.h"
 #include "core/log.h"
 #include "hook_exports.h"
@@ -130,6 +131,28 @@ struct Target {
     std::string stamp;
 };
 
+fs::path PatchDirectory(const Image& image) { return image.config.parent_path() / "patches"; }
+std::string PatchRevision(const Image& image) {
+    auto config = toml::parse_file(image.config.string());
+    if (auto* paths = config["patches"]["manifests"].as_array()) {
+        for (const auto& entry : *paths) {
+            auto name = entry.value<std::string>();
+            if (!name || fs::path(*name).is_absolute() || name->find("..") != std::string::npos ||
+                !fs::is_regular_file(image.config.parent_path() / *name))
+                throw std::runtime_error("Required translated-code patch manifest is missing or invalid");
+        }
+    }
+    auto revision = translated_patches::Revision(PatchDirectory(image));
+    // Constants used by the DLL are build inputs, too; content matters even
+    // when an updater restores old timestamps.
+    auto header = CompilerDir() / "include/game/expansion.h";
+    if (fs::exists(header)) {
+        std::ifstream in(header, std::ios::binary);
+        revision += translated_patches::Sha256(std::string((std::istreambuf_iterator<char>(in)), {}));
+    }
+    return revision;
+}
+
 // a DLL serves the executable it was linked against and the xbe it was translated from
 bool StampFor(const Image& image, const std::vector<uint8_t>& xbe, std::string& stamp) {
     WIN32_FILE_ATTRIBUTE_DATA exe{};
@@ -137,7 +160,7 @@ bool StampFor(const Image& image, const std::vector<uint8_t>& xbe, std::string& 
     if (!GetFileAttributesExW(path.c_str(), GetFileExInfoStandard, &exe)) return false;
     uint64_t size = (uint64_t(exe.nFileSizeHigh) << 32) | exe.nFileSizeLow;
     uint64_t time = (uint64_t(exe.ftLastWriteTime.dwHighDateTime) << 32) | exe.ftLastWriteTime.dwLowDateTime;
-    stamp = std::to_string(size) + " " + std::to_string(time) + " " + Sha1(xbe);
+    stamp = std::to_string(size) + " " + std::to_string(time) + " " + Sha1(xbe) + " " + PatchRevision(image);
     return true;
 }
 
@@ -147,7 +170,11 @@ bool Current(const Target& target) {
     fs::file_time_type built = fs::last_write_time(CodeDll(*target.image), ec);
     if (ec) return false;
     std::ifstream f(StampFile(*target.image));
-    if (!f) return built > fs::last_write_time(ExeDir() / (target.image->exe + L".exe"), ec);
+    if (!f) {
+        for (const auto& entry : fs::directory_iterator(PatchDirectory(*target.image), ec))
+            if (entry.is_regular_file() && entry.last_write_time() > built) return false;
+        return built > fs::last_write_time(ExeDir() / (target.image->exe + L".exe"), ec);
+    }
     std::string line;
     return std::getline(f, line) && line == target.stamp;
 }
@@ -301,7 +328,7 @@ std::string TranslationStamp(const Target& target) {
     std::string stamp = Sha1(target.xbe);
     for (const fs::path& p : {target.image->config, CompilerDir() / "xbe_recomp.exe"})
         stamp += " " + std::to_string(fs::file_size(p, ec)) + " " + std::to_string(fs::last_write_time(p, ec).time_since_epoch().count());
-    return stamp;
+    return stamp + " " + PatchRevision(*target.image);
 }
 
 fs::path TranslationFile(const Image& image) { return WorkDir(image) / "translated.txt"; }
@@ -343,7 +370,15 @@ bool Translate(std::vector<Target>& targets, Processes& run) {
         const std::string& xbe = started[i]->image->xbe;
         if (code == kDllNotFound) ok = RecordFailure(missing_runtime);
         else if (code) ok = RecordFailure(L"Translating " + std::wstring(xbe.begin(), xbe.end()) + L" failed.");
-        else std::ofstream(TranslationFile(*started[i]->image)) << TranslationStamp(*started[i]) << "\n";
+        else {
+            try {
+                translated_patches::Apply(WorkDir(*started[i]->image), PatchDirectory(*started[i]->image));
+                std::ofstream(TranslationFile(*started[i]->image)) << TranslationStamp(*started[i]) << "\n";
+            } catch (const std::exception& error) {
+                std::string detail = error.what();
+                ok = RecordFailure(L"Translated-code patches failed: " + std::wstring(detail.begin(), detail.end()));
+            }
+        }
     }
     return ok;
 }
@@ -768,7 +803,13 @@ bool PrepareGameCode(const GameFiles& game) {
     HANDLE lock = CreateMutexW(nullptr, FALSE, mutex_name.c_str());
     WaitForSingleObject(lock, INFINITE);
     std::vector<Image> images = Images();
-    std::vector<Target> stale = StaleTargets(game, images);
+    std::vector<Target> stale;
+    try { stale = StaleTargets(game, images); }
+    catch (const std::exception& error) {
+        std::string detail = error.what();
+        RecordFailure(L"Patch inputs could not be verified: " + std::wstring(detail.begin(), detail.end()));
+        ReleaseMutex(lock); CloseHandle(lock); ShowFailure(); return false;
+    }
     for (const Target& target : stale) LOGR("Game code: building %ls.dll", target.image->exe.c_str());
     bool built = stale.empty() || (BuildWithWindow(stale) && g_start);
     ReleaseMutex(lock);
@@ -786,7 +827,13 @@ int BuildGameCode(const GameFiles& game) {
     HANDLE lock = CreateMutexW(nullptr, FALSE, mutex_name.c_str());
     WaitForSingleObject(lock, INFINITE);
     std::vector<Image> images = Images();  // the targets point into it
-    std::vector<Target> stale = StaleTargets(game, images);
+    std::vector<Target> stale;
+    try { stale = StaleTargets(game, images); }
+    catch (const std::exception& error) {
+        std::string detail = error.what();
+        RecordFailure(L"Patch inputs could not be verified: " + std::wstring(detail.begin(), detail.end()));
+        ReleaseMutex(lock); CloseHandle(lock); ShowFailure(); return 1;
+    }
     for (const Target& target : stale) LOGR("Game code: building %ls.dll (--build-game-code)", target.image->exe.c_str());
     g_start = true;  // nothing to build counts as ready to play
     bool built = stale.empty() || BuildWithWindow(stale);

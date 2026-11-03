@@ -29,6 +29,8 @@ else()
     FetchContent_MakeAvailable(xbe_sdk)
     set(SDK ${xbe_sdk_SOURCE_DIR})
 endif()
+set(XBE_PATCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config/patches")
+set(XBE_PATCH_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/src/game/expansion.h")
 include(${SDK}/cmake/XbeRecomp.cmake)
 
 file(GLOB XBE_HOST_SOURCES CONFIGURE_DEPENDS src/*/*.cpp)

@@ -1,10 +1,11 @@
 #pragma once
-// Expanded databases: up to 305 schools in up to 31 conferences (the 2027 D1 universe), where the stock code holds
+// Expanded databases: up to 309 schools in up to 31 conferences, where the stock code holds
 // 128 schools in 14 conferences. Everything here applies only while Active(): with the stock database (or any
-// database within the stock limits) the stock code runs. The copies of game functions in expansion_gen.cpp
-// (generated at build time by tools/expansion/clone_func.py from tools/expansion/expansion_spec.json) use these
+// database within the stock limits) the stock code runs. Verified function copies in the player's game DLL
+// (patched after translation using config/patches/expansion.json) use these
 // constants in place of the stock ones; hooks in expansion.cpp, poll.cpp and ranks.cpp do the rest.
 #include <cstdint>
+#include "cpu/x86_ops.h"
 
 namespace expansion {
 
@@ -13,7 +14,7 @@ namespace expansion {
 // heap setup at boot), and fixed for the session.
 constexpr uint32_t kStockMaxSchools = 130;   // registry and team buffers: 130 (the disc has 128)
 constexpr uint32_t kStockConferences = 14;
-bool Active();
+X86_HOST_API bool Active();
 
 // 0x990D0 builds the player database inside one block: database.big is read into its top and each table is
 // decompressed from its bottom. Stock 0x12C000 (1.2 MB) only fits the 128-school tables.
@@ -26,7 +27,7 @@ constexpr uint32_t kDbArchiveTop = kDbBlock - 0x400;  // stock 0x12BC00 = block 
 constexpr uint32_t kExtraHeap = 0x3000000;  // 48 MB: 96 MB heap, ~34 MB of the 128 MB contiguous range left
 
 // Schools the expanded build is sized for.
-constexpr uint32_t kSchools = 305;
+constexpr uint32_t kSchools = 309;
 // Player table capacities (stock 3,250 batters = 0xCB2, 1,800 pitchers = 0x708). The season rollover fills the
 // batter table up to its capacity with new players, so the margin over 25 x schools is the recruit pool. Keep the
 // stock margin of 49 rows: creating a Dynasty generates new players until the table is full, and 3,349 at once
@@ -87,7 +88,7 @@ constexpr uint32_t kTeamRows = kDbTeams;
 constexpr uint32_t kScheduleConfs = 14;
 
 // 0x500E70: whether the conference with this index loads <schedulename>.dat into the holder.
-bool LoadConferenceSchedule(uint32_t conf);
+X86_HOST_API bool LoadConferenceSchedule(uint32_t conf);
 
 // 9-bit team slots in schedule game records. A game record (20 bytes) has two sides, home at +4 and away at +0xC:
 // byte 0 = team registry slot, byte 1 = runs, byte 2 = hits, byte 3 = errors and 9th-inning runs, then the innings

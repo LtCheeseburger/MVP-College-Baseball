@@ -1,5 +1,8 @@
 # Recompiler input for default.xbe, written by xbe_symbols
 
+[patches]
+manifests = ["patches/expansion.json"]
+
 [xbe]
 path = "assets/default.xbe"
 title = 0x4541008D

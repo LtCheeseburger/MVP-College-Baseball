@@ -73,6 +73,17 @@ set(XBE_IMGUI_SOURCES
     ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp)
 
 file(GLOB XBE_RUNTIME_SOURCES CONFIGURE_DEPENDS ${XBE_SDK_DIR}/runtime/*/*.cpp)
+if(XBE_PATCH_DIR)
+    file(GLOB XBE_PATCH_MANIFESTS CONFIGURE_DEPENDS ${XBE_PATCH_DIR}/*.json)
+    add_executable(xbe_patch ${XBE_SDK_DIR}/tools/game_patch/main.cpp ${XBE_SDK_DIR}/runtime/app/translated_patches.cpp)
+    target_include_directories(xbe_patch PRIVATE ${XBE_SDK_DIR}/runtime)
+    target_link_libraries(xbe_patch PRIVATE bcrypt)
+    add_custom_command(TARGET compiler_files POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${XBE_PATCH_DIR} ${XBE_COMPILER_DIR}/config/patches
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${XBE_COMPILER_DIR}/include/game
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${XBE_PATCH_HEADERS} ${XBE_COMPILER_DIR}/include/game
+        VERBATIM)
+endif()
 # SDL's headers go to the input code alone (it is linked LINK_ONLY)
 set_source_files_properties(${XBE_SDK_DIR}/runtime/core/input.cpp PROPERTIES INCLUDE_DIRECTORIES "${sdl3_SOURCE_DIR}/include")
 
@@ -90,14 +101,21 @@ function(add_xbe_image target xbe config partitions game_dir)
         list(APPEND GEN_SOURCES ${GEN}/x86_recomp.${i}.cpp)
     endforeach()
     file(GLOB configs CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/config/*.toml ${XBE_SDK_DIR}/xdk/*/*.toml)
+    set(patch_command)
+    set(patch_deps)
+    if(XBE_PATCH_DIR)
+        set(patch_command COMMAND xbe_patch ${GEN} ${XBE_PATCH_DIR})
+        set(patch_deps xbe_patch ${XBE_PATCH_MANIFESTS} ${XBE_PATCH_HEADERS})
+    endif()
     add_custom_command(
         OUTPUT ${GEN}/codegen.stamp
         BYPRODUCTS ${GEN_SOURCES} ${GEN}/x86_recomp_shared.h ${GEN}/image_symbols.h ${GEN}/hook_exports.h
                    ${GEN}/exports.def ${GEN}/imports.def ${GEN}/code.lib
         COMMAND xbe_recomp config/${config} --xdk ${XBE_SDK_DIR}/xdk
+        ${patch_command}
         COMMAND ${XBE_LLVM_BIN}/lld-link.exe /lib /machine:x64 /def:${GEN}/imports.def /out:${GEN}/code.lib
         COMMAND ${CMAKE_COMMAND} -E touch ${GEN}/codegen.stamp
-        DEPENDS xbe_recomp ${configs} ${CMAKE_CURRENT_SOURCE_DIR}/assets/${xbe}
+        DEPENDS xbe_recomp ${configs} ${CMAKE_CURRENT_SOURCE_DIR}/assets/${xbe} ${patch_deps}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Recompiling ${xbe}"
         VERBATIM)
@@ -126,7 +144,7 @@ function(add_xbe_image target xbe config partitions game_dir)
     set_target_properties(${target}_code PROPERTIES OUTPUT_NAME ${target} CXX_EXTENSIONS OFF)
     set_source_files_properties(${GEN_SOURCES} PROPERTIES GENERATED TRUE)
     add_dependencies(${target}_code recompile_${target})
-    target_include_directories(${target}_code PRIVATE ${XBE_SDK_DIR}/runtime ${GEN})
+    target_include_directories(${target}_code PRIVATE ${XBE_SDK_DIR}/runtime ${GEN} ${CMAKE_CURRENT_SOURCE_DIR}/src)
     target_include_directories(${target}_code SYSTEM PRIVATE ${XBE_SDK_DIR}/runtime/cpu/freestanding)
     target_compile_definitions(${target}_code PRIVATE X86_GAME_CODE)
     target_compile_options(${target}_code PRIVATE -fms-compatibility-version=19.40 -O2 -fno-strict-aliasing -nostdinc

@@ -1,5 +1,5 @@
-// Expanded databases (up to 305 schools, 31 conferences): detection, and the hooks that raise the stock limits next
-// to the generated copies in expansion_gen.cpp (player table capacities, the database block, per-team buffers, the
+// Expanded databases (up to 309 schools, 31 conferences): detection, and hooks beside the verified function copies
+// in the player's DLL (player table capacities, the database block, per-team buffers, the
 // 5-bit conference id, 9-bit schedule slots; tools/expansion/expansion_spec.json). Every hook here runs the stock
 // code unless Active(). Constants and the reasons for them: expansion.h.
 #include <algorithm>
@@ -9,6 +9,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <stdexcept>
 
 #include "common/game_hooks.h"
 #include "core/log.h"
@@ -132,8 +133,8 @@ bool Detect() {
     bool on = schools > expansion::kStockMaxSchools || conferences > expansion::kStockConferences;
     if (on && (schools > expansion::kSchools || conferences > expansion::kConferenceRows - 1)) {
         LOGE("expansion: the database has %u schools in %u conferences, more than the %u / %u this build holds; "
-             "stock limits", schools, conferences, expansion::kSchools, expansion::kConferenceRows - 1);
-        return false;
+             "refusing to boot", schools, conferences, expansion::kSchools, expansion::kConferenceRows - 1);
+        throw std::runtime_error("Database exceeds this build's school/conference capacities");
     }
     LOGR("expansion: database with %u schools in %u conferences: %s", schools, conferences,
          on ? "expanded limits" : "stock limits");
@@ -155,3 +156,166 @@ bool LoadConferenceSchedule(uint32_t conf) {
 
 }  // namespace expansion
 
+// ---- Conference tournaments and automatic bids ------------------------------------------------------------------
+// The stock code keys the 11 conference tournaments to conf.dat *asset ids* (the conference logo slot: bits 0-3 of
+// the conf.dat record, field 0 of 0x7CB10; bits 4-5 = division count), not to conference ids: the builder 0x4F6110
+// and the dispatcher 0x5000E0 ask 0x86F90(k) for "the conference whose asset id is k" (k = 1..14, last match wins),
+// and 0x4D9930(conference) answers the tournament slot of that conference's *asset id*. In the disc's data asset id
+// == conference id. An expanded database has up to 31 conferences sharing 14 logo slots, so 0x86F90 picked arbitrary
+// conferences (the last one with that logo) and 0x4D9930 sent auto-bid lookups to other conferences' brackets. With
+// an expanded database both use the conference id: tournament k is conference k's, and the data orders conferences
+// so every bracket fits. 0x86F90 has no other callers; the asset id keeps choosing logos (0x8B3E0) and NCAA regions
+// (0x4D9A50).
+namespace {
+
+// Teams the stock bracket of tournament k reads from the conference standings (0 = no tournament):
+// 0x4FE060 8-team pods (k = 1, 2, 4, 6, 11, 12), 0x4FE590 6 (3, 7, 8), 0x4FE8D0 4 (10), 0x4FEBF0 2 (14).
+uint32_t TournamentTeams(uint32_t k) {
+    switch (k) {
+        case 1: case 2: case 4: case 6: case 11: case 12: return 8;
+        case 3: case 7: case 8: return 6;
+        case 10: return 4;
+        case 14: return 2;
+        default: return 0;
+    }
+}
+
+// Tournament slot (holder index) of conference k, as the stock 0x4D9930 switch.
+int32_t TournamentSlot(uint32_t k) {
+    static const int32_t slots[15] = {-1, 0x10, 0x11, 0x12, 0x13, -1, 0x14, 0x15, 0x16, -1, 0x17, 0x18, 0x19, -1, 0x1A};
+    return k < 15 ? slots[k] : -1;
+}
+
+std::mutex g_tourney_lock;
+bool g_tourney_skipped[64] = {};   // conference id -> its bracket was not built (auto bid = regular-season leader)
+
+// Teams in conference k's standings (season manager [mgr+0x14] +0x20 array by conference id; rank vector +0x10).
+uint32_t StandingsTeams(X86Context& ctx, uint32_t mgr, uint32_t k) {
+    uint32_t st = kernel::R32(mgr + 0x14);
+    if (!st || k >= kernel::R32(st + 0x1C)) return 0;
+    uint32_t obj = kernel::R32(kernel::R32(st + 0x20) + k * 4);
+    if (!obj) return 0;
+    if (!(kernel::R32(obj + 4) & 0xFF)) CallThis(ctx, obj, 0x4FC9F0, {});
+    uint32_t vec = kernel::R32(obj + 0x10);
+    return vec ? (kernel::R32(vec + 8) - kernel::R32(vec + 4)) / 4 : 0;
+}
+
+}  // namespace
+
+// Conference with tournament key k (thiscall on the league db, k; ret 4) -> conference id k if it exists, else 0.
+X86_EXTERN_FUNC(__imp__sub_00086F90);
+X86_FUNC(sub_00086F90) {
+    if (!expansion::Active()) return __imp__sub_00086F90(ctx, base);
+    uint32_t db = ctx.ecx, k = Arg(ctx, 0), table = kernel::R32(db + 0x2C), vt = kernel::R32(table);
+    uint32_t rows = CallThis(ctx, table, kernel::R32(vt + 0x34), {}), found = 0;
+    for (uint32_t r = 0; r < rows && !found; r++)
+        if (CallThis(ctx, table, kernel::R32(vt + 0x38), {r}) == k) found = k;
+    ctx.eax = found;
+    ctx.esp += 8;
+}
+
+// Tournament slot of a conference (thiscall on the season manager, conference id; ret 4), -1 = none (the
+// conference's regular-season leader takes the automatic bid: 0x4FEDE0, 0x97DB0).
+X86_EXTERN_FUNC(__imp__sub_004D9930);
+X86_FUNC(sub_004D9930) {
+    if (!expansion::Active()) return __imp__sub_004D9930(ctx, base);
+    uint32_t k = Arg(ctx, 0);
+    int32_t slot = TournamentSlot(k);
+    {
+        std::lock_guard<std::mutex> lock(g_tourney_lock);
+        if (k < 64 && g_tourney_skipped[k]) slot = -1;
+    }
+    ctx.eax = uint32_t(slot);
+    ctx.esp += 8;
+}
+
+// Conference tournament dispatch (thiscall on the season manager, event with the tournament key at +8; ret 4):
+// builds tournament k from conference k's standings. A conference with fewer teams than its bracket reads (the
+// stock builders take standings entries 0..n-1 unchecked) gets no tournament: its regular-season leader takes the
+// automatic bid (0x4D9930 answers -1 for it).
+X86_EXTERN_FUNC(__imp__sub_005000E0);
+X86_FUNC(sub_005000E0) {
+    if (!expansion::Active()) return __imp__sub_005000E0(ctx, base);
+    uint32_t mgr = ctx.ecx, ev = Arg(ctx, 0), k = ev ? kernel::R32(ev + 8) : 0;
+    uint32_t need = TournamentTeams(k), have = need ? StandingsTeams(ctx, mgr, k) : 0;
+    if (need && have < need) {
+        LOGR("expansion: conference %u has %u teams, its tournament needs %u: no tournament, regular-season leader "
+             "gets the automatic bid", k, have, need);
+        std::lock_guard<std::mutex> lock(g_tourney_lock);
+        if (k < 64) g_tourney_skipped[k] = true;
+        ctx.esp += 8;
+        return;
+    }
+    __imp__sub_005000E0(ctx, base);
+}
+
+// Default conference tournament setup (season start): a new season's tournaments start unskipped.
+X86_EXTERN_FUNC(__imp__sub_004F6110);
+X86_FUNC(sub_004F6110) {
+    {
+        std::lock_guard<std::mutex> lock(g_tourney_lock);
+        std::memset(g_tourney_skipped, 0, sizeof g_tourney_skipped);
+    }
+    __imp__sub_004F6110(ctx, base);
+}
+
+// ---- Capacities ----------------------------------------------------------------------------------------------------
+
+// Save buffer size (cdecl-like, flags; ret 4; 0x77D10): fixed sizes per saved section, made for the stock 3,250
+// players (roster 0xF7800, dynasty 0x1C3400, ...). The serializers do not check the end of the buffer, so saving a
+// 305-school Dynasty ran off the end of "cDBManager::SaveBuffer" (0x77DA0) into the rest of memory (crash in the
+// node-map writer 0x797B0). Every section gets kSaveScale times the room.
+X86_EXTERN_FUNC(__imp__sub_00077D10);
+X86_FUNC(sub_00077D10) {
+    __imp__sub_00077D10(ctx, base);
+    if (expansion::Active()) ctx.eax *= expansion::kSaveScale;
+}
+
+// Team registry ctor (thiscall, capacity): built once at boot (0x4E08D0) for every team in roster.bin.
+X86_EXTERN_FUNC(__imp__sub_004D5130);
+X86_FUNC(sub_004D5130) {
+    uint32_t self = ctx.ecx;
+    bool ours = expansion::Active() && Arg(ctx, 0) == kStockTeamSlots;
+    // one spare entry: a lookup of a team id past the last one reads the sorted list at the count
+    if (ours) kernel::W32(ctx.esp + 4, expansion::kTeamSlots + 1);
+    __imp__sub_004D5130(ctx, base);
+    if (!ours) return;
+    // the ctor marks unused sorted-list entries 0xFF (no team); with 9-bit slots that is slot 255, so use kNoSlot
+    uint32_t sorted = kernel::R32(self + 0x14), capacity = kernel::R32(self + 0x04);
+    for (uint32_t i = 0; sorted && i < capacity; i++) kernel::W32(sorted + i * 4, expansion::kNoSlot);
+}
+
+// Division of a team (thiscall, bit 10 of +0xA4): with an expanded database that bit is the conference id's fifth.
+X86_EXTERN_FUNC(__imp__sub_004D1910);
+X86_FUNC(sub_004D1910) {
+    if (!expansion::Active()) return __imp__sub_004D1910(ctx, base);
+    ctx.eax = 0;
+    ctx.esp += 4;
+}
+
+// Player id list ctor (thiscall): 3,250 ids stored inside the object. Lists that big get a buffer the size of the
+// batter table instead, so a list of every player still fits. Most of these lists live on the stack and their
+// destructor is inlined (it only resets the vtable), so a buffer is never freed: it belongs to the object's address
+// and is reused by the next list built there (allocating per list from the game heap ran it out of memory after
+// about two weeks of Dynasty simming). The buffers come from system memory, outside the game heap.
+X86_EXTERN_FUNC(__imp__sub_004F0320);
+X86_FUNC(sub_004F0320) {
+    uint32_t self = ctx.ecx;
+    __imp__sub_004F0320(ctx, base);
+    if (!expansion::Active() || kernel::R32(self + kListCapacity) != kStockListCapacity) return;
+    uint32_t bytes = expansion::kBatterRows * 4;
+    uint32_t buffer;
+    {
+        std::lock_guard<std::mutex> lock(g_lists_lock);
+        uint32_t& slot = g_list_buffers[self];
+        if (!slot) slot = mem::AllocSystem(bytes);
+        buffer = slot;
+    }
+    if (!buffer) {
+        LOGE("expansion: no memory for a %u-player list, kept the stock 3,250", expansion::kBatterRows);
+        return;
+    }
+    std::memset(kernel::HostPtr(buffer), 0, bytes);
+    kernel::W32(self + kListData, buffer);
+    kernel::W32(self + kListCapacity, expansion::kBatterRows);
+}

@@ -297,7 +297,7 @@ std::vector<uint32_t> RunPoll(X86Context& ctx) {
 }  // namespace
 
 // UpdatePoll (no arguments): new poll into [db+0x50], the previous one into [db+0x54], event 0xAF posted on the
-// schedule holder (0x326B50, thiscall). The stock one is the switch in expansion_gen.cpp (its copy sizes the vectors
+// schedule holder (0x326B50, thiscall). The original entry lives in the player's DLL (its expanded copy sizes the vectors
 // for an expanded database).
 X86_EXTERN_FUNC(__imp__sub_00090AB0);
 X86_FUNC(sub_00090AB0) {
