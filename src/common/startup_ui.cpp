@@ -73,6 +73,9 @@ void StartupPad(int port, input::Pad &pad) {
     for(double at:{55.,66.,73.,74.,84.,85.,86.,93.,94.,95.,96.,97.})if(t>at && t<at+.12)pad.buttons|=2;
     for(double at:{60.,63.,67.,76.,88.,99.,103.})if(t>at && t<at+.12)pad.analog[0]=255;
     for(double at:{65.,70.,72.,82.,91.})if(t>at && t<at+.12)pad.analog[1]=255;
+    // The pause audit normally keeps the confirmation's default Cancel.
+    // Explicitly opt into selecting Yes for the quit-match heap regression.
+    if(dev::Env("MVP06_TEST_QUIT_MATCH") && t>101 && t<101.12)pad.buttons|=2;
     if((t>53 && t<53.12)||(t>58 && t<58.12))pad.analog[3]=255;
   }
   double r = ready.load();
