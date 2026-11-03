@@ -1,3 +1,6 @@
+#include "core/dev_tools.h"
+#include "../common/startup_ui.h"
+#include "../common/overhaul.h"
 // PC Options inside the game's own menus. The Options menu's "Online Options" entry leads to the game's settings list
 // screen (fes_smart_options, the one Audio Options uses) with the OPTIONS_ONLINE context; without Xbox Live it has
 // nothing to show, so it becomes "PC Options" and that context gets rows of its own:
@@ -302,6 +305,21 @@ uint32_t FlowContext() {
 
 }  // namespace
 
+uint32_t game::PcOptionsString(uint32_t id) {
+    return id>=kStringBase && id-kStringBase<G().strings.size() ? G().strings[id-kStringBase] : 0;
+}
+std::string game::PcOptionValue(uint32_t index) {
+    if(index>=Rows().size())return {};
+    const auto &row=Rows()[index];
+    int choice=std::clamp(row.get(),0,int(row.choices.size())-1);
+    const wchar_t *value=row.choices[choice];
+    int count=WideCharToMultiByte(CP_UTF8,0,value,-1,nullptr,0,nullptr,nullptr);
+    if(count<=1)return {};
+    std::string text(count,'\0');
+    WideCharToMultiByte(CP_UTF8,0,value,-1,text.data(),count,nullptr,nullptr);
+    text.pop_back();return text;
+}
+
 // string lookup, thiscall (id): our labels, the Online Options entry renamed and the list's title on our screen
 X86_EXTERN_FUNC(__imp__sub_00083B00);
 X86_FUNC(sub_00083B00) {
@@ -320,11 +338,14 @@ X86_FUNC(sub_00083B00) {
 // the factory's heap, then the base constructor with the factory's arguments, 1, the cancel prompt and our rows.
 X86_EXTERN_FUNC(__imp__sub_00112BC0);
 X86_FUNC(sub_00112BC0) {
+    if (overhaul::Active()) game::StartupScreen(kernel::ReadCString(kernel::R32(ctx.esp + 4),32).c_str());
     // MVP06_TRACE_FE logs each screen made, for tests that wait for a menu
-    static const bool trace = std::getenv("MVP06_TRACE_FE") != nullptr;
+    static const bool trace = dev::Env("MVP06_TRACE_FE") != nullptr;
     if (trace) LOGR("FE screen %s", kernel::ReadCString(kernel::R32(ctx.esp + 4), 32).c_str());
     if (FlowContext() != kContextOnline || kernel::ReadCString(kernel::R32(ctx.esp + 4), 16) != "SMARTOPTIONS") {
+        auto sceneName = kernel::ReadCString(kernel::R32(ctx.esp + 4), 32);
         __imp__sub_00112BC0(ctx, base);
+        if (overhaul::Active()) game::StartupNativeScene(sceneName.c_str(), ctx.eax);
         return;
     }
     uint32_t screen = kernel::CallGuest(ctx, kGameNew, {kListScreenSize, kernel::R32(ctx.ecx + 8)});
@@ -341,6 +362,7 @@ X86_FUNC(sub_00112BC0) {
         ctx.ecx = keep;
         LOGR("pc options: %u rows", uint32_t(Rows().size()));
     }
+    if (overhaul::Active()) game::StartupNativeScene("SMARTOPTIONS", screen);
     kernel::Return(ctx, screen, 9);
 }
 

@@ -69,6 +69,8 @@ inline std::atomic<uint64_t> g_perf_sync_late{0}, g_perf_sync_block{0};  // read
 // F3: save the next frame, every draw and target, under diag::CaptureDir
 inline std::atomic<bool> g_capture{false};
 inline std::function<uint64_t(const std::filesystem::path&)> g_ui_image;
+// Expose an already-live console texture to host UI (e.g. a player portrait).
+inline std::function<uint64_t(uint32_t)> g_ui_guest_image;
 inline std::function<uint64_t(const uint8_t*,uint32_t,uint32_t,uint32_t)> g_ui_video;
 
 }  // namespace gpu

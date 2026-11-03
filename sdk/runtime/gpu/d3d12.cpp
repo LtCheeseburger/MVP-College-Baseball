@@ -1,3 +1,4 @@
+#include "core/dev_tools.h"
 // The title's Direct3D 8 calls drawn with Direct3D 12
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -945,7 +946,7 @@ bool D3D12Backend::Init(uint32_t width, uint32_t height) {
     gpu::g_ui_image = [this](const std::filesystem::path& path) -> uint64_t {
         auto found = ui_images_.find(path);
         if (found != ui_images_.end()) return found->second.second;
-        if (ui_images_.size() >= 58) return 0;
+        if (ui_images_.size() >= 1015) return 0;
         texturedumper::Image image;
         if (!texturedumper::ReadUiImage(path, image)) return 0;
         auto& entry = ui_images_[path];
@@ -956,12 +957,32 @@ bool D3D12Backend::Init(uint32_t width, uint32_t height) {
         desc.Format = image.format;
         desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        // Generated pause glyphs are an opaque black/white luminance atlas.
+        // Sample it as a white alpha mask, retaining clean antialiased edges
+        // without baking a black rectangle into the selected red menu row.
+        if (path.filename() == "icons-mask.png")
+            desc.Shader4ComponentMapping = D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(
+                D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_1,
+                D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_1,
+                D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_1,
+                D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_0);
         desc.Texture2D.MipLevels = 1;
         dev_->CreateShaderResourceView(entry.first.res.Get(), &desc, Cpu(ui_heap_.Get(),slot,srv_inc_));
         return entry.second = Gpu(ui_heap_.Get(),slot,srv_inc_).ptr;
     };
+    gpu::g_ui_guest_image = [this](uint32_t header)->uint64_t {
+        TextureDesc desc;
+        if(!header || !Describe(header,desc) || desc.cube || desc.depth!=1)return 0;
+        State state{};state.textures[0]=header;
+        DrawTextures stages{};auto* resource=BindTexture(state,0,stages);
+        if(!resource || stages.sv[0].ViewDimension!=D3D12_SRV_DIMENSION_TEXTURE2D)return 0;
+        // One descriptor per in-flight frame avoids overwriting a queued view.
+        uint32_t slot=1017+uint32_t(frame_%kFrames);
+        dev_->CreateShaderResourceView(resource,&stages.sv[0],Cpu(ui_heap_.Get(),slot,srv_inc_));
+        return Gpu(ui_heap_.Get(),slot,srv_inc_).ptr;
+    };
     gpu::g_ui_video = [this](const uint8_t* bytes,uint32_t w,uint32_t h,uint32_t pitch)->uint64_t {
-        uint32_t index=uint32_t(frame_%kFrames), slot=60+index;
+        uint32_t index=uint32_t(frame_%kFrames), slot=1020+index;
         auto& texture=ui_video_[index];
         std::vector<uint8_t> pixels(bytes,bytes+size_t(pitch)*h);
         if(!texture.res){
@@ -986,6 +1007,7 @@ bool D3D12Backend::Init(uint32_t width, uint32_t height) {
 }
 
 bool D3D12Backend::CreateDevice() {
+#if MVP06_DEV_TOOLS
     if (GetEnvironmentVariableW(L"XBE_D3D12_DEBUG", nullptr, 0)) {
         ComPtr<ID3D12Debug> dbg;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&dbg)))) dbg->EnableDebugLayer();
@@ -996,6 +1018,7 @@ bool D3D12Backend::CreateDevice() {
             dred->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
         }
     }
+#endif
     if (FAILED(CreateDXGIFactory2(0, IID_PPV_ARGS(&factory_)))) return false;
     // dedicated GPU first on hybrid laptops
     ComPtr<IDXGIFactory6> f6;
@@ -1071,7 +1094,7 @@ void D3D12Backend::CreateHeaps() {
     smp_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, kSamplerCount, true, smp_heap_);
     rtv_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kRtvCount + kFrames, false, rtv_heap_);
     dsv_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, kDsvCount, false, dsv_heap_);
-    CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 64, true, ui_heap_);
+    CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1024, true, ui_heap_);
     for (uint32_t i = kRtvCount; i-- > 0;) free_rtv_.push_back(i);
     for (uint32_t i = kDsvCount; i-- > 0;) free_dsv_.push_back(i);
 }
@@ -1804,6 +1827,7 @@ void D3D12Backend::LogDeviceRemoved() {
     static std::atomic<bool> once{false};
     if (once.exchange(true)) return;
     LOGE("d3d12: device removed reason=%08lX", dev_->GetDeviceRemovedReason());
+#if MVP06_DEV_TOOLS
     ComPtr<ID3D12DeviceRemovedExtendedData> dred;
     if (FAILED(dev_.As(&dred))) return;
     D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT bc{};
@@ -1818,6 +1842,7 @@ void D3D12Backend::LogDeviceRemoved() {
     D3D12_DRED_PAGE_FAULT_OUTPUT pf{};
     if (SUCCEEDED(dred->GetPageFaultAllocationOutput(&pf)) && pf.PageFaultVA)
         LOGE("d3d12: DRED fault VA=%016llX", (unsigned long long)pf.PageFaultVA);
+#endif
 }
 
 ID3D12PipelineState* D3D12Backend::EnsurePipeline(const PsoKey& k, ID3DBlob* vs, ID3DBlob* ps) {

@@ -57,3 +57,7 @@ Run `build.bat`. The first build recompiles the game and takes a while. The exe 
 - [Xbox XBE Recomp](https://github.com/TGP482/XboxXBE-Recomp), the recompiler and runtime this is built on.
 - [XenonRecomp](https://github.com/hedge-dev/XenonRecomp) for the overridable function layout and instruction hooks.
 - [Zydis](https://github.com/zyantific/zydis) for decoding x86 instructions, [toml++](https://github.com/marzer/tomlplusplus) for the configs, [Dear ImGui](https://github.com/ocornut/imgui) for the settings overlay and [SDL](https://github.com/libsdl-org/SDL) for the window, input and controllers.
+
+## MVP 27 native logos
+
+The separate `mvp27-logos.mvpmod` replaces native school logos for 127 stock teams; Northern Iowa keeps its original art. Use port **0.2.3-beta or newer**. Put the archive in `mods/`, enable **MVP 27 Native Logos** in the launcher, and restart. It works with or without MVP 27 UI; `--no-mods` disables both. The editable source project is `projects/mvp27-logos.mvpproject` in the development workspace, with a sharing ZIP under `artifacts/phase4`.

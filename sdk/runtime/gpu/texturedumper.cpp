@@ -1,3 +1,4 @@
+#include "core/dev_tools.h"
 #include "gpu/texturedumper.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -31,6 +32,7 @@
 #include "app/app.h"
 #include "core/log.h"
 #include "gpu/shaders.h"
+#include "kernel/mods.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -491,8 +493,8 @@ Image Decode(const TextureDesc& d, const uint8_t* guest, const uint32_t* palette
 // the settings into g.set; false when none changed
 bool LatchSettings() {
     const app::Settings& s = app::Get();
-    // texture dumping and replacement are turned off in this build, whatever the settings file says
-    const bool kTextureFiles = std::wcsstr(GetCommandLineW(), L"--workshop-texture-audit") != nullptr;
+    // Player builds cannot enable filesystem texture packs through settings or CLI.
+    constexpr bool kTextureFiles = dev::Enabled;
     Latched now{kTextureFiles && s.custom_textures, kTextureFiles && s.dump_textures, s.texture_dump_format};
     if (now == g.set) return false;
     g.set = now;
@@ -546,19 +548,44 @@ bool UpdatePackFiles() {
 
 #include "workshop_gpu.inc"
 
-bool ReadUiImage(const std::filesystem::path& path, Image& out) { return ReadPng(path, out); }
+// host UI art: a file under the game folder is read as the game sees it, mods on top of the disk
+bool ReadUiImage(const std::filesystem::path& path, Image& out) {
+    std::vector<uint8_t> bytes;
+    if (!kernel::mods::Load(path, bytes) || bytes.empty()) return false;
+    IWICImagingFactory* wic = Wic();
+    ComPtr<IWICStream> stream;
+    ComPtr<IWICBitmapDecoder> decoder;
+    ComPtr<IWICBitmapFrameDecode> frame;
+    ComPtr<IWICBitmapSource> bgra;
+    HRESULT hr = wic ? wic->CreateStream(&stream) : E_FAIL;
+    if (SUCCEEDED(hr)) hr = stream->InitializeFromMemory(bytes.data(), DWORD(bytes.size()));
+    if (SUCCEEDED(hr)) hr = wic->CreateDecoderFromStream(stream.Get(), nullptr, WICDecodeMetadataCacheOnDemand, &decoder);
+    if (SUCCEEDED(hr)) hr = decoder->GetFrame(0, &frame);
+    if (SUCCEEDED(hr)) hr = WICConvertBitmapSource(GUID_WICPixelFormat32bppBGRA, frame.Get(), &bgra);
+    UINT w = 0;
+    UINT h = 0;
+    if (SUCCEEDED(hr)) hr = bgra->GetSize(&w, &h);
+    if (FAILED(hr) || !w || !h || w > kMaxSide || h > kMaxSide) return false;
+    Level top{std::vector<uint8_t>(size_t(w) * h * 4), w * 4};
+    if (FAILED(bgra->CopyPixels(nullptr, top.pitch, UINT(top.px.size()), top.px.data()))) return false;
+    out.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    out.width = w;
+    out.height = h;
+    out.levels.push_back(std::move(top));
+    return true;
+}
 
 bool Update() {
     bool changed = LatchSettings();
     bool workshop = UpdateWorkshop();
-    bool reloaded = g.set.replacing && UpdatePackFiles();
+    bool reloaded = dev::Enabled && g.set.replacing && UpdatePackFiles();
     if (changed || reloaded || workshop) g.generation++;
     return reloaded || workshop;
 }
 
 uint32_t Generation() { return g.generation; }
 
-bool Replacing() { return !g_workshop_images.empty() || (g.set.replacing && !g.files.empty()); }
+bool Replacing() { return !g_workshop_images.empty() || (dev::Enabled && g.set.replacing && !g.files.empty()); }
 
 uint64_t Key(const TextureDesc& d, const FormatInfo& fi, const uint8_t* guest, const uint32_t* palette) {
     if (!Replacing() && !g.set.dumping) return 0;
@@ -571,6 +598,7 @@ uint64_t Key(const TextureDesc& d, const FormatInfo& fi, const uint8_t* guest, c
 }
 
 void Dump(uint64_t key, const TextureDesc& d, const uint8_t* guest, const uint32_t* palette) {
+#if MVP06_DEV_TOOLS
     if (!key || !g.set.dumping || g.files.count(key)) return;
     {
         std::lock_guard l(g.lock);
@@ -585,10 +613,12 @@ void Dump(uint64_t key, const TextureDesc& d, const uint8_t* guest, const uint32
             WritePng(path, img);
         }
     });
+#endif
 }
 
 Lookup Take(uint64_t key, Image& out) {
     if (auto found = g_workshop_images.find(key); found != g_workshop_images.end()) { out = found->second; return Lookup::Ready; }
+    if constexpr (!dev::Enabled) return Lookup::None;
     auto file = g.files.find(key);
     if (!g.set.replacing || file == g.files.end()) return Lookup::None;
     uint32_t revision = 0;
@@ -609,6 +639,7 @@ Lookup Take(uint64_t key, Image& out) {
 }
 
 bool VerifyWorkshopDDS(const std::filesystem::path& folder) {
+#if MVP06_DEV_TOOLS
     std::ofstream report(folder / "live-render.txt"); int failures = 0;
     auto check = [&](const char* label, bool value) { report << (value ? "PASS " : "FAIL ") << label << '\n'; if (!value) failures++; };
     std::string error; const std::string revision = "synthetic-frame"; constexpr uint64_t key = 0x6175d92eed39ad7dull;
@@ -624,6 +655,9 @@ bool VerifyWorkshopDDS(const std::filesystem::path& folder) {
     check("clear generation stages", StageWorkshop({}, "clear", error)); CommitWorkshop("clear");
     check("clear generation removes old renderer overrides", UpdateWorkshop() && WorkshopApplied("clear") && Take(key,image) == Lookup::None);
     return failures == 0;
+#else
+    return false;
+#endif
 }
 
 }  // namespace gpu::texturedumper

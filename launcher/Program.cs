@@ -62,6 +62,7 @@ static class Program
                 var gameDir = Path.Combine(dir, Game.GameFolder);
                 if (mode == "repair")
                 {
+                    BundledMods.Install(dir);
                     var bad = MVPWorkshop.Core.Install.LooseInstaller.Verify(gameDir, null, CancellationToken.None);
                     new MVPWorkshop.Core.Install.LooseInstaller(src, gameDir).Restore(bad, null, CancellationToken.None);
                     var still = MVPWorkshop.Core.Install.LooseInstaller.Verify(gameDir, null, CancellationToken.None);

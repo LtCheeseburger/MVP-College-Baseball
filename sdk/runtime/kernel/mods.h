@@ -16,6 +16,10 @@ namespace kernel::mods {
 void Init(const std::filesystem::path& game_dir, const std::filesystem::path& mods_dir,
           const std::vector<std::filesystem::path>& extra, bool none, const std::string& xbe_sha1);
 bool Active();
+// a mod with this id is on (after Init)
+bool Enabled(const std::string& id);
+// the game folder Init was given; mod paths are relative to it
+std::filesystem::path GameDir();
 // Serializes complete VFS transactions against Workshop mount publication.
 std::unique_lock<std::recursive_mutex> Lock();
 void RecordOpen(const std::filesystem::path& path);

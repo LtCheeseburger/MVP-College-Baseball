@@ -68,6 +68,8 @@ extern "C" __attribute__((used)) inline int _fltused = 0;
 
 // runtime services, implemented in cpu/dispatch.cpp
 X86_HOST_API void x86_icall(X86Context& ctx, uint8_t* base, uint32_t target);
+// Optional presentation-only filter for zero-argument FE virtual Render calls.
+X86_HOST_API void x86_set_ui_render_filter(bool (*filter)(uint32_t, uint32_t));
 // a jump to a C++ catch continuation unwinds the host stack to the frame that resumes there (esp as the CRT set it)
 struct X86Resume {
     uint32_t target, esp;

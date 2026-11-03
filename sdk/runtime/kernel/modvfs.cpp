@@ -479,12 +479,14 @@ public:
         std::vector<Entry*> to_pack;
         for (Entry& e : entries_)
             if (e.pack || (e.xsh && !e.loaded)) to_pack.push_back(&e);
+        // reads go through the mod layer, whose lock this thread holds: read here, pack on the pool
+        bool failed = false;
+        for (Entry* e : to_pack)
+            if (!e->loaded && !(e->xsh ? xsh::Build(e->path, e->bytes) : LoadFile(e->path, e->bytes))) failed = true;
         std::atomic<size_t> next{0};
-        std::atomic<bool> failed{false};
         auto work = [&] {
             for (size_t i; (i = next++) < to_pack.size();) {
                 Entry& e = *to_pack[i];
-                if (!e.loaded && !(e.xsh ? xsh::Build(e.path, e.bytes) : LoadFile(e.path, e.bytes))) failed = true;
                 if (e.pack) e.bytes = Pack(e.bytes);
                 e.loaded = true;
                 e.size = e.bytes.size();

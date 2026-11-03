@@ -191,9 +191,10 @@ bool ReadDisk(const fs::path& p, std::vector<uint8_t>& out, size_t limit) {
 
 uint16_t U16(const uint8_t* p) { return uint16_t(p[0] | p[1] << 8); }
 uint32_t U32(const uint8_t* p) { return uint32_t(p[0]) | p[1] << 8 | p[2] << 16 | uint32_t(p[3]) << 24; }
+uint64_t U64(const uint8_t* p) { return uint64_t(U32(p)) | uint64_t(U32(p + 4)) << 32; }
 
 struct ZipEntry {
-    uint32_t local = 0, csize = 0, usize = 0;
+    uint64_t local = 0, csize = 0, usize = 0;
     uint16_t method = 0;
 };
 
@@ -211,37 +212,71 @@ struct Mod {
         std::ifstream in(path, std::ios::binary);
         if (!in) return false;
         in.seekg(0, std::ios::end);
-        uint64_t size = uint64_t(in.tellg());
+        auto end = in.tellg();
+        if (end < 22) return false;
+        uint64_t size = uint64_t(end);
         size_t tail = size_t(std::min<uint64_t>(size, 65535 + 22));
         std::vector<uint8_t> t(tail);
         in.seekg(std::streamoff(size - tail));
         in.read(reinterpret_cast<char*>(t.data()), std::streamsize(tail));
         size_t eocd = SIZE_MAX;
         for (size_t i = tail >= 22 ? tail - 22 : 0; i != SIZE_MAX && tail >= 22; i--)
-            if (U32(&t[i]) == 0x06054B50) {
+            if (U32(&t[i]) == 0x06054B50 && i + 22 + U16(&t[i + 20]) == tail) {
                 eocd = i;
                 break;
             }
         if (eocd == SIZE_MAX) return false;
-        uint32_t count = U16(&t[eocd + 10]), cd_size = U32(&t[eocd + 12]), cd_off = U32(&t[eocd + 16]);
-        if (count == 0xFFFF || cd_off == 0xFFFFFFFF) {
-            LOGE("mods: %s is a zip64 archive, not supported", path.filename().string().c_str());
-            return false;
+        if (U16(&t[eocd + 4]) || U16(&t[eocd + 6])) return false; // no split archives
+        uint64_t count = U16(&t[eocd + 10]), cd_size = U32(&t[eocd + 12]), cd_off = U32(&t[eocd + 16]);
+        if (count == 0xFFFF || cd_off == 0xFFFFFFFF || cd_size == 0xFFFFFFFF) {
+            uint8_t locator[20], record[56];
+            uint64_t absolute = size - tail + eocd;
+            if (absolute < 20) return false;
+            in.seekg(std::streamoff(absolute - 20));
+            if (!in.read(reinterpret_cast<char*>(locator), 20) || U32(locator) != 0x07064B50 ||
+                U32(locator + 4) || U32(locator + 16) != 1) return false;
+            auto offset = U64(locator + 8);
+            if (offset > size - 56) return false;
+            in.seekg(std::streamoff(offset));
+            if (!in.read(reinterpret_cast<char*>(record), 56) || U32(record) != 0x06064B50 ||
+                U64(record + 4) < 44 || U32(record + 16) || U32(record + 20) ||
+                U64(record + 24) != U64(record + 32)) return false;
+            count = U64(record + 32); cd_size = U64(record + 40); cd_off = U64(record + 48);
         }
-        if (uint64_t(cd_off) + cd_size > size) return false;
-        std::vector<uint8_t> cd(cd_size);
-        in.seekg(cd_off);
-        in.read(reinterpret_cast<char*>(cd.data()), std::streamsize(cd_size));
+        if (count > 1000000 || cd_size > 512ull * 1024 * 1024 || cd_off > size || cd_size > size - cd_off) return false;
+        std::vector<uint8_t> cd(static_cast<size_t>(cd_size));
+        in.seekg(std::streamoff(cd_off));
+        if (!in.read(reinterpret_cast<char*>(cd.data()), std::streamsize(cd_size))) return false;
         size_t at = 0;
-        for (uint32_t i = 0; i < count; i++) {
+        for (uint64_t i = 0; i < count; i++) {
             if (at + 46 > cd.size() || U32(&cd[at]) != 0x02014B50) return false;
             uint16_t flags = U16(&cd[at + 8]), nlen = U16(&cd[at + 28]), elen = U16(&cd[at + 30]), clen = U16(&cd[at + 32]);
-            if (at + 46 + nlen > cd.size()) return false;
+            if (at + 46 + nlen + elen + clen > cd.size()) return false;
             ZipEntry e;
             e.method = U16(&cd[at + 10]);
             e.csize = U32(&cd[at + 20]);
             e.usize = U32(&cd[at + 24]);
             e.local = U32(&cd[at + 42]);
+            if (U16(&cd[at + 34])) return false;
+            bool needs64 = e.usize == 0xFFFFFFFF || e.csize == 0xFFFFFFFF || e.local == 0xFFFFFFFF;
+            for (size_t extra = at + 46 + nlen, stop = extra + elen; extra + 4 <= stop;) {
+                auto type = U16(&cd[extra]), length = U16(&cd[extra + 2]); extra += 4;
+                if (length > stop - extra) return false;
+                if (type == 1) {
+                    size_t p = extra, finish = extra + length;
+                    auto field = [&](uint64_t& value) {
+                        if (value != 0xFFFFFFFF) return true;
+                        if (finish - p < 8) return false;
+                        value = U64(&cd[p]); p += 8; return true;
+                    };
+                    if (!field(e.usize) || !field(e.csize) || !field(e.local)) return false;
+                    needs64 = false;
+                }
+                extra += length;
+            }
+            if (needs64 || e.local > size - 30 || e.csize > size ||
+                e.csize > 2ull * 1024 * 1024 * 1024 || e.usize > 2ull * 1024 * 1024 * 1024 ||
+                (e.method == 0 && e.csize != e.usize)) return false;
             std::string n(reinterpret_cast<const char*>(&cd[at + 46]), nlen);
             std::replace(n.begin(), n.end(), '\\', '/');
             at += 46 + nlen + elen + clen;
@@ -284,7 +319,8 @@ struct Mod {
         in.seekg(e.local);
         if (!in.read(reinterpret_cast<char*>(h), 30) || U32(h) != 0x04034B50) return false;
         in.seekg(std::streamoff(e.local) + 30 + U16(h + 26) + U16(h + 28));
-        std::vector<uint8_t> raw(e.csize);
+        if (e.csize > SIZE_MAX) return false;
+        std::vector<uint8_t> raw(static_cast<size_t>(e.csize));
         if (!in.read(reinterpret_cast<char*>(raw.data()), std::streamsize(raw.size()))) return false;
         if (e.method == 0) {
             out = std::move(raw);
@@ -292,6 +328,7 @@ struct Mod {
             LOGE("mods: %s: %s is damaged", path.filename().string().c_str(), n.c_str());
             return false;
         }
+        if (out.size() != e.usize) return false;
         if (out.size() > limit) out.resize(limit);
         return true;
     }
@@ -517,7 +554,8 @@ void Init(const fs::path& game_dir, const fs::path& mods_dir, const std::vector<
         for (auto& [id, p] : found)
             if (!listed.count(id)) LOGR("mods: %s found, off until it's enabled", id.c_str());
     }
-    for (const fs::path& p : extra) wanted.push_back(p);
+    // Safe mode wins over both the saved mod list and explicit --mod arguments.
+    if (!none) for (const fs::path& p : extra) wanted.push_back(p);
 
     std::set<std::string> ids;
     for (const fs::path& p : wanted) {
@@ -583,6 +621,13 @@ void Init(const fs::path& game_dir, const fs::path& mods_dir, const std::vector<
 
 bool Active() {
     auto mount_guard = Lock(); return !g_mods.empty(); }
+
+bool Enabled(const std::string& id) {
+    auto mount_guard = Lock();
+    return std::any_of(g_mods.begin(), g_mods.end(), [&](auto& m) { return m->id == id; });
+}
+
+fs::path GameDir() { return fs::u8path(g_game); }
 
 bool Stat(const fs::path& p, Node& out) {
     auto mount_guard = Lock();

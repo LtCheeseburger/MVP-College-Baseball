@@ -6,6 +6,16 @@ project(game LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Shared source, explicit build capabilities. The paired DEV folder defaults on;
+# standalone/BASE builds default off. Presets and release.bat may override this.
+get_filename_component(MVP06_PARENT "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY)
+set(MVP06_DEV_DEFAULT OFF)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR
+   EXISTS "${MVP06_PARENT}/MVP06-Base/MVP06-XBERecomp/AGENTS.md")
+    set(MVP06_DEV_DEFAULT ON)
+endif()
+option(MVP06_DEV_TOOLS "Enable developer diagnostics, texture packs and test drivers" ${MVP06_DEV_DEFAULT})
+
 # the SDK: sdk/ here, two folders up inside the SDK's templates, a checkout beside this repository, else downloaded
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/sdk/cmake/XbeRecomp.cmake)
     set(SDK ${CMAKE_CURRENT_SOURCE_DIR}/sdk)
@@ -37,6 +47,7 @@ endif()
 
 # target name = GAME_EXE in build.bat, xbe = GAME_XBE
 add_xbe_image(MVP06 default.xbe game.toml ${GAME_PARTITIONS} game)
+target_compile_definitions(MVP06 PRIVATE MVP06_DEV_TOOLS=$<BOOL:${MVP06_DEV_TOOLS}>)
 target_link_libraries(MVP06 PRIVATE mfplat mfreadwrite mfuuid)
 target_sources(MVP06 PRIVATE MVP06.rc)  # icon resource 1, LoadIconW in the runtime
 

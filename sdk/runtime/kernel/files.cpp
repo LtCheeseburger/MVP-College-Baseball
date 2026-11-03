@@ -1,3 +1,4 @@
+#include "core/dev_tools.h"
 #include <algorithm>
 #include <cctype>
 #include <chrono>
@@ -558,6 +559,12 @@ static uint32_t Transfer(const Args& a, bool write, uint32_t pages) {
         if (done < chunk) break;
     }
     f->pos = pos + n;
+    // Explicit asset-budget audit; silent during normal play.
+    static const bool trace_logos = dev::Env("MVP06_TRACE_LOGOS") != nullptr;
+    if (!write && trace_logos && Upper(f->xbox).find("LOGOS.BIG") != std::string::npos)
+        LOGR("logo-io: %s offset=%llu requested=%u read=%u guest=%08X virtual-size=%llu",
+             f->xbox.c_str(), (unsigned long long)pos, len, n, buf,
+             (unsigned long long)(f->vf ? f->vf->Size() : f->entry ? f->entry->size : 0));
     if (write && IsSavePath(f->xbox)) LOGD("save: write %s %u of %u bytes at %llu", f->xbox.c_str(), n, len, (unsigned long long)pos);
     if (write && n < len) return Finish(*f, 0xC000007F, n, event, apc, apc_ctx, iosb);  // disk full
     if (!write && len && !n) return Finish(*f, kEndOfFile, 0, event, apc, apc_ctx, iosb);

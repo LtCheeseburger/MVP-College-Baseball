@@ -137,7 +137,16 @@ uint32_t KernelThunkAddress(uint32_t ordinal) { return kKernelThunkBase + ordina
 
 }  // namespace dispatch
 
+static std::atomic<bool (*)(uint32_t,uint32_t)> g_ui_render_filter{nullptr};
+void x86_set_ui_render_filter(bool (*filter)(uint32_t,uint32_t)) {
+    g_ui_render_filter.store(filter,std::memory_order_release);
+}
 void x86_icall(X86Context& ctx, uint8_t* base, uint32_t target) {
+    if (target >= 0x90000 && target < 0xF0000)
+        if(auto filter=g_ui_render_filter.load(std::memory_order_acquire); filter && filter(target,ctx.ecx)) {
+            ctx.esp += 4; // FE Render() has no arguments and returns void.
+            return;
+        }
     ctx.last_icall = target;
     if (target >= g_lo && target < g_hi && g_continuation[target - g_lo]) throw X86Resume{target, ctx.esp};
     if (X86Func* f = dispatch::Find(target)) {

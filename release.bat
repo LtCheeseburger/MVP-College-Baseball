@@ -1,7 +1,19 @@
 @echo off
 set "GAME_EXE=MVP06"
 cd /d "%~dp0"
+rem In the paired workspace, refuse a release with divergent authored source.
+set "SYNC_PEER=..\MVP06-Base\MVP06-XBERecomp"
+if exist "..\..\MVP06-XBERecomp\tools\sync-check.ps1" set "SYNC_PEER=..\..\MVP06-XBERecomp"
+if exist "%SYNC_PEER%\tools\sync-check.ps1" (
+    where pwsh >nul 2>nul || (echo PowerShell 7 is required for the BASE/DEV sync check & exit /b 1)
+    pwsh -NoProfile -File tools\sync-check.ps1 || (echo BASE/DEV source differs; review and synchronize before packaging & exit /b 1)
+)
 set "OUT=out\build\release"
+rem Never package a stale executable with developer tools, even from DEV.
+cmake --preset release -DMVP06_DEV_TOOLS=OFF || (echo configuring player capabilities failed & exit /b 1)
+cmake --build "%OUT%" --target MVP06 || (echo building player executable failed & exit /b 1)
+rem Build the optional UI from its source project, or verify a previously staged bundle.
+pwsh -NoProfile -File tools\build-ui-mod.ps1 || (echo building the bundled UI failed & exit /b 1)
 set /p VER=<VERSION
 set "ZIP=MVP-27-College-Baseball-v%VER%.zip"
 rem setup and the launcher are launcher\ here; they use MVP Workshop's install code from the pinned submodule
@@ -23,9 +35,12 @@ rem the zip holds Setup.exe and "Port Files": setup copies those to the chosen f
 rem the player's own disc image beside them
 set "PKG=%OUT%\package"
 set "PORT=%PKG%\Port Files"
-rd /s /q "%OUT%elease" 2>nul
+rd /s /q "%OUT%\release" 2>nul
 rd /s /q "%PKG%" 2>nul
 mkdir "%PORT%"
+mkdir "%PORT%\bundled-mods"
+copy /y "%OUT%\bundled-mods\mvp27-ui.mvpmod" "%PORT%\bundled-mods\" >nul || exit /b 1
+copy /y "%OUT%\bundled-mods\defaults.json" "%PORT%\bundled-mods\" >nul || exit /b 1
 rem only the runtime DLLs the executables import; xbe_recomp.exe needs its own copy, Windows only looks beside the
 rem exe it starts
 del /q "%OUT%\compiler\*.dll" 2>nul
@@ -43,7 +58,7 @@ rem exe) so the launcher updates itself, the version it compares with the releas
 rem every port file with its size and SHA-256, which the update checks and uses to remove files a release dropped
 copy /y "%PKG%\Setup.exe" "%PORT%\Launcher.exe" >nul || exit /b 1
 >"%PORT%\version.txt" echo %VER%
-powershell -NoProfile -Command "$root = (Resolve-Path '%PORT%').Path; $files = Get-ChildItem -LiteralPath $root -Recurse -File | Where-Object Name -ne 'port-manifest.json' | ForEach-Object { [ordered]@{ path = $_.FullName.Substring($root.Length + 1).Replace('\','/'); size = $_.Length; sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLower() } }; [ordered]@{ format = 1; version = '%VER%'; modFormat = 1; layout = 1; workshopReload = 1; workshopLiveTextures = 1; workshopLaunch = 1; workshopReloadMode = 'live-textures'; files = @($files) } | ConvertTo-Json -Depth 4 | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $root 'port-manifest.json')" || (echo writing port-manifest.json failed & exit /b 1)
+powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; Import-Module '%SystemRoot%\System32\WindowsPowerShell\v1.0\Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1' -Force; $root = (Resolve-Path '%PORT%').Path; $files = Get-ChildItem -LiteralPath $root -Recurse -File | Where-Object Name -ne 'port-manifest.json' | ForEach-Object { [ordered]@{ path = $_.FullName.Substring($root.Length + 1).Replace('\','/'); size = $_.Length; sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLower() } }; [ordered]@{ format = 1; version = '%VER%'; modFormat = 1; layout = 1; workshopReload = 1; workshopLiveTextures = 1; workshopLaunch = 1; workshopReloadMode = 'live-textures'; files = @($files) } | ConvertTo-Json -Depth 4 | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $root 'port-manifest.json')" || (echo writing port-manifest.json failed & exit /b 1)
 "%SEVENZIP%" a "%ZIP%" ".\%PKG%\*" >nul || exit /b 1
-powershell -NoProfile -Command "'{0} *{1}' -f (Get-FileHash -Algorithm SHA256 -LiteralPath '%ZIP%').Hash.ToLower(), '%ZIP%' | Set-Content -Encoding ASCII -LiteralPath '%ZIP%.sha256'" || exit /b 1
+powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; Import-Module '%SystemRoot%\System32\WindowsPowerShell\v1.0\Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1' -Force; '{0} *{1}' -f (Get-FileHash -Algorithm SHA256 -LiteralPath '%ZIP%').Hash.ToLower(), '%ZIP%' | Set-Content -Encoding ASCII -LiteralPath '%ZIP%.sha256'" || exit /b 1
 echo %ZIP%

@@ -1,4 +1,5 @@
 #pragma once
+#include "core/dev_tools.h"
 #include <atomic>
 #include <cstdarg>
 #include <cstdint>
@@ -6,7 +7,7 @@
 
 namespace logx {
 
-// a release build writes Report and Error lines only
+// Player builds write Report and Error lines only; developer builds retain detail.
 enum class Level { Debug, Info, Warn, Error, Report };
 
 // release: dir/prefix.log, carried on when append; debug: dir/prefix_NNN.log per run, newest 30 kept
@@ -15,11 +16,7 @@ void Write(Level lv, const char* fmt, ...) __attribute__((format(printf, 2, 3)))
 void Flush();
 const std::string& Path();
 
-#ifdef NDEBUG
-inline constexpr bool kVerbose = false;
-#else
-inline constexpr bool kVerbose = true;
-#endif
+inline constexpr bool kVerbose = dev::Enabled;
 
 }  // namespace logx
 

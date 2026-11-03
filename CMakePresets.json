@@ -16,15 +16,21 @@
             "condition": {"type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows"}
         },
         {"name": "debug", "displayName": "Debug", "inherits": "base",
-         "cacheVariables": {"CMAKE_BUILD_TYPE": "Debug"}},
+         "cacheVariables": {"CMAKE_BUILD_TYPE": "Debug", "MVP06_DEV_TOOLS": "ON"}},
         {"name": "release", "displayName": "Release", "inherits": "base",
          "cacheVariables": {"CMAKE_BUILD_TYPE": "Release"}},
         {"name": "relwithdebinfo", "displayName": "RelWithDebInfo", "inherits": "base",
-         "cacheVariables": {"CMAKE_BUILD_TYPE": "RelWithDebInfo"}}
+         "cacheVariables": {"CMAKE_BUILD_TYPE": "RelWithDebInfo"}},
+        {"name": "dev", "displayName": "Developer tools (optimized)", "inherits": "release",
+         "cacheVariables": {"MVP06_DEV_TOOLS": "ON"}},
+        {"name": "player", "displayName": "Player release", "inherits": "release",
+         "cacheVariables": {"MVP06_DEV_TOOLS": "OFF"}}
     ],
     "buildPresets": [
         {"name": "debug", "configurePreset": "debug"},
         {"name": "release", "configurePreset": "release"},
-        {"name": "relwithdebinfo", "configurePreset": "relwithdebinfo"}
+        {"name": "relwithdebinfo", "configurePreset": "relwithdebinfo"},
+        {"name": "dev", "configurePreset": "dev"},
+        {"name": "player", "configurePreset": "player"}
     ]
 }

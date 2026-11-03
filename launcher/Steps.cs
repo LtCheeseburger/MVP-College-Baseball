@@ -19,6 +19,8 @@ static class Steps
             if (File.Exists(p)) list.Add((p, rel));
         }
         Add(Game.Exe);
+        Add(BundledMods.CachePath);
+        Add("bundled-mods/defaults.json");
         // version.txt and port-manifest.json: what the launcher's updater compares with releases and swaps by
         foreach (var f in new[] { "splash.png", "splash.bmp", "README.md", "THIRD_PARTY.txt", "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll", "version.txt", "port-manifest.json" }) Add(f);
         var compiler = Path.Combine(portDir, "compiler");
@@ -45,6 +47,7 @@ static class Steps
         var self = Environment.ProcessPath!;
         var target = Path.Combine(installDir, Game.Launcher);
         if (!string.Equals(Path.GetFullPath(self), Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase)) File.Copy(self, target, true);
+        BundledMods.Install(installDir);
     }
 
     /// <summary>Runs the exe's own game-code build (its progress window); 0 start the game, 2 not now, 1 failed.</summary>

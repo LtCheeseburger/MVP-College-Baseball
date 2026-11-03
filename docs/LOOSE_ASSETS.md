@@ -64,6 +64,7 @@ What the disc holds (survey of all 11,903 SHPX files, 39,744 images):
 | 0x7B PAL8 | 584 | palette in a `0x2A` attachment | **raw** `.bin` (the block's bytes after its header) |
 
 Mip levels: the count is the top 4 bits of the header's last u16 (`RawY >> 12`); levels follow level 0 back to back.
+The original frontend logo cache allocates twenty 60,000-byte buffers. Port 0.2.3-beta sizes these from the largest rebuilt XSH in the active logos_big view, preventing resized/mipmapped logos from overwriting adjacent cached textures. The stock-size path keeps its original capacity and heap policy; HD logos enable up to an 8 MB heap extension in available 2 MB increments while retaining at least 16 MB outside the game heap. This is independent of the host UI's PNG previews.
 Some DXT blocks end with 16 zero bytes after the pixels (kept as "pad"). Nothing else (other types, RefPack-compressed
 pixels, shared or out-of-order blocks) occurs, and anything like that would stay raw or keep the file whole.
 12 files named `.xsh` are not SHPX and stay plain files.

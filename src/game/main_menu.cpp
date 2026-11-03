@@ -6,6 +6,9 @@
 #include <string>
 
 #include "common/game_hooks.h"
+#include "common/submenu_ui.h"
+#include "common/startup_ui.h"
+#include "common/overhaul.h"
 #include "core/log.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
@@ -40,6 +43,7 @@ uint32_t QuitText() {
 // so a QUIT row is handed to it here with the row grid (the "CELL" control) as the control.
 X86_EXTERN_FUNC(__imp__sub_00517EE0);
 X86_FUNC(sub_00517EE0) {
+    if(overhaul::Active() && game::SubmenuPopupVisible())return kernel::Return(ctx,1,1);
     constexpr uint32_t kCellName = 0x604910, kControlOf = 0xA60A0, kQuitCheck = 0x517F60;
     uint32_t screen = ctx.ecx, keep = ctx.ecx;
     ctx.ecx = screen;
@@ -67,13 +71,29 @@ X86_FUNC(sub_00517EE0) {
     __imp__sub_00517EE0(ctx, base);
 }
 
+// Directional events belong to the modal while it owns input. Do not consume
+// the controller report globally: the popup needs those same events.
+#define MODAL_DIRECTION(address) \
+X86_EXTERN_FUNC(__imp__sub_##address); \
+X86_FUNC(sub_##address) { \
+  if(overhaul::Active() && game::SubmenuPopupVisible())return kernel::Return(ctx,1,1); \
+  __imp__sub_##address(ctx,base); \
+}
+MODAL_DIRECTION(00517DE0)
+MODAL_DIRECTION(00517E20)
+MODAL_DIRECTION(00517E60)
+MODAL_DIRECTION(00517EA0)
+#undef MODAL_DIRECTION
+
 // popup setup, thiscall (owner, answer function, ?, prompt string, ...)
 X86_EXTERN_FUNC(__imp__sub_000E1620);
 X86_FUNC(sub_000E1620) {
+    uint32_t popup=ctx.ecx;
     // any other popup ends the quit question; the select hook marks it once the popup is up
     if (kernel::R32(ctx.esp + 8) != kNoAnswer || kernel::R32(ctx.esp + 16) != kQuitPrompt) g_quit_popup = false;
     else LOGR("main menu: quit popup opened");
     __imp__sub_000E1620(ctx, base);
+    if (overhaul::Active()) game::PopupOpened(popup);
 }
 
 // the empty popup answer, cdecl (answer, context)

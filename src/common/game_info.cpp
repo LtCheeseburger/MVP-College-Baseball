@@ -1,11 +1,28 @@
+#include "startup_ui.h"
+#include "ui_style.h"
 #include "app/app.h"
 #include "game_hooks.h"
+#include "overhaul.h"
 
 
 
 namespace game {
 bool g_xbox_720p = true;
 }
+
+// the UI overhaul draws and takes the pad only while mvp27-ui is on (overhaul.h)
+namespace {
+void OverhaulWindow(void* hwnd) {
+    if (overhaul::Active()) game::InitializeUi(hwnd);
+}
+void OverhaulUi(double elapsed) {
+    if (overhaul::Active()) game::StartupUi(elapsed);
+}
+void OverhaulPad(int port, input::Pad& pad) {
+    game::WorkshopLaunchPad(port, pad);
+
+}
+}  // namespace
 
 // what the runtime asks of the game; strings must be set, hooks may stay null
 const app::GameInfo app::kGame = {
@@ -32,9 +49,9 @@ const app::GameInfo app::kGame = {
     .save = nullptr,                      // writes more into it
     .init = game::WorkshopLaunchInit,                      // after the settings load, before the window and boot
     .loaded = nullptr,                    // image in memory, before its entry point runs
-    .window = nullptr,          // load UI fonts before renderer boot
+    .window = OverhaulWindow,             // load UI fonts before renderer boot
     .message = nullptr,                   // window messages first; true takes one
-    .ui = nullptr,                        // ImGui drawing each frame
-    .pad = game::WorkshopLaunchPad,             // changes a polled pad: the keyboard as the first controller
+    .ui = OverhaulUi,                     // ImGui drawing each frame
+    .pad = OverhaulPad,                   // changes a polled pad: the keyboard as the first controller
     .rumble = nullptr,                    // changes a rumble before it is set
 };

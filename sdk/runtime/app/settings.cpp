@@ -1,3 +1,4 @@
+#include "core/dev_tools.h"
 // the settings file beside the exe
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -64,8 +65,8 @@ void Load() {
     s.dof = t["depth_of_field"].value_or(s.dof);
     s.glow = t["glow"].value_or(s.glow);
     s.fx_high = t["effects_quality"].value_or(std::string(s.fx_high ? "high" : "original")) != "original";
-    s.custom_textures = t["custom_textures"].value_or(s.custom_textures);
-    s.dump_textures = t["dump_textures"].value_or(s.dump_textures);
+    s.custom_textures = dev::Enabled && t["custom_textures"].value_or(s.custom_textures);
+    s.dump_textures = dev::Enabled && t["dump_textures"].value_or(s.dump_textures);
     s.texture_dump_format = std::min(t["texture_dump_format"].value_or(s.texture_dump_format), 1u);
     s.screenshot_key = std::min(t["screenshot_key"].value_or(s.screenshot_key), 0xFEu);
     s.save_backups = std::min(t["save_backups"].value_or(s.save_backups), 100u);

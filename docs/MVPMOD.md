@@ -16,6 +16,9 @@ them). It builds on `docs/LOOSE_ASSETS.md`. It replaces the M0 prototype (`MVP06
 
 ## 2. The file
 A `.mvpmod` is a zip (stored or deflate; nothing else). Names inside are `/`-separated and matched case-insensitively.
+Classic ZIP and single-disk ZIP64 are supported. ZIP64 is used by the UI project builder even for small archives;
+encrypted and split archives are not supported. Runtime limits are one million entries, a 512 MB central directory,
+and 2 GB per uncompressed file. Mods remain data-only; they do not load executable code.
 ```
 mod.json          required
 icon.png          optional, square, 64-256 px

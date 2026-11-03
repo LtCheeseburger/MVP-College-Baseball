@@ -1,3 +1,4 @@
+#include "core/dev_tools.h"
 // the host: window, message loop, crash dumps; the game is described by app::kGame
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -79,6 +80,7 @@ LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* e) {
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
+#if MVP06_DEV_TOOLS
 void DumpThreads() {
     gpu::g_capture = true;
     // the stacks log as errors: say in a release log too that F3 asked for them, not a crash
@@ -89,6 +91,8 @@ void DumpThreads() {
             kernel::LogGuestStack(*t->ctx, 32);
         }
 }
+
+#endif
 
 // window thread only
 void ApplyNow() {
@@ -155,7 +159,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     if (intptr_t result = 0; kGame.message && kGame.message(hwnd, msg, wp, lp, &result)) return result;
     switch (msg) {
         case WM_KEYDOWN:
+#if MVP06_DEV_TOOLS
             if (wp == VK_F3) DumpThreads();
+#endif
             if (wp == VK_F11 && !(lp & 0x40000000)) ToggleFullscreen();
             if (wp == Get().screenshot_key && !(lp & 0x40000000)) gpu::screenshot::Request();
             return 0;
@@ -277,6 +283,7 @@ void OpenGameWindow(bool apply) { SendMessageW(g_hwnd, kOpenWindow, apply, 0); }
 }  // namespace app
 
 int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
+#if MVP06_DEV_TOOLS
     // No window, game data, settings or saves are opened by the synthetic renderer check.
     {
         int count = 0; wchar_t** arguments = CommandLineToArgvW(GetCommandLineW(), &count);
@@ -287,6 +294,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
             }
         LocalFree(arguments);
     }
+#endif
     SetUnhandledExceptionFilter(app::WriteCrashDump);
     std::signal(SIGABRT, [](int) { app::WriteCrashDump(nullptr); });
     timeBeginPeriod(1);
@@ -336,7 +344,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
         }
         LocalFree(argv);
         kernel::mods::Init(game.dir, app::ExeDir() / "mods", extra, none, kImageSha1);
-        if (!reload_request.empty() && !extra.empty()) {
+        if (!none && !reload_request.empty() && !extra.empty()) {
             kernel::mods::ConfigureReload(reload_request, extra.back(), kImageSha1);
             kernel::mods::ConfigureLiveTextures(
                 [](const std::vector<kernel::mods::LiveTexture>& entries, const std::string& revision, std::string& error) {
@@ -346,7 +354,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
                 }, gpu::texturedumper::CommitWorkshop, [](const std::string& revision) {
                     const bool applied = gpu::texturedumper::WorkshopApplied(revision);
                     static std::string captured;
-                    if (applied && captured != revision && std::wcsstr(GetCommandLineW(), L"--workshop-texture-audit")) {
+                    if (dev::Enabled && applied && captured != revision && std::wcsstr(GetCommandLineW(), L"--workshop-texture-audit")) {
                         captured = revision; gpu::screenshot::Request();
                     }
                     return applied;

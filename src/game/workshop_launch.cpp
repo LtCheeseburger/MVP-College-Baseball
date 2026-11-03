@@ -1,3 +1,4 @@
+#include "core/dev_tools.h"
 // Opt-in Workshop startup routing. All state changes use native controller input;
 // no guessed roster/stadium addresses or save data are written.
 #ifndef NOMINMAX
@@ -20,6 +21,8 @@
 #include <string>
 #include <unordered_map>
 #include "common/game_hooks.h"
+#include "common/overhaul.h"
+#include "common/startup_ui.h"
 #include "core/input.h"
 #include "core/log.h"
 #include "kernel/memory.h"
@@ -124,7 +127,7 @@ void WorkshopLaunchInit() {
     bool badArguments=false;
     int count=0;auto arguments=CommandLineToArgvW(GetCommandLineW(),&count);
     for(int i=1;arguments && i+1<count;i++) {
-        if(!std::wcscmp(arguments[i],L"--workshop-launch-audit"))audit=true;
+        if(dev::Enabled && !std::wcscmp(arguments[i],L"--workshop-launch-audit"))audit=true;
         else if(!std::wcscmp(arguments[i],L"--workshop-target"))target=Utf8(arguments[++i]);
         else if(!std::wcscmp(arguments[i],L"--team") || !std::wcscmp(arguments[i],L"--home"))home=Utf8(arguments[++i]);
         else if(!std::wcscmp(arguments[i],L"--away"))away=Utf8(arguments[++i]);
@@ -151,12 +154,18 @@ bool WorkshopMenuSelection(const std::string& name) {
     menuWrong=true;return false; // Never activate another native menu action during automation.
 }
 void WorkshopLaunchPad(int port,input::Pad& pad) {
-    KeyboardPad(port,pad);
+    // Detect real input before the overhaul adds its own native-title/intro
+    // pulses. Those synthetic pulses must not cancel Workshop navigation.
+    bool manual=false;
+    if(port==0 && enabled) {
+        auto raw=pad;KeyboardPad(port,raw);
+        manual=raw.buttons || std::abs(int(raw.lx))>16000 || std::abs(int(raw.ly))>16000 || std::abs(int(raw.rx))>16000 || std::abs(int(raw.ry))>16000;
+        for(auto value:raw.analog)manual|=value>30;
+    }
+    if (overhaul::Active()) StartupPad(port,pad); else KeyboardPad(port,pad);
     if(port!=0 || !enabled)return;
     std::lock_guard lock(mutex);auto now=GetTickCount64();
     if(now-started>180000){Stop("failed","Target was not reached within three minutes; automatic input stopped");return;}
-    bool manual=pad.buttons || std::abs(int(pad.lx))>16000 || std::abs(int(pad.ly))>16000 || std::abs(int(pad.rx))>16000 || std::abs(int(pad.ry))>16000;
-    for(auto value:pad.analog)manual|=value>30;
     if(manual){Stop("cancelled","Controller/keyboard input returned control to the user");return;}
     pad.connected=true;
     if(now<releaseAt)return;
@@ -224,12 +233,9 @@ void WorkshopLaunchPad(int port,input::Pad& pad) {
 }
 }
 
-X86_EXTERN_FUNC(__imp__sub_000BBAC0);
-X86_FUNC(sub_000BBAC0) { Observe(ctx.ecx); __imp__sub_000BBAC0(ctx,base); }
-X86_EXTERN_FUNC(__imp__sub_000AFCE0);
-X86_FUNC(sub_000AFCE0) { Observe(ctx.ecx); __imp__sub_000AFCE0(ctx,base); }
-X86_EXTERN_FUNC(__imp__sub_000C0230);
-X86_FUNC(sub_000C0230) {
+namespace game {
+void WorkshopObserve(uint32_t root) { Observe(root); }
+void WorkshopMovie(X86Context& ctx) {
     if(enabled){auto movie=kernel::R32(ctx.esp+4);if(movie==9 || movie==11)kernel::W32(ctx.esp+4,~0u);}
-    __imp__sub_000C0230(ctx,base);
+}
 }

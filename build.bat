@@ -43,7 +43,9 @@ for /f "tokens=*" %%v in ('clang++ --version ^| findstr /i version') do echo    
 
 rem symbols
 echo [2/3] XDK symbols
-cmake --preset release >nul || goto :fail
+set "DEV_TOOLS=OFF"
+if exist "..\MVP06-Base\MVP06-XBERecomp\AGENTS.md" set "DEV_TOOLS=ON"
+cmake --preset release -DMVP06_DEV_TOOLS=%DEV_TOOLS% >nul || goto :fail
 findstr /b /l /c:"[symbols]" config\game.toml >nul 2>nul && echo       config\game.toml already written && goto :game
 cmake --build out\build\release --target xbe_symbols >nul || goto :fail
 rem the configure step wrote where the SDK is

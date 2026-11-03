@@ -247,6 +247,7 @@ public static class PortUpdater
                 File.Move(dst, saved);
                 done.Add((dst, saved));
             }
+            BundledMods.Install(installDir, rel => SaveAside(Path.Combine(installDir, rel), rel));
             File.Delete(Path.Combine(installDir, Journal));
         }
         catch

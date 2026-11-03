@@ -32,3 +32,12 @@ settings.toml
 *.zip.sha256
 /launcher/bin/
 /launcher/obj/
+
+# unpacked local release bundles
+/MVP-27-College-Baseball-v*/
+/tools/MvpProject/bin/
+/tools/MvpProject/obj/
+/tools/tests/Phase3/bin/
+/tools/tests/Phase3/obj/
+/tools/tests/Phase4/bin/
+/tools/tests/Phase4/obj/

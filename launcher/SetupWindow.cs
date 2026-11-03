@@ -286,6 +286,7 @@ sealed partial class SetupWindow : Window
                 return;
             }
             label.Text = "Checking every game file…";
+            await Task.Run(() => BundledMods.Install(installDir));
             var p = new Progress<LooseInstaller.Progress>(x => bar.Value = (double)x.Done / Math.Max(1, x.Total));
             var bad = await Task.Run(() => LooseInstaller.Verify(gameDir, p, cancel.Token));
             if (bad.Count == 0)
