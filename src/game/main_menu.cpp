@@ -96,6 +96,22 @@ X86_FUNC(sub_000E1620) {
     if (overhaul::Active()) game::PopupOpened(popup);
 }
 
+// Native notifications also use text/format variants of popup setup. The NCAA
+// simulator reuses its confirmation popup for the CWS scheduling notice through
+// these paths; tracking only E1620 leaves the live native modal hidden as closed.
+#define POPUP_SETUP_VARIANT(address) \
+X86_EXTERN_FUNC(__imp__sub_##address); \
+X86_FUNC(sub_##address) { \
+    const auto popup=ctx.ecx; \
+    g_quit_popup=false; \
+    __imp__sub_##address(ctx,base); \
+    if(overhaul::Active())game::PopupOpened(popup); \
+}
+POPUP_SETUP_VARIANT(000E1790)
+POPUP_SETUP_VARIANT(000E1920)
+POPUP_SETUP_VARIANT(000E1BE0)
+#undef POPUP_SETUP_VARIANT
+
 // the empty popup answer, cdecl (answer, context)
 X86_EXTERN_FUNC(__imp__sub_005012E0);
 X86_FUNC(sub_005012E0) {

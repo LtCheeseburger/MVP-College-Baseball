@@ -22,10 +22,27 @@ static class Program
     static JsonObject Read(string path)=>JsonNode.Parse(File.ReadAllText(path)) as JsonObject??throw new InvalidDataException(path);
     [STAThread] static int Main(string[] args) {
         try {
+            if(args.Length is 5 or 6 && args[0]=="import-roster") {
+                string output=Path.GetFullPath(args[4]);Directory.CreateDirectory(output);
+                var registry=Path.Combine(output,"player-registry.json");
+                var imported=MVPWorkshop.Core.Formats.RosterCsvImporter.Import(args[1],args[2],args[3],File.Exists(registry)?Read(registry):null,args.Length==6?args[5]:null);
+                // All validation precedes publication. Preserve original source files and hashes.
+                string raw=Path.Combine(output,"raw");Directory.CreateDirectory(raw);
+                foreach(var file in Directory.EnumerateFiles(args[1],"*.csv"))File.Copy(file,Path.Combine(raw,Path.GetFileName(file)),true);
+                if(args.Length==6)File.Copy(args[5],Path.Combine(raw,"online-rosters.json"),true);
+                File.WriteAllText(registry,imported.Registry.ToJsonString(Pretty));
+                File.WriteAllText(Path.Combine(output,"players.json"),imported.Players.ToJsonString(Pretty));
+                File.WriteAllText(Path.Combine(output,"import-audit.json"),imported.Audit.ToJsonString(Pretty));
+                Console.WriteLine($"Imported {imported.Audit["selectedRealPlayers"]} players from {imported.Audit["sourceSchools"]} schools; audit: {output}");return 0;
+            }
             if(args.Length!=1)throw new ArgumentException("Usage: MvpProject <folder.mvpproject>");
             var root=Path.TrimEndingDirectorySeparator(Path.GetFullPath(args[0]));var project=Read(Path.Combine(root,"project.json"));
             if((int?)project["format"]!=1)throw new InvalidDataException("Unsupported project format");
             var mod=project["mod"] as JsonObject??throw new InvalidDataException("Missing mod metadata");
+            void PackMember(string member) {
+                var packed=mod["refpack"] as JsonArray;if(packed is null){packed=new JsonArray();mod["refpack"]=packed;}
+                if(!packed.Any(value=>(string?)value==member))packed.Add(member);
+            }
             var id=(string?)mod["id"]??"";
             if(id.Length==0||id.Any(c=>!(char.IsAsciiLetterLower(c)||char.IsAsciiDigit(c)||c=='-')))throw new InvalidDataException("Invalid mod id");
             if((int?)mod["format"]!=1 || (int?)mod["layout"]!=1 || (string?)mod["game"]?["xbeSha1"] is not {Length:40})throw new InvalidDataException("Invalid mod metadata");
@@ -42,7 +59,17 @@ static class Program
                     if(!(target.StartsWith("files/")||target is "icon.png" or "readme.md")||!seen.Add(target))throw new InvalidDataException("Invalid or duplicate target: "+target);
                     var input=Safe(root,source);var output=Safe(stage,target);Directory.CreateDirectory(Path.GetDirectoryName(output)!);
                     var op=(string?)r["op"];
-                    if(op=="xsh-logo") {
+                    if(op=="league-database") {
+                        var game=(string?)r["stockGame"]??"";if(!game.StartsWith("overrides/"))throw new InvalidDataException("Stock database must be a local project override.");
+                        var stock=Safe(root,game);
+                        var players=(string?)r["players"];
+                        var result=MVPWorkshop.Core.Formats.LeagueDatabase.Build(stock,input,(bool?)r["testPlaceholders"]==true,players is null?null:Safe(root,players));
+                        bool preview=(bool?)project["build"]?["allowPlaceholderPreview"]==true && ((string?)mod["version"])?.Contains("-preview",StringComparison.Ordinal)==true;
+                        if(result.PlaceholderRosters && !id.EndsWith("-test",StringComparison.Ordinal) && !preview)throw new InvalidDataException("Placeholder rosters require an explicitly named -test mod or an opted-in -preview version.");
+                        foreach(var (relative,data) in result.Files){var destination="files/"+relative;if(!seen.Add(destination))throw new InvalidDataException("Duplicate database output "+destination);var path=Safe(stage,destination);Directory.CreateDirectory(Path.GetDirectoryName(path)!);File.WriteAllBytes(path,data);inputs.Add(new JsonObject{["source"]=source,["target"]=destination,["outputSha256"]=Hash(path),["bytes"]=data.Length});}
+                        foreach(var path in result.Files.Keys){int end=path.IndexOf(".xsh/",StringComparison.OrdinalIgnoreCase);if(end>=0)PackMember(path[..(end+4)]);}
+                        continue;
+                    } else if(op=="xsh-logo") {
                         var template=(string?)r["template"]??"";
                         if(!template.StartsWith("overrides/"))throw new InvalidDataException("Native template must be an override");
                         var templatePath=Safe(root,template);
@@ -50,7 +77,9 @@ static class Program
                         foreach(var member in Directory.EnumerateFileSystemEntries(templatePath,"*",SearchOption.AllDirectories))Safe(root,Path.GetRelativePath(root,member).Replace('\\','/'));
                         var templateHashes=new JsonObject();
                         foreach(var member in Directory.EnumerateFiles(templatePath).OrderBy(p=>p,StringComparer.Ordinal))templateHashes[Path.GetFileName(member)]=Hash(member);
-                        var generated=NativeLogos.Build(input,templatePath,(int?)r["mainSize"]??128,(int?)r["wideWidth"]??64,(int?)r["wideHeight"]??32,r["mipLevels"]!.ToString()=="full");
+                        var generated=NativeLogos.Build(input,templatePath,(int?)r["mainSize"]??128,(int?)r["wideWidth"]??64,(int?)r["wideHeight"]??32,r["mipLevels"]!.ToString()=="full",(bool?)r["allSlots"]==true);
+                        if((int?)r["assetId"] is int assetId)generated=MVPWorkshop.Core.Formats.XshFolder.RetagSchool(generated,assetId);
+                        PackMember(target["files/".Length..]);
                         Directory.CreateDirectory(output);
                         foreach(var file in generated.OrderBy(x=>x.Key,StringComparer.Ordinal)) {
                             var destination=target+"/"+file.Key;
@@ -126,3 +155,4 @@ static class Zip64 {
         writer.Write(0x06054b50u);writer.Write((ushort)0);writer.Write((ushort)0);writer.Write(ushort.MaxValue);writer.Write(ushort.MaxValue);writer.Write(uint.MaxValue);writer.Write(uint.MaxValue);writer.Write((ushort)0);
     }
 }
+

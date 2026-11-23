@@ -5,6 +5,7 @@ struct Pad;
 }
 namespace game {
 void StartupReady();
+bool StartupMainMenuReady();
 void StartupTimeline(const char *name);
 void StartupMainMenuSelection(int row);
 void PollNativeMainMenu();
@@ -14,6 +15,8 @@ void BeginLicensing();
 void StartupScreen(const char *);
 void StartupUi(double);
 bool StartupSubmenuActive();
+bool ReplayUiActive();
+bool DrawNativeStadiumSelection();
 void PopupOpened(uint32_t scene);
 void PopupClosed(uint32_t scene);
 } // namespace game

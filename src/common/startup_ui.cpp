@@ -1,4 +1,5 @@
 #include "core/dev_tools.h"
+#include "roster_browser_ui.h"
 #include "startup_ui.h"
 #include "overhaul.h"
 #include "app/app.h"
@@ -32,7 +33,11 @@ std::atomic<int> menuRow{0};
 std::atomic<bool> menuPresent{false}, introPlayed{false};
 std::atomic<bool> returnFromSubmenu{false};
 std::atomic<bool> leafFromSubmenu{false};
+std::atomic<bool> dynastySchoolVisible{false};
 bool matchupAuditGameplay=false;
+std::atomic<double> teamManagementAuditAt{0},optionsAuditAt{0};
+std::atomic<double> dynastyHomeAuditAt{0};
+std::atomic<double> startingPitcherAuditAt{0},startingLineupAuditAt{0},finalPlaySimAuditAt{0},coachAuditAt{0},simGameAuditAt{0},finalScoreAuditAt{0},recruitingAuditAt{0},statsLandingAuditAt{0},statisticsMenuAuditAt{0};
 double pauseAuditGameplayAt=0;
 double Now() {
   return std::chrono::duration<double>(
@@ -60,11 +65,321 @@ void StartupReady() {
   if (phase == 2 && ready.load() == 0)
     ready = Now();
 }
+bool StartupMainMenuReady() {
+  return phase.load() == 5 && Now() - began.load() >= .7;
+}
 void StartupPad(int port, input::Pad &pad) {
   KeyboardPad(port, pad);
+  if(HandleTutorialNoticePad(port,pad))return;
+  // The roster validator supplies a No answer but no native B callback.
+  // Back must decline optimization, including when Yes was highlighted.
+  static bool rosterCancelPending[4]{},rosterCancelHeld[4]{},rosterCancelArmed[4]{};
+  static double rosterAcceptUntil[4]{};
+  if(port>=0 && port<4 && overhaul::Active()){
+    if(rosterAcceptUntil[port]>Now() && SubmenuPopupVisible()){
+      pad.buttons=0;pad.lx=pad.ly=0;for(auto& value:pad.analog)value=0;pad.analog[0]=255;return;
+    }
+    if(rosterCancelHeld[port]){
+      if(!pad.analog[0] && !pad.analog[1])rosterCancelHeld[port]=false;
+      pad.buttons=0;pad.lx=pad.ly=0;for(auto& value:pad.analog)value=0;return;
+    }
+    std::string body;std::vector<std::string> choices;int selected=0;
+    const bool validation=InspectPopup(body,choices,selected) && choices.size()==2 &&
+      choices[0]=="No" && choices[1]=="Yes" && body.find("optimize")!=std::string::npos && body.find("CPU")!=std::string::npos;
+    if(!validation){rosterCancelPending[port]=false;rosterCancelArmed[port]=false;}
+    else if(!pad.analog[1] && !rosterCancelPending[port])rosterCancelArmed[port]=true;
+    else if((pad.analog[1] && rosterCancelArmed[port]) || rosterCancelPending[port]){
+      rosterCancelPending[port]=true;pad.buttons=0;pad.lx=pad.ly=0;for(auto& value:pad.analog)value=0;
+      if(selected>0)pad.buttons=1;
+      else {pad.analog[0]=255;rosterAcceptUntil[port]=Now()+.15;rosterCancelPending[port]=false;rosterCancelHeld[port]=true;}
+      return;
+    }
+  }
+  static bool onlineDismissHeld[4]{};
+  if(port>=0 && port<4 && onlineDismissHeld[port]){
+    if(!pad.analog[0] && !pad.analog[1])onlineDismissHeld[port]=false;
+    pad.buttons=0;pad.lx=pad.ly=0;for(auto& value:pad.analog)value=0;return;
+  }
+  if(overhaul::Active() && LegacyOnlineNotice()){
+    // This native confirmation has no B/cancel callback. Accept its No row,
+    // keeping the original flow's cleanup without entering the network backend.
+    const auto dismiss=std::max(pad.analog[0],pad.analog[1]);
+    pad.buttons=0;pad.lx=pad.ly=0;for(auto& value:pad.analog)value=0;
+    std::string text;std::vector<std::string> choices;int selected=0;
+    InspectPopup(text,choices,selected);
+    if(dismiss){if(selected>0)pad.buttons=1;else{pad.analog[0]=dismiss;if(port>=0 && port<4)onlineDismissHeld[port]=true;}}
+    return;
+  }
+  if(port==0 && dev::Env("MVP06_TEST_BUTTON_ICONS"))pad.connected=true;
+  MapDynastyPickerConfirm(port,pad);
+  if(!dev::Env("MVP06_TEST_TEAM_MANAGEMENT"))MapTeamManagementPad(port,pad);
+  if(!dev::Env("MVP06_TEST_CREATE_EDIT"))MapPlaySimPad(port, pad);
+  if(!dev::Env("MVP06_TEST_STATISTICS_MENU"))MapStatisticsMenuPad(port,pad);
+  if(!dev::Env("MVP06_TEST_TEAM_MANAGEMENT") && !dev::Env("MVP06_TEST_CREATE_EDIT") && !dev::Env("MVP06_TEST_STATISTICS_MENU"))MapDashboardPad(port,pad);
+  if(port==0 && dev::Env("MVP06_TEST_CREATE_EDIT") && teamManagementAuditAt.load()>0){
+   const double e=Now()-teamManagementAuditAt.load();pad.connected=true;pad.buttons=0;std::fill(std::begin(pad.analog),std::end(pad.analog),0);
+   if(e<3 && std::fmod(e,.45)<.12 && TeamManagementSelection()>=0 && TeamManagementSelection()!=4)pad.buttons=8;
+   if(e>4 && e<4.14)pad.analog[0]=255;
+   if(e>6 && e<6.14)pad.buttons=8;if(e>7 && e<7.14)pad.buttons=4;
+   if(!std::strcmp(dev::Env("MVP06_TEST_CREATE_EDIT"),"edit") && e>8 && e<8.14)pad.buttons=8;
+   if(e>9 && e<9.14)pad.analog[0]=255;
+   static double rosterAt=0,editorAt=0;
+   if(e>10 && CreateEditAuditStage()==2 && !rosterAt)rosterAt=Now();
+   if(rosterAt && Now()-rosterAt>1 && Now()-rosterAt<1.14)pad.analog[0]=255;
+   if(e>10 && CreateEditAuditStage()==3 && !PlayerEditorLoading() && !editorAt)editorAt=Now();
+   if(editorAt){double f=Now()-editorAt;for(double at:{2.,4.})if(f>at && f<at+.14)pad.analog[7]=255;for(double at:{6.,8.})if(f>at && f<at+.14)pad.buttons=2;}
+
+   MapTeamManagementPad(port,pad);MapPlaySimPad(port,pad);return;
+  }
+  if(port==0 && dev::Env("MVP06_TEST_UI_ISSUES") && teamManagementAuditAt.load()>0){
+   const double e=Now()-teamManagementAuditAt.load();pad.connected=true;pad.buttons=0;std::fill(std::begin(pad.analog),std::end(pad.analog),0);
+   if(e<2 && std::fmod(e,.45)<.12 && TeamManagementSelection()>=0 && TeamManagementSelection()!=5)pad.buttons=2;
+   for(double at:{3.,7.,16.})if(e>at && e<at+.14)pad.analog[0]=255;
+   if(e>5 && e<5.14)pad.buttons=2;if(e>6 && e<6.14)pad.buttons=1;
+   if(e>11 && e<11.14)pad.analog[1]=255;
+   for(double at:{21.,29.})if(e>at && e<at+.14)pad.buttons=1;
+   for(double at:{18.,31.})if(e>at && e<at+.14)pad.buttons=8;
+   for(double at:{19.,30.})if(e>at && e<at+.14)pad.buttons=2;
+   for(double at:{20.,28.})if(e>at && e<at+.14)pad.buttons=4;
+   if(e>24 && e<25.2)pad.buttons=8;
+   MapTeamManagementPad(port,pad);MapStatisticsMenuPad(port,pad);MapPlaySimPad(port,pad);
+   return;
+  }
+  if (port == 0 && dev::Env("MVP06_TEST_SCHOOL_ORDER") &&
+      phase.load() == 10 && dynastySchoolVisible.load()) {
+    static double entered = Now();
+    const double elapsed = Now() - entered;
+    const double interval=dev::Env("MVP06_TEST_PICKER_SWEEP")?.30:.45;
+    const int pulse=int(elapsed/interval);
+    pad.connected=true;pad.buttons=0;std::fill(std::begin(pad.analog),std::end(pad.analog),0);
+    if(elapsed/interval-pulse<.4){
+      if(dev::Env("MVP06_TEST_PICKER_SWEEP")){
+        if(pulse<320){int move=pulse%10;if(move<6)pad.buttons=2;else if(move<9)pad.buttons=1;else pad.analog[7]=255;}
+      }else{
+        if(pulse<72){int move=pulse%18;if(move<12)pad.buttons=2;else if(move<16)pad.buttons=1;else pad.analog[7]=255;}
+        else if(pulse<108)pad.analog[7]=255;else if(pulse<144)pad.analog[6]=255;else if(pulse==146)pad.analog[0]=255;
+      }
+    }
+    static bool captured = false;
+    if (pulse >= 144 && !captured) { captured = true; gpu::g_capture = true; }
+  }
+  if (phase.load() == 10 && dynastySchoolVisible.load() && pad.connected) {
+    // The native school picker moves between teams horizontally. Translate
+    // vertical list navigation into that same input so A confirms the native team.
+    constexpr uint16_t up = 0x01, down = 0x02, left = 0x04, right = 0x08;
+    const auto vertical = pad.buttons & (up | down);
+    if (vertical) {
+      pad.buttons &= ~uint16_t(up | down | left | right);
+      if (vertical == up) pad.buttons |= right;
+      if (vertical == down) pad.buttons |= left;
+    }
+    if (std::abs(int(pad.ly)) > std::abs(int(pad.lx)))
+      pad.lx = pad.ly;
+    pad.ly = 0;
+  }
   if (port != 0) {
     if(phase.load()==8)MapTeamSelectPad(port,pad,Now()-began.load());
     return;
+  }
+  if(dev::Env("MVP06_TEST_SIM_GAME") && !dev::Env("MVP06_TEST_FINAL_SCORE") && simGameAuditAt.load()>0){
+    const double t=Now()-simGameAuditAt.load();
+    for(double at:{1.,5.})if(t>at && t<at+.14)pad.buttons|=4;
+    if(t>3 && t<3.14)pad.buttons|=8;
+    for(double at:{7.,9.})if(t>at && t<at+.14)pad.analog[2]=255;
+    for(double at:{11.,15.})if(t>at && t<at+.14)pad.analog[0]=255;
+    if(t>13 && t<13.14)pad.buttons|=8;
+  }
+  if(dev::Env("MVP06_TEST_FINAL_SCORE") && finalScoreAuditAt.load()>0){
+    const double t=Now()-finalScoreAuditAt.load();
+    if(t>2 && t<2.14)pad.analog[0]=255;
+    if(dev::Env("MVP06_TEST_BOX_SCORE")){for(double at=3.;at<60.;at+=.5)if(t>at && t<at+.14)pad.buttons|=2;if(t>62 && t<62.14)pad.analog[1]=255;return;}
+    if(t>5 && t<5.14)pad.analog[1]=255;
+    if(t>7 && t<7.14)pad.buttons|=8;
+    if(t>10 && t<10.14)pad.analog[0]=255;
+  }
+  if(dev::Env("MVP06_TEST_COACH") && coachAuditAt.load()>0){
+    const double t=Now()-coachAuditAt.load();
+    for(double at:{1.,2.})if(t>at && t<at+.14)pad.buttons|=dev::Env("MVP06_TEST_UI_HORIZONTAL")?8:2;
+    for(double at:{3.,4.})if(t>at && t<at+.14)pad.buttons|=dev::Env("MVP06_TEST_UI_HORIZONTAL")?4:1;
+    if(dev::Env("MVP06_TEST_UI_HORIZONTAL"))MapPlaySimPad(port,pad);
+    for(double at:{5.,7.,9.,11.})if(t>at && t<at+.14)pad.analog[2]=255;
+    for(double at:{13.,16.,19.,22.})if(t>at && t<at+.14)pad.analog[0]=255;
+  }
+  if(dev::Env("MVP06_TEST_FINAL_PLAY_SIM") && startingLineupAuditAt.load()>0){
+    const double t=Now()-startingLineupAuditAt.load();if(t>.8 && t<.94)pad.buttons|=0x10;
+    if(finalPlaySimAuditAt.load()>0){const double f=Now()-finalPlaySimAuditAt.load();
+      for(double at:{1.,2.})if(f>at && f<at+.14)pad.buttons|=8;
+      for(double at:{3.,4.})if(f>at && f<at+.14)pad.buttons|=4;
+      if(dev::Env("MVP06_TEST_COACH") && f>5 && f<5.14)pad.buttons|=8;
+      if(dev::Env("MVP06_TEST_SIM_GAME"))for(double at:{5.,5.5})if(f>at && f<at+.14)pad.buttons|=8;
+      if(f>6 && f<6.14)pad.analog[0]=255;
+      if(dev::Env("MVP06_TEST_UI_HORIZONTAL"))MapPlaySimPad(port,pad);
+    }
+  }
+  if(dev::Env("MVP06_TEST_STARTING_LINEUP") && !dev::Env("MVP06_TEST_FINAL_PLAY_SIM") && startingLineupAuditAt.load()>0) {
+    const double t=Now()-startingLineupAuditAt.load();
+    for(double at:{1.,2.,3.,4.,5.,6.,7.,8.,9.,10.,11.})if(t>at && t<at+.14)pad.buttons|=2;
+    if(t>12.5 && t<12.64)pad.buttons|=1;
+    if(t>14 && t<14.14)pad.analog[0]=255;
+    if(t>16 && t<16.14)pad.buttons|=2;
+    if(t>18 && t<18.14)pad.analog[0]=255;
+    if(t>20 && t<20.14)pad.analog[1]=255;
+  }
+  if (dev::Env("MVP06_TEST_STARTING_PITCHER") && startingPitcherAuditAt.load()>0) {
+    const double t=Now()-startingPitcherAuditAt.load();
+    for(double at:{.8,1.5,2.2,2.9,3.6,4.3,5.,5.7,6.4,7.1})if(t>at && t<at+.14)pad.buttons|=2;
+    if(t>8.3 && t<8.44)pad.buttons|=1;
+    if(t>9.5 && t<9.64)pad.analog[2]=255;
+    if(t>11.5 && t<11.64)pad.analog[1]=255;
+    if(t>13.3 && t<13.44)pad.analog[3]=255;
+    if(t>15.3 && t<15.44)pad.analog[1]=255;
+    if(t>17.5 && t<17.64)pad.analog[0]=255;
+    if(t>19.5 && t<19.64)pad.buttons|=0x10;
+  }
+  if (dev::Env("MVP06_TEST_DYNASTY_HOME") && dynastyHomeAuditAt.load()>0) {
+    const double t = Now()-dynastyHomeAuditAt.load();
+    if(dev::Env("MVP06_TEST_OPTIONS")){
+      for(double at:{.8,1.2,1.6,2.})if(t>at && t<at+.14)pad.buttons|=2;
+      if(t>2.8 && t<2.94)pad.analog[0]=255;
+      if(optionsAuditAt.load()>0){double e=Now()-optionsAuditAt.load();int target=int(e/6);double f=e-target*6;
+       if(target<5){for(int i=0;i<target;++i){double at=.55+i*.28;if(f>at && f<at+.13)pad.buttons|=2;}
+        if(f>2 && f<2.14)pad.analog[0]=255;if(f>4 && f<4.14)pad.analog[1]=255;
+       }
+      }
+      return;
+    }
+    if(dev::Env("MVP06_TEST_TEAM_MANAGEMENT")){
+      if(teamManagementAuditAt.load()==0){for(double at:{.8,1.2,1.6})if(t>at && t<at+.14)pad.buttons|=2;if(t>2.3 && t<2.44)pad.analog[0]=255;}
+      else if(dev::Env("MVP06_TEST_ROSTER_MANAGEMENT") && !std::strcmp(dev::Env("MVP06_TEST_ROSTER_MANAGEMENT"),"status")){
+        double e=Now()-teamManagementAuditAt.load();int current=TeamManagementSelection();
+        if(e<3 && std::fmod(e,.45)<.10 && current>=0 && current!=9)pad.buttons|=(current/5!=1)?2:8;
+        if(e>4 && e<4.14)pad.analog[0]=255;
+        if(current<0){
+          for(double at:{7.,9.,11.,11.5,12.,12.5,13.,13.5,14.,14.5})if(e>at && e<at+.14)pad.buttons|=2;
+          for(double at:{8.,10.})if(e>at && e<at+.14)pad.analog[0]=255;
+          if(e>17 && e<17.14)pad.analog[3]=255;
+          for(double at:{23.,26.})if(e>at && e<at+.14)pad.analog[1]=255;
+        }
+      }
+      else if(dev::Env("MVP06_TEST_ROSTER_MANAGEMENT")){
+        double e=Now()-teamManagementAuditAt.load();int segment=int(e/30),targets[]={1,2,3,6,7,9};double f=e-segment*30;if(!std::strcmp(dev::Env("MVP06_TEST_ROSTER_MANAGEMENT"),"pitch") && segment>0)segment=6;
+        if(segment<6){int current=TeamManagementSelection(),target=targets[segment];
+          if(f<3 && std::fmod(f,.45)<.10 && current>=0 && current!=target)pad.buttons|=(current/5!=target/5)?2:8;
+          if(f>4 && f<4.14)pad.analog[0]=255;
+          if(current<0){
+            for(double at:{7.,9.,20.})if(f>at && f<at+.14)pad.buttons|=2;
+            if(f>18 && f<18.14)pad.buttons|=8;
+            if(segment!=2){for(double at:{8.,10.})if(f>at && f<at+.14)pad.analog[0]=255;}
+            if(f>12 && f<12.14)pad.analog[2]=255;
+            if(f>14 && f<14.14)pad.analog[3]=255;
+            for(double at:{17.,26.,28.})if(f>at && f<at+.14)pad.analog[1]=255;
+          }
+        }
+      }
+      else if(dev::Env("MVP06_TEST_DEPTH_CHART")){
+        double e=Now()-teamManagementAuditAt.load();
+        for(double at:{4.,30.,38.})if(e>at && e<at+.14)pad.analog[0]=255;
+        for(double at:{7.,9.,21.,27.})if(e>at && e<at+.14)pad.buttons|=8;
+        for(double at:{11.,13.,23.,25.,32.,33.,34.,35.,36.,40.})if(e>at && e<at+.14)pad.buttons|=2;
+        for(double at:{15.,17.})if(e>at && e<at+.14)pad.buttons|=4;
+        if(e>19 && e<19.14)pad.buttons|=1;
+        for(double at:{42.,44.,46.})if(e>at && e<at+.14)pad.analog[1]=255;
+      }
+      else{double elapsed=Now()-teamManagementAuditAt.load();int offset=std::strcmp(dev::Env("MVP06_TEST_TEAM_MANAGEMENT"),"tail")==0?6:0;int segment=int(elapsed/12);int target=offset+segment;double phase=elapsed-segment*12;
+        if(target<10 && TeamManagementAvailable(target)){
+          int current=TeamManagementSelection();
+          if(phase<2.8 && std::fmod(phase,.45)<.10 && current>=0 && current!=target)pad.buttons|=(current/5!=target/5)?2:8;
+          if(phase>4 && phase<4.14)pad.analog[0]=255;
+          if((phase>8 && phase<8.14 || phase>10 && phase<10.14) && TeamManagementSelection()<0)pad.analog[1]=255;
+        }
+      }
+      MapTeamManagementPad(port,pad);return;
+    }
+    if(dev::Env("MVP06_TEST_STATS_LANDING")){
+      for(double at:{.8,1.2})if(t>at && t<at+.14)pad.buttons|=2;
+      if(t>2 && t<2.14)pad.analog[0]=255;
+      if(statsLandingAuditAt.load()>0){double r=Now()-statsLandingAuditAt.load();
+        if(dev::Env("MVP06_TEST_STATISTICS_MENU")){
+          if(statisticsMenuAuditAt.load()==0){
+            for(double at:{1.,1.4})if(r>at && r<at+.14)pad.buttons|=2;
+            if(r>2.5 && r<2.64)pad.analog[0]=255;
+          }else{
+            double elapsed=Now()-statisticsMenuAuditAt.load();int target=int(elapsed/(dev::Env("MVP06_TEST_STATS_TABLES")?16:8));double phase=elapsed-target*(dev::Env("MVP06_TEST_STATS_TABLES")?16:8);
+            if(target<6){
+              int current=StatisticsMenuSelection();
+              if(phase<2.5 && std::fmod(phase,.5)<.09 && current>=0 && current!=target)pad.buttons|=(current/3!=target/3)?2:8;
+              if(phase>3 && phase<3.14)pad.analog[0]=255;
+              if(dev::Env("MVP06_TEST_STATS_TABLES")){
+                  if(target<5){for(double at:{4.2,4.6,5.0,5.4})if(phase>at && phase<at+.12)pad.buttons|=2;
+                    if(phase>6 && phase<6.14)pad.analog[0]=255;
+                    if(phase>7 && phase<7.14)pad.analog[2]=255;
+                    if(phase>8 && phase<8.14)pad.buttons|=8;
+                    if(phase>9 && phase<9.14)pad.analog[3]=255;
+                  }else{
+                    if(phase>4.2 && phase<4.34)pad.buttons|=8;
+                    if(phase>5 && phase<5.14)pad.analog[0]=255;
+                    if(phase>7 && phase<7.14)pad.analog[2]=255;
+                  }
+                  if(phase>11 && phase<11.14)pad.analog[1]=255;
+                  if(phase>13 && phase<13.14 && StatisticsMenuSelection()<0)pad.analog[1]=255;
+                }else if(phase>6 && phase<6.14)pad.analog[1]=255;
+            }
+          }
+          MapStatisticsMenuPad(port,pad);return;
+        }
+        if(dev::Env("MVP06_TEST_LEAGUE_TABLES")){
+          if(r>1 && r<1.14)pad.analog[0]=255;
+          for(double at=2;at<9;at+=.3)if(r>at && r<at+.14)pad.buttons|=2;
+          for(double at=10;at<13;at+=.3)if(r>at && r<at+.14)pad.buttons|=1;
+          if(r>14 && r<14.14)pad.analog[1]=255;
+          if(r>15 && r<15.14)pad.buttons|=2;
+          if(r>16 && r<16.14)pad.analog[0]=255;
+          for(double at=17;at<22;at+=.3)if(r>at && r<at+.14)pad.buttons|=2;
+          for(double at:{23.,25.,27.,29.})if(r>at && r<at+.14)pad.analog[7]=255;
+          for(double at:{31.,33.})if(r>at && r<at+.14)pad.analog[6]=255;
+          for(double at=35;at<40;at+=.3)if(r>at && r<at+.14)pad.buttons|=8;
+          for(double at=41;at<46;at+=.3)if(r>at && r<at+.14)pad.buttons|=4;
+          if(r>48 && r<48.14)pad.analog[1]=255;
+          return;
+        }
+        for(double at:{1.,7.,13.})if(r>at && r<at+.14)pad.analog[0]=255;
+        for(double at:{4.,10.,16.})if(r>at && r<at+.14)pad.analog[1]=255;
+        for(double at:{5.,11.,11.4,17.})if(r>at && r<at+.14)pad.buttons|=2;
+      }return;
+    }
+    if (t>.8 && t<.94) pad.buttons |= 2;
+    if(dev::Env("MVP06_TEST_RECRUITING")){if(t>2 && t<2.14)pad.analog[0]=255;if(recruitingAuditAt.load()>0){double r=Now()-recruitingAuditAt.load();if(dev::Env("MVP06_TEST_RECRUIT_PROFILE")){
+ if(r>1 && r<1.14)pad.buttons|=2;
+ for(double at:{2.,6.,26.})if(r>at && r<at+.14)pad.analog[0]=255;
+
+ for(double at:{10.,14.})if(r>at && r<at+.14)pad.analog[7]=255;
+ if(r>18 && r<18.14)pad.analog[6]=255;
+ if(r>22 && r<22.14)pad.buttons|=2;
+ for(double at:{29.,33.})if(r>at && r<at+.14)pad.analog[1]=255;
+ return;
+ }if(dev::Env("MVP06_TEST_RECRUIT_LIST")){for(double at:{1.,3.,3.3,3.6,4.,4.3,4.6,5.,5.3,5.6,6.,6.3,6.6,7.,23.,23.4,31.,31.4,31.8,37.,37.3,37.6,38.,38.3,38.6,39.,39.3,39.6,40.,40.3,40.6,41.})if(r>at && r<at+.14)pad.buttons|=2;for(double at:{2.,18.,24.,32.,36.})if(r>at && r<at+.14)pad.analog[0]=255;for(double at:{16.,20.,22.,30.,34.,43.})if(r>at && r<at+.14)pad.analog[1]=255;if(r>8 && r<8.14)pad.buttons|=8;if(r>9 && r<9.14)pad.buttons|=4;if(r>10 && r<10.14)pad.analog[2]=255;if(r>14 && r<14.14)pad.analog[3]=255;return;}for(double at:{1.,5.,5.4,9.,9.3,9.6})if(r>at && r<at+.14)pad.buttons|=2;for(double at:{2.,6.,10.,14.})if(r>at && r<at+.14)pad.analog[0]=255;for(double at:{4.,8.,12.,16.})if(r>at && r<at+.14)pad.analog[1]=255;}return;}
+    if (t>1.6 && t<1.74) pad.buttons |= 1;
+    if (t>2.4 && t<2.54) pad.analog[0] = 255;
+    if (const auto test=dev::Env("MVP06_TEST_PLAY_SIM")) {
+      if (t>3.8 && t<3.94) pad.analog[0]=255;
+      if (t>5.4 && t<5.54) pad.buttons|=8;
+      if (t>6.6 && t<6.74) pad.buttons|=4;
+      if (t>7.8 && t<7.94) pad.analog[1]=255;
+      if (t>9.4 && t<9.54) pad.analog[0]=255;
+      if (std::strcmp(test,"play")!=0 && t>11 && t<11.14) pad.buttons|=8;
+      if (t>12.6 && t<12.74) pad.analog[0]=255;
+      if (std::strcmp(test,"play")!=0 && t>22 && t<22.14) pad.analog[1]=255;
+    } else if (dev::Env("MVP06_TEST_SIMULATION")) {
+      if (t>3.5 && t<3.64) pad.buttons|=8;
+      if (t>5.3 && t<5.44) pad.analog[3]=255;
+      if (t>6.2 && t<6.34) pad.analog[0]=255;
+    } else if (dev::Env("MVP06_TEST_DYNASTY_CALENDAR")) {
+      if (t>3.5 && t<3.64) pad.buttons |= 8;
+      if (t>4.4 && t<4.54) pad.buttons |= 4;
+      if (t>5.3 && t<5.44) pad.analog[7] = 255;
+      if (t>6.2 && t<6.34) pad.analog[6] = 255;
+      if (t>7.1 && t<7.24) pad.analog[2] = 255;
+    }
   }
   int c = phase.load();
   if(dev::Env("MVP06_TEST_PAUSE") && pauseAuditGameplayAt>0){
@@ -221,7 +536,11 @@ void StartupPad(int port, input::Pad &pad) {
     double elapsed = Now() - began.load();
     const char *test = dev::Env("MVP06_TEST_SUBMENU");
     if (SettingsMenuActive()) {
-      pad.analog[0]=0; // The settings audit observes values without activating actions.
+      pad.analog[0]=0; // Other settings audits remain read-only.
+      if(dev::Env("MVP06_TEST_BUTTON_ICONS") && SubmenuRowCount()>=16){
+        if(SelectedSubmenuRow()!=15){if(std::fmod(elapsed,.24)<.10)pad.buttons|=2;}
+        else{static double reached=0;if(!reached)reached=Now();double e=Now()-reached;if(e>1 && e<1.14)pad.buttons|=8;if(e>2 && e<2.14)pad.analog[0]=255;}
+      }
       if (dev::Env("MVP06_TEST_FORMAT")) {
         if (elapsed > 1 && elapsed < 1.14) pad.buttons |= 2;
         if (elapsed > 2 && elapsed < 10 && std::fmod(elapsed-2,.8)<.12) pad.buttons |= 8;
@@ -372,6 +691,12 @@ void StartupScreen(const char *n) {
   if(!std::strcmp(n,"HUDRIGHT") && dev::Env("MVP06_TEST_PAUSE") && pauseAuditGameplayAt==0)pauseAuditGameplayAt=Now();
   if(!std::strcmp(n,"HUDRIGHT") && dev::Env("MVP06_TEST_MATCHUP"))matchupAuditGameplay=true;
   if (!std::strcmp(n, "LOADING1")) {ResetMatchupLoading();phase=9;began=Now();return;}
+  if (!std::strcmp(n, "FSELECTSCHOOL") || !std::strcmp(n, "SELECTSCHOOL")) {
+    dynastySchoolVisible = false;
+    phase = 10;
+    began = Now();
+    return;
+  }
   if (!std::strcmp(n, "TEAMSELECT")) {
     ResetTeamSelect();
     phase = 8;
@@ -400,7 +725,7 @@ void StartupScreen(const char *n) {
       began = Now();
       phase = introPlayed.load() ? 5 : 3;
     }
-  } else if ((phase.load() == 5 || phase.load() == 6 || phase.load() == 8 || phase.load() == 9) &&
+  } else if ((phase.load() == 5 || phase.load() == 6 || phase.load() == 8 || phase.load() == 9 || phase.load() == 10) &&
              std::strcmp(n, "CNTRLSELECT") && std::strcmp(n, "POPUPLEFT") && std::strcmp(n, "POPUPRIGHT") &&
              std::strcmp(n, "BACKMAIN") && std::strcmp(n, "NAVBAR") &&
              std::strcmp(n, "LOGOANIM") && std::strcmp(n, "EAMESSENGER") &&
@@ -421,6 +746,68 @@ void StartupScreen(const char *n) {
   }
 }
 void StartupUi(double) {
+  if(NativeMenuPresentation())return;
+  if(dev::Env("MVP06_TEST_PICKER_RENDER") && dynastySchoolVisible.load()){
+    static double entered=Now(),captured=0;if(Now()-entered<12 && Now()-captured>.25){captured=Now();gpu::g_capture=true;}
+  }
+  if(dev::Env("MVP06_TEST_BUTTON_ICONS") || dev::Env("MVP06_TEST_OPTIONS") || dev::Env("MVP06_TEST_RECRUIT_LIST") || dev::Env("MVP06_TEST_STATS_LANDING") || dev::Env("MVP06_TEST_TEAM_MANAGEMENT")){static double captured=0;if(Now()-captured>1){gpu::g_capture=true;captured=Now();}}
+  if (DrawLoadout()) return;
+  if (DrawNativeBallparkLoading()) return;
+  if (DrawNativeBallparkEditor()) return;
+  if (DrawNativeTextKeyboard()) return;
+  if (DrawNativePlayerInformation()) return;
+  if (DrawNativeRosterBrowser()) return;
+  if (DrawNativeDynastyOptions()){if(dev::Env("MVP06_TEST_OPTIONS") && optionsAuditAt.load()==0)optionsAuditAt=Now();return;}
+    if(DrawNativePostseasonScores())return;
+    if(DrawNativeHireStaff())return;
+    if(DrawNativeMailFilters())return;
+    if(DrawNativeOffseason())return;
+    if (DrawNativeRecruitProfile())return;
+  if (DrawNativeRosterStatus())return;
+  if (DrawNativeRosterEditor())return;
+  if (DrawNativeManagementDetail())return;
+  if (DrawNativeDepthChart())return;
+  if (DrawNativeAwardWatch())return;
+  if (DrawNativePlayerEditor())return;
+  if (DrawNativeCreateEdit())return;
+  if (DrawNativeTeamManagement()){if(dev::Env("MVP06_TEST_TEAM_MANAGEMENT") && teamManagementAuditAt.load()==0)teamManagementAuditAt=Now();return;}
+  if (DrawNativeStatisticsTable()) return;
+  if (DrawNativeStatisticsMenu()) {if(dev::Env("MVP06_TEST_STATISTICS_MENU") && statisticsMenuAuditAt.load()==0)statisticsMenuAuditAt=Now();return;}
+  if (DrawNativeLeagueTable()) return;
+  if (DrawNativeStatsLanding()) {if(dev::Env("MVP06_TEST_STATS_LANDING") && statsLandingAuditAt.load()==0)statsLandingAuditAt=Now();return;}
+  if (DrawNativeRecruitList()) return;
+  if (DrawNativeRecruiting()) {if(dev::Env("MVP06_TEST_RECRUITING") && recruitingAuditAt.load()==0)recruitingAuditAt=Now();return;}
+  if (DrawNativeBoxScore()) return;
+  if (DrawNativeFinalScore()) {if(dev::Env("MVP06_TEST_FINAL_SCORE") && finalScoreAuditAt.load()==0)finalScoreAuditAt=Now();return;}
+  if (DrawNativeSimGame()) {if(dev::Env("MVP06_TEST_SIM_GAME") && simGameAuditAt.load()==0)simGameAuditAt=Now();return;}
+  if (DrawNativeCoach()) {if(dev::Env("MVP06_TEST_COACH") && coachAuditAt.load()==0)coachAuditAt=Now();return;}
+  if (DrawNativeFinalPlaySim()) {if(dev::Env("MVP06_TEST_FINAL_PLAY_SIM") && finalPlaySimAuditAt.load()==0)finalPlaySimAuditAt=Now();return;}
+  if (DrawNativeStadiumSelection()) return;
+  if (DrawNativeStartingLineup()) {if(dev::Env("MVP06_TEST_STARTING_LINEUP") && startingLineupAuditAt.load()==0)startingLineupAuditAt=Now();return;}
+  if (DrawNativeStartingPitcher()) {
+    if(dev::Env("MVP06_TEST_STARTING_PITCHER") && startingPitcherAuditAt.load()==0)startingPitcherAuditAt=Now();
+    return;
+  }
+  if (DrawNativePlaySim()) return;
+  if(DrawNativeRecruitActions())return;
+  if(DrawNativeRecruitOffer())return;
+  if(DrawNativeMailReader())return;
+  if(DrawNativeInbox())return;
+  if(DrawNativeTournamentTree())return;
+  const bool calendar=DrawNativeDynastyCalendar();
+  if (DrawNativeSimulationProgress(calendar)) return;
+  if (calendar) return;
+  if (DrawNativeDynastyHome()) {
+    if (dev::Env("MVP06_TEST_DYNASTY_HOME") && dynastyHomeAuditAt.load()==0)
+      dynastyHomeAuditAt = Now();
+    return;
+  }
+  {
+    const bool visible = DrawNativeDynastySchool();
+    dynastySchoolVisible = visible;
+    if (visible) return;
+  }
+  if (DrawNativeUtilityMenu()) return;
   DrawPauseMenuTheme();
   PollNativePitcherInfo();
   PollNativeBatterInfo();
@@ -429,7 +816,7 @@ void StartupUi(double) {
   PollNativeMvpTransition();
   DrawMvpTransition();
   if(dev::Env("MVP06_PREVIEW_STADIUM")) {
-    auto tex=gpu::g_ui_image(Assets()/"stadium-intro-preview-bg.png");
+    auto tex=gpu::g_ui_image(overhaul::UiAsset(Assets()/"stadium-intro-preview-bg.png"));
     if(tex)ImGui::GetBackgroundDrawList()->AddImage((ImTextureID)tex,{0,0},ImGui::GetIO().DisplaySize);
     PublishStadiumIntro({MatchupSide{"FLORIDA","GATORS","48","23","A+","2"},MatchupSide{"TEXAS","LONGHORNS","56","16","A+","1"}},"Disch-Falk Field",true);
     DrawStadiumIntro();
@@ -439,6 +826,19 @@ void StartupUi(double) {
   DrawStadiumIntro();
   // Opt-in visual fixture: renders the layout without waiting for a game load.
   // Normal screen routing and native input never use these sample values.
+  if (const char* preview = dev::Env("MVP06_PREVIEW_MATCHUP"); preview && !std::strcmp(preview, "loadout")) {
+    static const double previewAt = Now();
+    const std::array<MatchupSide,2> sides = {{
+        {"FLORIDA","GATORS","","","","77"}, {"TEXAS","LONGHORNS","","","","115"}}};
+    LoadoutScore score{};
+    score[0][0] = "UF";
+    score[1][0] = "TEX";
+    score[0][1] = "0";
+    for (auto& row : score)
+      for (int col = 10; col < 13; ++col) row[col] = "0";
+    DrawLoadoutCard(sides, score, Now() - previewAt);
+    return;
+  }
   if(dev::Env("MVP06_PREVIEW_MATCHUP")) {
     static double previewAt=Now();
     PublishMatchupLoading({MatchupSide{"FLORIDA","GATORS","48","23","A+","2"},MatchupSide{"TEXAS","LONGHORNS","56","16","A+","1"}},true,true);
@@ -453,13 +853,11 @@ void StartupUi(double) {
   if (c == 9 || MatchupLoadingVisible()) {
     if(c==9)PollNativeMatchupLoading();
     DrawMatchupLoading(Now()-began.load());
-    DrawNotification();
     return;
   }
   if (c == 8) {
     PollNativeTeamSelect();
     DrawTeamSelect(Now() - began.load());
-    DrawNotification();
     return;
   }
   if (!c) {
@@ -475,7 +873,6 @@ void StartupUi(double) {
                  << IM_COL32_A_SHIFT);
       }
     }
-    DrawNotification();
     static double capturedAt = 0;
     if (dev::Env("MVP06_TRACE_FE") && began.load() != capturedAt &&
         Now() - began.load() > 3) {
@@ -492,7 +889,6 @@ void StartupUi(double) {
   double t = Now() - began.load();
   if (c == 6 || c == 7) {
     DrawSubmenu(t);
-    DrawNotification();
     return;
   }
   if (c == 3 && t >= .55) {
@@ -519,7 +915,7 @@ void StartupUi(double) {
                 float a = 1.f) {
     if (a <= 0)
       return;
-    auto tex = gpu::g_ui_image(root / f);
+    auto tex = gpu::g_ui_image(overhaul::UiAsset(root / f));
     if (tex)
       d->AddImage((ImTextureID)tex, p(x, y), p(x + w, y + h), {0, 0}, {1, 1},
                   IM_COL32(255, 255, 255, int(255 * std::clamp(a, 0.f, 1.f))));
@@ -555,7 +951,7 @@ void StartupUi(double) {
                                IM_COL32(0, 0, 0, 0), IM_COL32(0, 0, 0, 0),
                                IM_COL32(0, 0, 0, int(alpha * 220)));
     im("menu-trim-imagegen.png", 0, 0, 600, 1440, alpha);
-    im("lg27.png", 145, 120, 830, 275, alpha);
+    UiBrandLogo(d,p(145,120),p(975,395),IM_COL32(255,255,255,int(255*alpha)));
     int row = menuRow.load();
     static float visualRow = 0, fromRow = 0;
     static int targetRow = 0;
@@ -604,7 +1000,7 @@ void StartupUi(double) {
         p(0, highlightY), p(highlightRight, highlightY),
         p(highlightRight - rowSlant, highlightY + rowHeight),
         p(0, highlightY + rowHeight)};
-    auto strip = gpu::g_ui_image(root / "menu-selection-imagegen.png");
+    auto strip = gpu::g_ui_image(overhaul::UiAsset(root / "menu-selection-imagegen.png"));
     // Sample only the red texture core. The same quad defines selected and idle
     // row silhouettes; the source sprite's baked angle/border must not distort
     // it.
@@ -655,22 +1051,20 @@ void StartupUi(double) {
       captureBegan = began.load();
       gpu::g_capture = true;
     }
-    DrawNotification();
     return;
   }
-  im("loading-background.png", 0, 0, 2560, 1440);
-  im("licensing-background-imagegen.png", 0, 0, 2560, 1440,
-     c == 1 ? Fade(t, 0, .45) : 1);
+  UiMenuBackdrop(d,size,UiBackdrop::Charcoal);
   if (c == 2 || c == 3)
-    im("press-start-background-2560x1440.png", 0, 0, 2560, 1440,
-       c == 3 ? 1 : Fade(t, 0, .65));
+    im("press-start-background-2560x1440.png",0,0,2560,1440,c == 3 ? 1.f : Fade(t,0,.65));
   float e = c == 3 ? 1 : Fade(t, 0, .9);
   e = 1 - (1 - e) * (1 - e) * (1 - e);
   float x = c == 1 ? 453 : 300, y = c == 1 ? 460 : 440,
         w = c == 1 ? 1653 : 1080, h = c == 1 ? 537 : 360;
-  im("lg27.png", x + ((c == 1 ? 300 : 620) - x) * e,
-     y + ((c == 1 ? 440 : 450) - y) * e, w + ((c == 1 ? 1080 : 1320) - w) * e,
-     h + ((c == 1 ? 360 : 440) - h) * e);
+  const float logoX=x+((c==1 ? 300 : 620)-x)*e;
+  const float logoY=y+((c==1 ? 440 : 450)-y)*e;
+  const float logoW=w+((c==1 ? 1080 : 1320)-w)*e;
+  const float logoH=h+((c==1 ? 360 : 440)-h)*e;
+  UiBrandLogo(d,p(logoX,logoY),p(logoX+logoW,logoY+logoH));
   float a = c == 3 ? 0 : (c == 1 ? Fade(t, .3, .65) : 1 - Fade(t, 0, .3));
   if (a > 0) {
     d->AddLine(p(1445, 285), p(1445, 1045),

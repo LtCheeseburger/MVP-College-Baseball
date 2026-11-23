@@ -166,7 +166,18 @@ void Apply(const fs::path& generated, const fs::path& manifests) {
         for(const auto& owner:Array(edit,"functions").items) {
             auto name=Required(owner,"function");auto& body=functions.at(name).edited;
             auto [a,b]=Span(body,at);size_t count=0;
-            if(auto* after=edit.Get("after")) {
+            if(auto* replacement=edit.Get("replacement")) {
+                if(replacement->type!=Json::String)throw std::runtime_error("Invalid instruction replacement");
+                auto authored="\t"+replacement->s+"\n";
+                if(auto* guard=edit.Get("guard")) {
+                    if(guard->type!=Json::String||guard->s.empty())throw std::runtime_error("Invalid instruction guard");
+                    authored="\tif ("+guard->s+") {\n"+authored+"\t} else {\n"+body.substr(a,b-a)+"\t}\n";
+                }
+                body.replace(a,b-a,authored);count=1;
+            } else if(auto* before=edit.Get("before")) {
+                if(before->type!=Json::String) throw std::runtime_error("Invalid insertion");
+                body.insert(a,"\t"+before->s+"\n");count=1;
+            } else if(auto* after=edit.Get("after")) {
                 if(after->type!=Json::String) throw std::runtime_error("Invalid insertion");
                 body.insert(b,"\t"+after->s+"\n");count=1;
             } else if(edit.Flag("all")) count=Replace(body,Required(edit,"old"),Required(edit,"new"),true);

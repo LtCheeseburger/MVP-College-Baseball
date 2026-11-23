@@ -1,5 +1,7 @@
 #include "core/dev_tools.h"
+#include "game/phase9.h"
 #include "../common/startup_ui.h"
+#include "../common/team_select_ui.h"
 #include "../common/overhaul.h"
 // PC Options inside the game's own menus. The Options menu's "Online Options" entry leads to the game's settings list
 // screen (fes_smart_options, the one Audio Options uses) with the OPTIONS_ONLINE context; without Xbox Live it has
@@ -46,6 +48,10 @@ constexpr uint32_t kCancelPrompt = 0x3364;     // "Are you sure you want to canc
 // setting ids the game leaves free: its row factory makes 0 to 0x8A, and its per setting arrays (the row cache,
 // the store's flags) end near 0xB0, where ids past them would write into other heap blocks
 constexpr uint32_t kRowBase = 0x90;
+// Reuse an unused stock gap rather than extending the native store/cache range.
+// Legacy PC rows keep their existing ids, including the final id 0xB0.
+constexpr uint32_t kButtonIconsId = 0x8B, kButtonIconsRow = 15;
+uint32_t SettingId(uint32_t row) { return row==kButtonIconsRow?kButtonIconsId:kRowBase+row-(row>kButtonIconsRow?1:0); }
 constexpr uint32_t kStringBase = 0xFE00;       // string ids past FEENG.LOC's
 constexpr uint32_t kOnlineOptionsString = 27110;  // the Options menu entry, "Online Options"
 constexpr uint32_t kListTitleString = 13200;      // the list screen's title, "Gameplay Options"
@@ -216,6 +222,8 @@ const std::vector<Row>& Rows() {
          [](int i) { app::Get().mute_unfocused = i != 0; }},
         {L"HD 720p Mode (Restart)", {L"Off", L"On"}, [] { return game::g_xbox_720p ? 1 : 0; },
          [](int i) { game::g_xbox_720p = i != 0; }},
+        {L"Button Icons", {L"Xbox", L"PlayStation"}, [] { return app::Get().button_icons == 1 ? 1 : 0; },
+         [](int i) { app::Get().button_icons = i == 1 ? 1u : 0u; }},
         KeyRow<0>(L"Key: A"),
         KeyRow<1>(L"Key: B"),
         KeyRow<2>(L"Key: X"),
@@ -277,7 +285,7 @@ const Guest& G() {
         const auto& rows = Rows();
         g.ids = mem::AllocSystem(uint32_t(rows.size() * 4));
         for (size_t r = 0; r < rows.size(); r++) {
-            kernel::W32(g.ids + uint32_t(r * 4), kRowBase + uint32_t(r));
+            kernel::W32(g.ids + uint32_t(r * 4), SettingId(uint32_t(r)));
             g.labels.push_back(kStringBase + uint32_t(g.strings.size()));
             g.strings.push_back(GuestText(rows[r].label));
             uint32_t t = mem::AllocSystem(uint32_t(rows[r].choices.size() * 8));
@@ -295,7 +303,9 @@ const Guest& G() {
 }
 
 int RowOf(uint32_t id) {
-    return id >= kRowBase && id < kRowBase + Rows().size() ? int(id - kRowBase) : -1;
+    if(id==kButtonIconsId)return int(kButtonIconsRow);
+    if(id<kRowBase || id>=kRowBase+Rows().size()-1)return -1;
+    auto row=id-kRowBase;return int(row+(row>=kButtonIconsRow?1:0));
 }
 
 uint32_t FlowContext() {
@@ -308,9 +318,9 @@ uint32_t FlowContext() {
 uint32_t game::PcOptionsString(uint32_t id) {
     return id>=kStringBase && id-kStringBase<G().strings.size() ? G().strings[id-kStringBase] : 0;
 }
-std::string game::PcOptionValue(uint32_t index) {
-    if(index>=Rows().size())return {};
-    const auto &row=Rows()[index];
+std::string game::PcOptionValue(uint32_t settingId) {
+    const int index=RowOf(settingId);if(index<0)return {};
+    const auto &row=Rows()[size_t(index)];
     int choice=std::clamp(row.get(),0,int(row.choices.size())-1);
     const wchar_t *value=row.choices[choice];
     int count=WideCharToMultiByte(CP_UTF8,0,value,-1,nullptr,0,nullptr,nullptr);
@@ -324,6 +334,8 @@ std::string game::PcOptionValue(uint32_t index) {
 X86_EXTERN_FUNC(__imp__sub_00083B00);
 X86_FUNC(sub_00083B00) {
     uint32_t id = kernel::R32(ctx.esp + 4);
+    if(auto text=game::DashboardText(id))return kernel::Return(ctx,text,1);
+    if(auto text=phase9::ClassText(id))return kernel::Return(ctx,text,1);
     if (id == kOnlineOptionsString || (id == kListTitleString && FlowContext() == kContextOnline))
         return kernel::Return(ctx, G().pc_options, 1);
     if (id >= kStringBase && id - kStringBase < G().strings.size())
@@ -345,6 +357,7 @@ X86_FUNC(sub_00112BC0) {
     if (FlowContext() != kContextOnline || kernel::ReadCString(kernel::R32(ctx.esp + 4), 16) != "SMARTOPTIONS") {
         auto sceneName = kernel::ReadCString(kernel::R32(ctx.esp + 4), 32);
         __imp__sub_00112BC0(ctx, base);
+        if(dev::Env("MVP06_UI_SCREEN_AUDIT") && ctx.eax>=0x80000000u && ctx.eax<0x90000000u && mem::IsCommitted(ctx.eax+0xA0))LOGR("UI audit factory: requested=%s actual=%s root=%08X flags=%04X",sceneName.c_str(),kernel::ReadCString(ctx.eax+0x10,32).c_str(),ctx.eax,kernel::R16(ctx.eax+0x28));
         if (overhaul::Active()) game::StartupNativeScene(sceneName.c_str(), ctx.eax);
         return;
     }
@@ -378,7 +391,7 @@ X86_FUNC(sub_00543BF0) {
     if (!obj) return kernel::Return(ctx, 0, 1);
     kernel::W32(obj + 0x00, kChoiceListVtable);
     kernel::W32(obj + 0x04, ~0u);
-    kernel::W32(obj + 0x08, kRowBase + uint32_t(r));
+    kernel::W32(obj + 0x08, SettingId(uint32_t(r)));
     kernel::W32(obj + 0x0C, G().labels[size_t(r)]);
     kernel::W32(obj + 0x10, uint32_t(Rows()[size_t(r)].choices.size()));
     kernel::W32(obj + 0x14, G().tables[size_t(r)]);

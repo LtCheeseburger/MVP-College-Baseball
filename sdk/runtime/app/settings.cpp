@@ -71,6 +71,7 @@ void Load() {
     s.screenshot_key = std::min(t["screenshot_key"].value_or(s.screenshot_key), 0xFEu);
     s.save_backups = std::min(t["save_backups"].value_or(s.save_backups), 100u);
     s.save_history = std::clamp(t["save_history"].value_or(s.save_history), 2u, 20u);
+    s.button_icons = t["button_icons"].value_or(std::string("xbox")) == "playstation" ? 1u : 0u;
     s.rumble = std::min(t["rumble"].value_or(s.rumble), 100u);
     s.deadzone_left = std::min(t["deadzone_left"].value_or(s.deadzone_left), 50u);
     s.deadzone_right = std::min(t["deadzone_right"].value_or(s.deadzone_right), 50u);
@@ -111,6 +112,7 @@ toml::table Table() {
                   {"screenshot_key", int64_t(s.screenshot_key)},
                   {"save_backups", int64_t(s.save_backups)},
                   {"save_history", int64_t(s.save_history)},
+                  {"button_icons", s.button_icons == 1 ? "playstation" : "xbox"},
                   {"rumble", int64_t(s.rumble)},
                   {"deadzone_left", int64_t(s.deadzone_left)},
                   {"deadzone_right", int64_t(s.deadzone_right)},

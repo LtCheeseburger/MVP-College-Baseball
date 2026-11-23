@@ -12,6 +12,9 @@ bool IsFolder(const std::filesystem::path& dir);
 // logged and replaced by blank pixels of the original size (MVP Workshop converts formats when it saves).
 // Size reads only the DDS headers and gives the same length Build will.
 bool Size(const std::filesystem::path& dir, uint64_t& size);
+// Upper bound without opening DDS payload/header files. A lazy BIG entry may
+// reserve this extent and zero-pad after the actual SHPX length in its header.
+bool SizeBound(const std::filesystem::path& dir, uint64_t& size);
 bool Build(const std::filesystem::path& dir, std::vector<uint8_t>& out);
 
 }  // namespace kernel::xsh

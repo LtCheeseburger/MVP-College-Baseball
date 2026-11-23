@@ -19,7 +19,7 @@ static class Steps
             if (File.Exists(p)) list.Add((p, rel));
         }
         Add(Game.Exe);
-        Add(BundledMods.CachePath);
+        foreach (var id in new[] { "mvp27-league", "mvp27-logos", "mvp27-ui" }) Add($"bundled-mods/{id}.mvpmod");
         Add("bundled-mods/defaults.json");
         // version.txt and port-manifest.json: what the launcher's updater compares with releases and swaps by
         foreach (var f in new[] { "splash.png", "splash.bmp", "README.md", "THIRD_PARTY.txt", "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll", "version.txt", "port-manifest.json" }) Add(f);

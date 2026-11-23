@@ -3,6 +3,17 @@
 #include "app/app.h"
 #include "game_hooks.h"
 #include "overhaul.h"
+#include "player_overhaul.h"
+#include "kernel/mods.h"
+#include "game/pitch_clock.h"
+#include "submenu_ui.h"
+#include "team_select_ui.h"
+#include "imgui.h"
+#include "core/dev_tools.h"
+#include "gpu/backend.h"
+#include <memory>
+#include <cstring>
+#include <chrono>
 
 
 
@@ -21,10 +32,48 @@ float FrameAspect() {
 // the UI overhaul draws and takes the pad only while mvp27-ui is on (overhaul.h)
 namespace {
 void OverhaulWindow(void* hwnd) {
+    game::player_overhaul::Install();
     if (overhaul::Active()) game::InitializeUi(hwnd);
 }
+// Retain draw geometry, not a GPU readback: no synchronous capture or asset
+// reads are needed when the loader owns the mount or a modal disables its menu.
+void AppendPresentation(ImDrawList* dst,const ImDrawList* src) {
+ const int vertex=dst->VtxBuffer.Size,index=dst->IdxBuffer.Size;
+ dst->VtxBuffer.resize(vertex+src->VtxBuffer.Size);dst->IdxBuffer.resize(index+src->IdxBuffer.Size);
+ if(src->VtxBuffer.Size)std::memcpy(dst->VtxBuffer.Data+vertex,src->VtxBuffer.Data,src->VtxBuffer.Size*sizeof(ImDrawVert));
+ if(src->IdxBuffer.Size)std::memcpy(dst->IdxBuffer.Data+index,src->IdxBuffer.Data,src->IdxBuffer.Size*sizeof(ImDrawIdx));
+ if(dst->CmdBuffer.Size && !dst->CmdBuffer.back().ElemCount && !dst->CmdBuffer.back().UserCallback)dst->CmdBuffer.pop_back();
+ for(auto cmd:src->CmdBuffer){if(!cmd.ElemCount)continue;cmd.VtxOffset+=vertex;cmd.IdxOffset+=index;dst->CmdBuffer.push_back(cmd);}
+ dst->_VtxWritePtr=dst->VtxBuffer.Data+dst->VtxBuffer.Size;dst->_IdxWritePtr=dst->IdxBuffer.Data+dst->IdxBuffer.Size;
+ dst->_CmdHeader.VtxOffset=dst->VtxBuffer.Size;dst->_VtxCurrentIdx=0;dst->AddDrawCmd();
+}
+bool FullPresentation(const ImDrawList* d,ImVec2 size){
+ for(int i=0;i+3<d->VtxBuffer.Size && i<256;i+=4){const auto* v=d->VtxBuffer.Data+i;
+  if(v[0].pos.x<=1 && v[0].pos.y<=1 && v[2].pos.x>=size.x-1 && v[2].pos.y>=size.y-1 && (v[0].col>>24)==255 && (v[2].col>>24)==255)return true;
+ }return false;
+}
 void OverhaulUi(double elapsed) {
-    if (overhaul::Active()) game::StartupUi(elapsed);
+ game::ResetActionNavigation();
+ static std::unique_ptr<ImDrawList> screen,composed;static ImVec2 dimensions{};static double lastFull=0;
+ auto* draw=ImGui::GetBackgroundDrawList();const auto size=ImGui::GetIO().DisplaySize;
+ const double now=std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+ if(size.x!=dimensions.x || size.y!=dimensions.y){screen.reset();composed.reset();dimensions=size;}
+ auto mount=kernel::mods::TryLock();
+ if(!mount.owns_lock()){if(composed)AppendPresentation(draw,composed.get());return;}
+ if(!overhaul::Active()){gpu::g_menu_model_offset=0;screen.reset();composed.reset();return;}
+ if(dev::Env("MVP06_TEST_UI_ISSUES")){static double captured=0;if(now-captured>.5){gpu::g_capture=true;captured=now;}}
+ game::PollNativeSubmenu();
+ const bool modal=game::SubmenuPopupVisible();
+ if(modal){if(screen){AppendPresentation(draw,screen.get());lastFull=now;}else game::UiMenuBackdrop(draw,size,game::UiBackdrop::Steel);}
+ else{
+  game::StartupUi(elapsed);
+  if(FullPresentation(draw,size)){screen.reset(draw->CloneOutput());lastFull=now;}
+  else if(screen && now-lastFull<.12 && !draw->VtxBuffer.Size)AppendPresentation(draw,screen.get());
+  else if(!modal){screen.reset();}
+ }
+ game::DrawNotification();
+ game::DrawPitchClock();
+ if(draw->VtxBuffer.Size)composed.reset(draw->CloneOutput());else composed.reset();
 }
 void OverhaulPad(int port, input::Pad& pad) {
     game::WorkshopLaunchPad(port, pad);
@@ -66,4 +115,6 @@ const app::GameInfo app::kGame = {
     .ui = OverhaulUi,                     // ImGui drawing each frame
     .pad = OverhaulPad,                   // changes a polled pad: the keyboard as the first controller
     .rumble = nullptr,                    // changes a rumble before it is set
+    .required_mods = {"mvp27-league"},
+    .required_mod_replacement = overhaul::kCombinedModId,
 };

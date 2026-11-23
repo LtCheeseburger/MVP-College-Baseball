@@ -20,6 +20,7 @@ settings.toml
 /CrashDumps/
 
 # editors
+__pycache__/
 .vs/
 .vscode/
 .idea/
@@ -41,3 +42,5 @@ settings.toml
 /tools/tests/Phase3/obj/
 /tools/tests/Phase4/bin/
 /tools/tests/Phase4/obj/
+/tools/tests/Phase8/bin/
+/tools/tests/Phase8/obj/

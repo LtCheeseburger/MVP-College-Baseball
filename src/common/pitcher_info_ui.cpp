@@ -47,7 +47,7 @@ void DrawPitcherCard(){
   d->AddQuadFilled(p(3,3),p(140,3),p(170,69),p(3,69),primary());
   text(UiFont::Heading,56,26,3,card.number,100);
   text(UiFont::Heading,49,width-103,7,card.position,88);
-  if(!card.rank.empty())text(UiFont::Prompt,29,205,22,card.rank=="0"?"TEAM NR":"TEAM #"+card.rank,220);
+  text(UiFont::Prompt,29,185,22,card.team.empty()?"PITCHER PROFILE":card.team,285);
   frame(0,80,width,270);region(3,83,width-6,264,353,199,490,164,primary());
   if(!card.teamLogo.empty())if(auto logo=gpu::g_ui_image(root/("base-logos/"+card.teamLogo+".png")))d->AddImage((ImTextureID)logo,p(352,82),p(520,250),{0,0},{1,1},tint(255,255,255));
   if(card.portrait && gpu::g_ui_guest_image)if(auto portrait=gpu::g_ui_guest_image(card.portrait))d->AddImage((ImTextureID)portrait,p(12,80),p(232,350),{card.portraitUv[0],card.portraitUv[1]},{card.portraitUv[2],card.portraitUv[3]},tint(255,255,255));

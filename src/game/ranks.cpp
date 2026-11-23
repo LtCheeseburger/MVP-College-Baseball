@@ -45,7 +45,7 @@ namespace expansion {
 // National poll rank of a team (1 = best, 0 = unranked or unknown), from the current poll vector.
 uint32_t PollRank(uint32_t team) {
     uint32_t db = kernel::R32(kLeagueDb);
-    if (!db || !team || team >= kDbTeams) return 0;
+    if (!db || !team || team >= kDbTeams || !SchoolActive(team)) return 0;
     uint32_t vec = kernel::R32(db + 0x50), buf = vec ? kernel::R32(vec + 8) : 0;
     if (!buf) return 0;
     uint32_t rank = kernel::R32(buf + team * 4);
@@ -55,6 +55,7 @@ uint32_t PollRank(uint32_t team) {
     uint32_t teams = std::min(kernel::R32(kernel::R32(db + 0x34) + 8), kDbTeams), maxRank = 0, before = 0;
     if (team >= teams) return 0;
     for (uint32_t id = 1; id < teams; id++) {
+        if(!SchoolActive(id))continue;
         uint32_t r = kernel::R32(buf + id * 4);
         maxRank = r > maxRank ? r : maxRank;
         if (!r && id < team) before++;
@@ -74,6 +75,19 @@ X86_FUNC(sub_004FD2A0) {
         g_national[self] = {kernel::R32(self + kListCount), kernel::R32(self)};
     else
         g_national.erase(self);
+}
+
+// Weekly refreshes can change the first ranked school without reconstructing
+// the list. Refresh its identity signature too, so the all-school fallback
+// remains valid after the Top 25 leader changes.
+X86_EXTERN_FUNC(__imp__sub_004FD1B0);
+X86_FUNC(sub_004FD1B0) {
+    uint32_t self=ctx.ecx,conf=Arg(ctx,0);
+    __imp__sub_004FD1B0(ctx,base);
+    if(!expansion::Active()||!phase9::Enabled(phase9::Feature::StandingsAwards))return;
+    std::lock_guard lock(g_lock);
+    if(conf==0)g_national[self]={kernel::R32(self+kListCount),kernel::R32(self)};
+    else g_national.erase(self);
 }
 
 // Position of a value in a rank list (thiscall, value) -> 1-based index or 0. On a national list the value is a team

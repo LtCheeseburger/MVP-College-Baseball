@@ -22,6 +22,7 @@
 #include "core/log.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
+#include <sstream>
 
 namespace {
 
@@ -54,11 +55,15 @@ std::vector<std::string> SplitCsv(const std::string& line) {
 std::unordered_map<uint32_t, Name> LoadNames() {
     std::unordered_map<uint32_t, Name> names;
     const auto path = app::ExeDir() / "player_names.csv";
-    std::ifstream in(path);
-    if (!in) {
+    std::ifstream file(path);std::vector<uint8_t> league;
+    std::string text;
+    if(file)text.assign(std::istreambuf_iterator<char>(file),{});
+    else if(kernel::ReadGameFile("D:\\data\\league\\player_names.csv",league))text.assign(league.begin(),league.end());
+    if (text.empty()) {
         LOGR("player names: no %s, random names kept", path.string().c_str());
         return names;
     }
+    std::istringstream in(text);
     std::string line;
     std::getline(in, line);  // header
     while (std::getline(in, line)) {
@@ -131,3 +136,44 @@ X86_FUNC(sub_00091C30) {
     ctx.eax = saved_eax;
     LOGR("player names: db %08X, %u rows, %u renamed, %u with announcer audio", db, count, renamed, voiced);
 }
+
+// Placeholder names after a load. A roster that never ran the name pass keeps attrib.dat's placeholders (school in
+// first_name, slot number in last_name; the game shows "POS #slot"), and dynasties created from it save them. After
+// a dynasty load, rows with no first name and a "POS #n" last name whose key is in player_names.csv get
+// their real name. The test matters: departed players' keys are reused for generated prospects, which already
+// carry generated names and are left alone.
+namespace game {
+void ApplyPlaceholderNames(X86Context& ctx) {
+    const auto& names = Names();
+    const uint32_t db = kernel::R32(0x6C6540);
+    if (names.empty() || !db) return;
+    const uint32_t map = kernel::R32(db + kMapOffset), table = kernel::R32(db + kTableOffset);
+    if (!map || !table) return;
+    const uint32_t entries = kernel::R32(map + 4), count = kernel::R32(map + 8);
+    const uint32_t vtable = kernel::R32(table);
+    const uint32_t get_string = kernel::R32(vtable + 0x14), set_string = kernel::R32(vtable + kSetStringSlot);
+    const uint32_t buffer = Scratch() + 32;  // the second half of the scratch string buffer
+    uint32_t saved_eax = ctx.eax, renamed = 0;
+    for (uint32_t i = 0; i < count; i++) {
+        const uint32_t key = kernel::R32(entries + i * kEntrySize), row = kernel::R32(entries + i * kEntrySize + 4);
+        auto it = names.find(key);
+        if (it == names.end() || row == 0) continue;
+        std::memset(kernel::HostPtr(buffer), 0, 32);
+        CallThis(ctx, table, get_string, {kLastField, row, buffer});
+        const char* last = static_cast<const char*>(kernel::HostPtr(buffer));
+        size_t n = strnlen(last, 31);
+        // placeholder: empty first name, last name "<position> #<digits>"
+        const char* hash = static_cast<const char*>(std::memchr(last, '#', n));
+        if (!hash || hash == last || hash[-1] != ' ' || hash + 1 == last + n ||
+            !std::all_of(hash + 1, last + n, [](char c) { return c >= '0' && c <= '9'; })) continue;
+        std::memset(kernel::HostPtr(Scratch()), 0, 32);
+        CallThis(ctx, table, get_string, {kFirstField, row, Scratch()});
+        if (*static_cast<const char*>(kernel::HostPtr(Scratch()))) continue;
+        CallThis(ctx, table, set_string, {kFirstField, row, PutString(it->second.first), 0});
+        CallThis(ctx, table, set_string, {kLastField, row, PutString(it->second.last), 0});
+        renamed++;
+    }
+    ctx.eax = saved_eax;
+    if (renamed) LOGR("player names: %u placeholder rows given real names", renamed);
+}
+}  // namespace game

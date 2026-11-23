@@ -120,14 +120,14 @@ void DrawMatchupLoading(double elapsed) {
   auto p = [&](float x, float y) { return ImVec2(ox + x * s, oy + y * s); };
   auto image = [&](const std::string &file, float x, float y, float w, float h,
                    ImU32 tint = IM_COL32_WHITE) {
-    auto tex = gpu::g_ui_image(root / file);
+    auto tex = gpu::g_ui_image(overhaul::UiAsset(root / file));
     if (tex)
       d->AddImage((ImTextureID)tex, p(x, y), p(x + w, y + h), {0, 0}, {1, 1},
                   tint);
   };
   // Read the supplied atlas directly. Interior UVs exclude its gutters and
   // checkerboard; retaining the source avoids destructive asset processing.
-  auto atlas = gpu::g_ui_image(root / "matchup-texture-atlas.png");
+  auto atlas = gpu::g_ui_image(overhaul::UiAsset(root / "matchup-texture-atlas.png"));
   auto uv = [](float x, float y) { return ImVec2(x / 1671.f, y / 941.f); };
   auto textureQuad = [&](ImVec2 a, ImVec2 b, ImVec2 c, ImVec2 e, float u,
                          float v, float w, float h, ImU32 tint) {
@@ -163,7 +163,7 @@ void DrawMatchupLoading(double elapsed) {
     }
   };
   d->AddRectFilled({0, 0}, screen, IM_COL32(0, 0, 0, 255));
-  image("team-select-stadium-imagegen.png", 0, 0, 2560, 1440);
+  UiMenuBackdrop(d,screen,UiBackdrop::Graphite);
   d->AddRectFilled(p(0, 0), p(2560, 1440), IM_COL32(0, 0, 0, 75));
   // One wide atlas region across the screen preserves the original texture's
   // proportions. Do not stretch the entire horizontal atlas into each upright
@@ -268,7 +268,7 @@ void DrawMatchupLoading(double elapsed) {
                    IM_COL32(5, 6, 8, 250));
   centered(UiFont::TeamVersus, 190, 1140, 678, 290, IM_COL32_WHITE, "VS");
   d->AddRectFilled(p(1190, 873), p(1360, 888), IM_COL32(245, 0, 28, 255));
-  image("lg27.png", 1020, 190, 520, 173);
+  UiBrandLogo(d,p(1020,190),p(1540,363));
   textureQuad(p(0, 1210), p(2560, 1210), p(2560, 1440), p(0, 1440), 18, 215,
               1080, 90, IM_COL32(160, 160, 160, 180));
   d->AddRectFilled(p(0, 1220), p(2560, 1440), IM_COL32(0, 0, 0, 145));
@@ -301,5 +301,118 @@ void DrawMatchupLoading(double elapsed) {
       gpu::g_capture = true;
     }
   }
+}
+void DrawLoadoutCard(const std::array<MatchupSide,2>& sides, const LoadoutScore& score, double elapsed) {
+  if (!gpu::g_ui_image) return;
+  const auto root = Assets();
+  const auto atlas = gpu::g_ui_image(overhaul::UiAsset(root / "loadout-atlas.png"));
+  auto* draw = ImGui::GetBackgroundDrawList();
+  const auto screen = ImGui::GetIO().DisplaySize;
+  const float scale = std::min(screen.x / 1672.f, screen.y / 941.f);
+  const float ox = (screen.x - 1672 * scale) / 2, oy = (screen.y - 941 * scale) / 2;
+  auto p = [&](float x, float y) { return ImVec2(ox + x * scale, oy + y * scale); };
+  auto rect = [&](float x, float y, float w, float h, ImU32 color) {
+    draw->AddRectFilled(p(x,y), p(x+w,y+h), color);
+  };
+  auto image = [&](const std::filesystem::path& path, float x, float y, float w, float h) {
+    if (const auto texture = gpu::g_ui_image(overhaul::UiAsset(path)))
+      draw->AddImage((ImTextureID)texture, p(x,y), p(x+w,y+h));
+  };
+  auto uv = [](float x, float y) { return ImVec2(x / 1774.f, y / 887.f); };
+  auto region = [&](float x, float y, float w, float h, float u, float v, float uw, float vh,
+                    ImU32 tint = IM_COL32_WHITE) {
+    if (atlas)
+      draw->AddImage((ImTextureID)atlas, p(x,y), p(x+w,y+h), uv(u,v), uv(u+uw,v+vh), tint);
+  };
+  auto text = [&](UiFont kind, const std::string& value, float size, float cx, float y,
+                  float maxWidth, ImU32 color = IM_COL32_WHITE) {
+    auto* font = Font(kind);
+    if (!font || value.empty()) return;
+    float width = font->CalcTextSizeA(size * scale, 100000, 0, value.c_str()).x / scale;
+    const float fit = std::min(1.f, maxWidth / std::max(width, 1.f));
+    UiText(draw, kind, size * scale * fit, p(cx - width * fit / 2, y),
+           color, value.c_str(), maxWidth * scale);
+  };
+  static const auto colors = [] {
+    std::unordered_map<std::string, unsigned> result;
+    std::istringstream source(overhaul::Text(Assets() / "team-colors.tsv"));
+    std::string line;
+    while (std::getline(source, line))
+      if (const auto tab = line.find('\t'); tab != std::string::npos)
+        result[line.substr(0,tab)] = std::strtoul(line.c_str()+tab+1, nullptr, 16);
+    return result;
+  }();
+  constexpr ImU32 red = IM_COL32(238, 14, 40, 255);
+  constexpr ImU32 silver = IM_COL32(189, 195, 202, 255);
+  UiMenuBackdrop(draw,screen,UiBackdrop::Steel);
+  region(0,0,1672,941, 877,612,422,150, IM_COL32(255,255,255,125));
+  rect(0,0,1672,94,IM_COL32(9,13,17,180));
+  rect(0,93,1672,2,IM_COL32(158,165,173,145));
+  UiBrandLogo(draw,p(68,18),p(298,94));
+  text(UiFont::Prompt,"G A M E   L O A D I N G",24,1440,30,340,silver);
+
+  const float progress = float(std::fmod(std::max(elapsed, 0.0) * .58, 1.0));
+  auto indicator = [&](float x,float y,float w,float h) {
+    rect(x,y,w,h,IM_COL32(34,40,46,255));
+    const float left = x + progress * (w - w * .25f);
+    rect(left,y,w*.25f,h,red);
+  };
+  indicator(1326,65,228,4);
+
+  std::array<ImU32,2> teamColors;
+  for (int side = 0; side < 2; ++side) {
+    const auto& team = sides[side];
+    const auto color = colors.find(team.name);
+    const unsigned rgb = color == colors.end() ? (side ? 0x9A4209 : 0x03417E) : color->second;
+    teamColors[side] = IM_COL32((rgb>>16)&255,(rgb>>8)&255,rgb&255,255);
+    const float x = side ? 915.f : 78.f;
+    const float cx = x + 335;
+    const auto a = p(x+76,135), b = p(x+677,135), c = p(x+600,362), e = p(x,362);
+    draw->AddQuadFilled(a,b,c,e,teamColors[side]);
+    if (atlas)
+      draw->AddImageQuad((ImTextureID)atlas,a,b,c,e,uv(side ? 687.f : 92.f,231),
+                         uv(side ? 1116.f : 536.f,231),uv(side ? 1116.f : 536.f,376),
+                         uv(side ? 687.f : 92.f,376),IM_COL32(255,255,255,105));
+    draw->AddLine(a,b,silver,1.5f*scale);
+    draw->AddLine(e,c,silver,1.5f*scale);
+    draw->AddLine(side ? a : b,side ? e : c,red,5*scale);
+    image(overhaul::TeamLogo(team.name,team.nickname),cx-129,117,258,258);
+    const auto digit = team.rank.find_first_of("123456789");
+    const std::string rank = digit == std::string::npos ? "NR" : "#" + team.rank.substr(digit);
+    const auto xRank = side ? x+109 : x+125;
+    rect(xRank-35,158,70,34,IM_COL32(9,13,17,225));
+    text(UiFont::Prompt,rank,22,xRank,162,64);
+    text(UiFont::TeamDisplay,team.name,51,cx,375,536);
+    rect(cx-37,433,74,5,red);
+  }
+  text(UiFont::TeamDisplay,"VS",66,835,220,120,silver);
+
+  // The atlas contains the borders and column headings. Overlay the live rows
+  // at the source grid's cell centers to preserve blank and extra-inning cells.
+  constexpr float gx=385, gy=480, gw=902, gh=163;
+  region(gx,gy,gw,gh, 9,405,692,127);
+  if (!atlas) {
+    rect(gx,gy,gw,gh,IM_COL32(16,20,24,255));
+    draw->AddRect(p(gx,gy),p(gx+gw,gy+gh),silver);
+  }
+  constexpr float centers[] = {74,154,199,244,288,333,378,422,466,511,571,618,666};
+  for (int side=0; side<2; ++side) {
+    const float y = gy+56+side*51;
+    rect(gx+7,y+1,152,48,teamColors[side]);
+    for (int col=0; col<13; ++col) {
+      const float x = gx + (centers[col]-9)/692*gw;
+      auto value = score[side][col];
+      if (!col && value.empty()) value = sides[side].name;
+      text(UiFont::TeamDisplay,value,34,x,y+7,col ? 49.f : 140.f);
+      if (!atlas && side==0 && col)
+        text(UiFont::Prompt,col<10 ? std::to_string(col) : std::string(1,"RHE"[col-10]),
+             25,x,gy+13,49,silver);
+    }
+  }
+
+  UiBrandLogo(draw,p(668,684),p(1004,796));
+  text(UiFont::Prompt,"L O A D I N G . . .",25,836,827,450,silver);
+  draw->AddRect(p(533,870),p(1139,886),silver,0,0,scale);
+  indicator(536,873,600,10);
 }
 } // namespace game

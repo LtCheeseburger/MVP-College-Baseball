@@ -22,6 +22,7 @@ namespace fs = std::filesystem;
 namespace kernel::mods {
 static std::recursive_mutex g_mount_mutex;
 std::unique_lock<std::recursive_mutex> Lock() { return std::unique_lock<std::recursive_mutex>(g_mount_mutex); }
+std::unique_lock<std::recursive_mutex> TryLock() { return std::unique_lock<std::recursive_mutex>(g_mount_mutex,std::try_to_lock); }
 
 namespace {
 
@@ -525,6 +526,13 @@ void Init(const fs::path& game_dir, const fs::path& mods_dir, const std::vector<
     // mods.json order first; anything else found in the folder is off until the launcher turns it on
     std::vector<fs::path> wanted;
     std::error_code ec;
+    // Required data is not an optional safe-mode toggle. Even --no-mods keeps
+    // valid required packages; the game checks its required IDs before boot.
+    if (fs::is_directory(mods_dir, ec)) for (const auto& entry : fs::directory_iterator(mods_dir, ec)) {
+        bool folder = entry.is_directory(ec) && fs::exists(entry.path() / "mod.json", ec);
+        bool file = entry.is_regular_file(ec) && Lower(entry.path().extension().string()) == ".mvpmod";
+        if (folder || file) if (auto mod = OpenMod(entry.path(), xbe_sha1); mod && mod->meta.Flag("required")) wanted.push_back(entry.path());
+    }
     if (!none && fs::is_directory(mods_dir, ec)) {
         std::map<std::string, fs::path> found;  // id -> path
         for (auto& e : fs::directory_iterator(mods_dir, ec)) {
@@ -555,7 +563,10 @@ void Init(const fs::path& game_dir, const fs::path& mods_dir, const std::vector<
             if (!listed.count(id)) LOGR("mods: %s found, off until it's enabled", id.c_str());
     }
     // Safe mode wins over both the saved mod list and explicit --mod arguments.
-    if (!none) for (const fs::path& p : extra) wanted.push_back(p);
+    for (const fs::path& p : extra) {
+        if(!none)wanted.push_back(p);
+        else if(auto mod=OpenMod(p,xbe_sha1);mod && mod->meta.Flag("required"))wanted.push_back(p);
+    }
 
     std::set<std::string> ids;
     for (const fs::path& p : wanted) {
@@ -622,6 +633,10 @@ void Init(const fs::path& game_dir, const fs::path& mods_dir, const std::vector<
 bool Active() {
     auto mount_guard = Lock(); return !g_mods.empty(); }
 
+bool Required(const std::string& id) {
+    auto guard=Lock();for(const auto& mod:g_mods)if(mod->id==id)return mod->meta.Flag("required") && mod->affects_saves;
+    return false;
+}
 bool Enabled(const std::string& id) {
     auto mount_guard = Lock();
     return std::any_of(g_mods.begin(), g_mods.end(), [&](auto& m) { return m->id == id; });
@@ -724,6 +739,14 @@ bool FromMod(const fs::path& p) {
     auto mount_guard = Lock();
     std::string rel;
     return Rel(p, rel) && g_files.count(rel);
+}
+
+bool FromMod(const fs::path& p, const std::string& id) {
+    auto mount_guard = Lock();
+    std::string rel;
+    if (!Rel(p, rel)) return false;
+    auto it = g_files.find(rel);
+    return it != g_files.end() && it->second.mod->id == id;
 }
 
 bool Packed(const fs::path& p) {

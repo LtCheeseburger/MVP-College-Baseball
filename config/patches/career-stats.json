@@ -1,0 +1,229 @@
+{
+  "format": 1,
+  "includes": [
+    "game/expansion.h"
+  ],
+  "condition": "expansion::Active()",
+  "edits": [
+    {
+      "at": "004B0A4D",
+      "old": "0xCu",
+      "new": "expansion::kConferenceRows",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004B0A48",
+          "translation_sha256": "c00264dafa72dd9b275d1c25b02b7a3ce104e2926747c74de4b362dd9ad23b82",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004B0A57",
+      "old": "0x34F0u",
+      "new": "(expansion::CareerConferenceRows(ctx.eax)-ctx.eax+0u)",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004B0A48",
+          "translation_sha256": "385275dc19327edd7cabd5e7298a03ea0535149e6e70127f43d81a10d474789b",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0053EE36",
+      "old": "0x34F0u",
+      "new": "(expansion::CareerConferenceRows(ctx.esi)-ctx.esi+0u)",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "0053E970",
+          "translation_sha256": "50509f1893482d0651699d03990204a553273093151b71cc3be028caf4371d25",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "005527E4",
+      "old": "0x34F0u",
+      "new": "(expansion::CareerConferenceRows(ctx.esi)-ctx.esi+0u)",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00552730",
+          "translation_sha256": "f06dcf5cf11b2ed7fdb6d66c04ef750897848c238138917149828a69c2048020",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00552C56",
+      "old": "0x34F0u",
+      "new": "(expansion::CareerConferenceRows(ctx.esi)-ctx.esi+0u)",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00552B80",
+          "translation_sha256": "f06dcf5cf11b2ed7fdb6d66c04ef750897848c238138917149828a69c2048020",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00552EF6",
+      "old": "0x34F0u",
+      "new": "(expansion::CareerConferenceRows(ctx.esi)-ctx.esi+0u)",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00552E20",
+          "translation_sha256": "f06dcf5cf11b2ed7fdb6d66c04ef750897848c238138917149828a69c2048020",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00553413",
+      "old": "0x34F4u",
+      "new": "(expansion::CareerConferenceRows(ctx.ebp)-ctx.ebp+4u)",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "005533E0",
+          "translation_sha256": "302ac3699edd6cb378eb8d77d25242a881a166355e055e349ecf30970c23a78d",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "005534AE",
+      "old": "0x34F0u",
+      "new": "(expansion::CareerConferenceRows(ctx.ebp)-ctx.ebp+0u)",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "005533E0",
+          "translation_sha256": "93c01b459dae83674fc419e9bfc8a932f5b1bffac764aa950fffc7b05633f0a2",
+          "occurrences": 1
+        },
+        {
+          "function": "0055347D",
+          "translation_sha256": "93c01b459dae83674fc419e9bfc8a932f5b1bffac764aa950fffc7b05633f0a2",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "005535A5",
+      "old": "0x34F0u",
+      "new": "(expansion::CareerConferenceRows(ctx.ebp)-ctx.ebp+0u)",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "005533E0",
+          "translation_sha256": "93c01b459dae83674fc419e9bfc8a932f5b1bffac764aa950fffc7b05633f0a2",
+          "occurrences": 1
+        },
+        {
+          "function": "0055347D",
+          "translation_sha256": "93c01b459dae83674fc419e9bfc8a932f5b1bffac764aa950fffc7b05633f0a2",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00560EDE",
+      "old": "0xCu",
+      "new": "expansion::kConferenceRows",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00560E80",
+          "translation_sha256": "c00264dafa72dd9b275d1c25b02b7a3ce104e2926747c74de4b362dd9ad23b82",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00560F1C",
+      "old": "0x34F0u",
+      "new": "(expansion::CareerConferenceRows(ctx.esi)-ctx.esi+0u)",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00560E80",
+          "translation_sha256": "5d88503518015772a1b3842a2b0b50d648314de710a048ff10411c7f3742a716",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0056195A",
+      "old": "0x34F0u",
+      "new": "(expansion::CareerConferenceRows(ctx.esi)-ctx.esi+0u)",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "005613A0",
+          "translation_sha256": "f06dcf5cf11b2ed7fdb6d66c04ef750897848c238138917149828a69c2048020",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0056209A",
+      "old": "0x34F0u",
+      "new": "(expansion::CareerConferenceRows(ctx.esi)-ctx.esi+0u)",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00561AE0",
+          "translation_sha256": "f06dcf5cf11b2ed7fdb6d66c04ef750897848c238138917149828a69c2048020",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "003163AF",
+      "old": "0xCu",
+      "new": "expansion::kConferenceRows",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00316340",
+          "translation_sha256": "c00264dafa72dd9b275d1c25b02b7a3ce104e2926747c74de4b362dd9ad23b82",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "003163B6",
+      "old": "0x34F0u",
+      "new": "(expansion::CareerConferenceRows(ctx.esi)-ctx.esi+0u)",
+      "note": "Career Stats conference rows: initialize, access and destroy all expanded conferences",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00316340",
+          "translation_sha256": "5d88503518015772a1b3842a2b0b50d648314de710a048ff10411c7f3742a716",
+          "occurrences": 1
+        }
+      ]
+    }
+  ]
+}

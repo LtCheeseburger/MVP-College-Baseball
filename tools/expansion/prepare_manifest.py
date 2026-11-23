@@ -26,6 +26,8 @@ def main():
     funcs = {}
     for path in sorted(generated.glob('x86_recomp.*.cpp')):
         text = path.read_text()
+        if re.search(r'^X86_FUNC\(sub_[0-9A-F]{8}_exp\)', text, re.M):
+            raise ValueError('Manifest input is already patched; regenerate the untouched translation first: ' + str(path))
         for match in re.finditer(r'^X86_FUNC\(__imp__sub_([0-9A-F]{8})\) \{$', text, re.M):
             end = text.index('\n}\n', match.start()) + 3
             funcs[match[1]] = text[match.start():end]
@@ -46,7 +48,18 @@ def main():
             expected = original[name] if edit.get('all') else original[name][a:b]
             body = funcs[name]
             a, b = span(body, at)
-            if 'after' in edit:
+            if 'replacement' in edit:
+                authored = '\t' + edit['replacement'] + '\n'
+                if 'guard' in edit:
+                    if not isinstance(edit['guard'], str) or not edit['guard']:
+                        raise ValueError('Invalid instruction guard')
+                    authored = '\tif (' + edit['guard'] + ') {\n' + authored + '\t} else {\n' + body[a:b] + '\t}\n'
+                body = body[:a] + authored + body[b:]
+                count = 1
+            elif 'before' in edit:
+                count = 1
+                body = body[:a] + '\t' + edit['before'] + '\n' + body[a:]
+            elif 'after' in edit:
                 count = 1
                 body = body[:b] + '\t' + edit['after'] + '\n' + body[b:]
             elif edit.get('all'):

@@ -35,7 +35,6 @@
 namespace {
 
 constexpr uint32_t kLeagueDb = 0x6C6540, kHolder = 0x6DC59C, kRegistry = 0x6DC5A0, kSeasonMgr = 0x6DC5A8;
-constexpr uint32_t kSchedules = 0x25;                  // holder schedules at +0xC + i*4
 constexpr uint32_t kFirstNcaa = 27, kCwsFinal = 36;    // NCAA sites 27-34, CWS 35, CWS final 36
 constexpr uint32_t kRecordBytes = 20, kStatusFinal = 3;
 constexpr uint32_t kTeamRanked = 25;
@@ -132,7 +131,7 @@ int CollectGames(std::vector<Team>& teams, const std::vector<int>& index) {
         return id < index.size() ? index[id] : -1;
     };
     int finals = 0;
-    for (uint32_t i = 0; i < kSchedules; i++) {
+    for (uint32_t i = 0; i < phase9::ScheduleSlots(); i++) {
         uint32_t s = kernel::R32(holder + 0xC + 4 * i);
         if (!s) continue;
         uint32_t arr = kernel::R32(s + 0x28), n = kernel::R32(s + 0x24);
@@ -172,7 +171,7 @@ std::vector<uint32_t> RunPoll(X86Context& ctx) {
     std::vector<int> index(expansion::kDbTeams + 1, -1);
     for (uint32_t s = 0; s < regCount; s++) {
         uint32_t id = kernel::R32(regIds + s * 4);
-        if (!id || id > expansion::kDbTeams || index[id] >= 0) continue;
+        if (!id || id >= expansion::kDbTeams || index[id] >= 0 || !expansion::SchoolActive(id)) continue;
         index[id] = int(teams.size());
         Team t;
         t.id = id;

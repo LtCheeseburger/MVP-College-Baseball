@@ -13,13 +13,15 @@ $workspace = if ((Split-Path $parent -Leaf) -eq 'MVP06-Base') { Split-Path $pare
 if (-not $Base) { $Base = Join-Path $workspace 'MVP06-Base/MVP06-XBERecomp' }
 if (-not $Dev) { $Dev = Join-Path $workspace 'MVP06-XBERecomp' }
 # Relative paths, applied identically in both directions. No general *.cpp or sdk exclusions.
-$excludedRoots = @('.git','assets','generated','out','build','logs','hdd','CrashDumps','.vs','.vscode','.idea','.local','backups')
+$excludedRoots = @('.git','assets','generated','out','build','logs','hdd','CrashDumps','.vs','.vscode','.idea','.local','backups','__pycache__')
 $excludedPaths = @('launcher/bin','launcher/obj','docs/m0',
     'external/MVP-Workshop/src/MVPWorkshop.Core/bin',
     'external/MVP-Workshop/src/MVPWorkshop.Core/obj',
     'tools/MvpProject/bin','tools/MvpProject/obj',
     'tools/tests/Phase3/bin','tools/tests/Phase3/obj',
-    'tools/tests/Phase4/bin','tools/tests/Phase4/obj')
+    'tools/tests/Phase4/bin','tools/tests/Phase4/obj',
+    'tools/tests/Phase8/bin','tools/tests/Phase8/obj',
+    'tools/phase9/__pycache__')
 $excludedSuffixes = @('.zip','.zip.sha256','.pdb','.exe','.dll','.obj','.o')
 $textExtensions = @('.cpp','.c','.h','.hpp','.inl','.inc','.cmake','.txt','.md','.json','.toml','.yaml','.yml','.xml','.cs','.csproj','.props','.targets','.sln','.ps1','.bat','.cmd','.py','.sh','.rc','.csv','.tsv','.gitignore','.gitattributes','.gitmodules')
 function Get-Tree($root) {

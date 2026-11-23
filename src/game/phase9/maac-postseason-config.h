@@ -1,0 +1,2 @@
+#pragma once
+namespace mvp::maac_postseason { struct Profile {uint32_t key,regular,slot,start,field,games,capacity,initial[11][2],days[11],minutes[11];}; inline constexpr Profile kProfiles[]={{23u,45u,64u,29001u,6u,11u,14u,{{2u,5u},{3u,4u},{4294967295u,4294967295u},{4294967295u,4294967295u},{4294967295u,4294967295u},{4294967295u,4294967295u},{4294967295u,4294967295u},{4294967295u,4294967295u},{4294967295u,4294967295u},{4294967295u,4294967295u},{4294967295u,4294967295u}},{0u,0u,0u,0u,1u,1u,1u,2u,2u,3u,3u},{540u,720u,900u,1080u,540u,780u,1020u,660u,900u,660u,900u}}}; }

@@ -122,10 +122,17 @@ void ApplyNow() {
         GetMonitorInfoW(mon, &mi);
     }
     if (s.display_mode == DisplayMode::Windowed) {
-        RECT r{0, 0, LONG(out.width), LONG(out.height)};
+        const RECT& a = mi.rcWork;
+        RECT chrome{0,0,0,0};
+        AdjustWindowRect(&chrome, WS_OVERLAPPEDWINDOW, FALSE);
+        const LONG availableW=std::max<LONG>(1,a.right-a.left-(chrome.right-chrome.left)-32);
+        const LONG availableH=std::max<LONG>(1,a.bottom-a.top-(chrome.bottom-chrome.top)-32);
+        // The output/render setting remains independent of the presentation
+        // window: fit the desktop and preserve the requested aspect ratio.
+        const double fit=std::min({1.0,double(availableW)/out.width,double(availableH)/out.height});
+        RECT r{0,0,LONG(out.width*fit),LONG(out.height*fit)};
         AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
         int w = r.right - r.left, h = r.bottom - r.top;
-        const RECT& a = mi.rcWork;
         SetWindowLongPtrW(g_hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | visible);
         SetWindowPos(g_hwnd, HWND_NOTOPMOST, a.left + (a.right - a.left - w) / 2, a.top + (a.bottom - a.top - h) / 2, w, h,
                      SWP_FRAMECHANGED);
@@ -275,6 +282,11 @@ std::recursive_mutex& UiLock() {
 }
 
 bool Focused() { return g_focused; }
+void SaveBlocked(const std::string& reason) {
+    static std::mutex mutex;static std::string shown;
+    std::lock_guard lock(mutex);if(shown==reason)return;shown=reason;
+    MessageBoxA(nullptr,reason.c_str(),"Save league version mismatch",MB_OK|MB_ICONWARNING);
+}
 bool MuteNow() { return Get().mute_unfocused && !g_focused; }
 
 void ApplyDisplay() { PostMessageW(g_hwnd, kApplyDisplay, 0, 0); }
@@ -363,6 +375,14 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
         }
     }
 
+    const char* replacement = app::kGame.required_mod_replacement;
+    const bool replacement_loaded = replacement && kernel::mods::Required(replacement);
+    for (const auto& id : app::kGame.required_mods) if (!replacement_loaded && !kernel::mods::Required(id) &&
+        !(dev::Env("MVP06_TEST_LEAGUE_FIXTURE") && kernel::mods::Required(id+"-test"))) {
+        std::string text = "The required league mod " + id + " is missing or could not be loaded. Repair the installation before starting. Your saves have not been changed.";
+        MessageBoxA(nullptr, text.c_str(), "Required league mod", MB_OK | MB_ICONERROR);
+        return 1;
+    }
     bool splash = app::OpenSplash(), handover = app::StartHandover();
 
     WNDCLASSEXW wc{sizeof(wc)};

@@ -1,5 +1,6 @@
 #include "core/dev_tools.h"
 #include "mvp_transition_ui.h"
+#include "ui_style.h"
 #include "overhaul.h"
 #include "app/app.h"
 #include "gpu/backend.h"
@@ -38,7 +39,7 @@ void DrawMvpTransition(){
   float logoAlpha=Ease((t-.12)/.2)*(1-Ease((t-1.20)/.22));
   float zoom=.94f+.06f*Ease((t-.1)/.7);
   float w=1480*zoom,h=490*zoom,cx=1280+offset*.20f,cy=690;
-  if(auto logo=gpu::g_ui_image(root/"lg27.png"))d->AddImage((ImTextureID)logo,p(cx-w/2,cy-h/2),p(cx+w/2,cy+h/2),{0,0},{1,1},IM_COL32(255,255,255,int(logoAlpha*255)));
+  UiBrandLogo(d,p(cx-w/2,cy-h/2),p(cx+w/2,cy+h/2),IM_COL32(255,255,255,int(logoAlpha*255)));
   d->AddRectFilled(p(cx-270,985),p(cx+270,994),IM_COL32(225,0,25,int(logoAlpha*255)));
   if(dev::Env("MVP06_TRACE_FE")){static double last=0;static int stage=0;if(last!=at){last=at;stage=0;}if((stage==0&&t>.48)||(stage==1&&t>1.40)){stage++;gpu::g_capture=true;}}
 }

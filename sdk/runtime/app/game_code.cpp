@@ -78,8 +78,7 @@ Progress g_progress;
 std::wstring g_failure;  // the step that failed, written by the build thread before it ends
 HWND g_window = nullptr;
 bool g_start = false;  // the player picked Start once the game was ready
-bool g_delete_compiler = false;  // ticked on the ready page
-uint64_t g_compiler_bytes = 0;
+
 constexpr UINT kBuildDone = WM_APP + 1;
 
 int64_t NowMs() {
@@ -113,7 +112,9 @@ std::vector<Image> Images() {
 
 fs::path WorkDir(const Image& image) { return CompilerDir() / "work" / image.exe; }
 fs::path CodeDll(const Image& image) { return ExeDir() / (image.exe + L".dll"); }
-fs::path StampFile(const Image& image) { return WorkDir(image) / "built.txt"; }
+fs::path StampFile(const Image& image) {
+    return WorkDir(image).parent_path() / (image.exe + L".built.txt");
+}
 std::wstring Quote(const fs::path& path) { return L"\"" + path.wstring() + L"\""; }
 fs::path CompileLog() { return UserDir() / "logs" / "compile.log"; }
 
@@ -133,6 +134,8 @@ struct Target {
 
 fs::path PatchDirectory(const Image& image) { return image.config.parent_path() / "patches"; }
 std::string PatchRevision(const Image& image) {
+    if (image.config.empty())
+        throw std::runtime_error("Compiler configuration is missing. Restore the compiler folder from the matching release.");
     auto config = toml::parse_file(image.config.string());
     if (auto* paths = config["patches"]["manifests"].as_array()) {
         for (const auto& entry : *paths) {
@@ -170,6 +173,7 @@ bool Current(const Target& target) {
     fs::file_time_type built = fs::last_write_time(CodeDll(*target.image), ec);
     if (ec) return false;
     std::ifstream f(StampFile(*target.image));
+    if (!f) f.open(WorkDir(*target.image) / "built.txt");  // builds from before automatic cleanup
     if (!f) {
         for (const auto& entry : fs::directory_iterator(PatchDirectory(*target.image), ec))
             if (entry.is_regular_file() && entry.last_write_time() > built) return false;
@@ -459,8 +463,24 @@ bool Link(const Target& target, Processes& run) {
         std::wstring hint = L" If the game is already running, close it, then start it again.";
         return RecordFailure(L"Linking " + dll + L" failed." + hint);
     }
-    std::ofstream(StampFile(image)) << target.stamp << "\n";
+    std::ofstream stamp(StampFile(image), std::ios::trunc);
+    stamp << target.stamp << '\n';
+    stamp.close();
+    if (!stamp) return RecordFailure(L"Saving the game code build stamp failed.");
     return true;
+}
+
+void CleanWork(const Image& image) {
+    const fs::path work = WorkDir(image);
+    // Clean only generated outputs. Keep the stamp, patch inputs and toolchain for future launches and rebuilds.
+    for (const auto& path : {CompilerDir(), work.parent_path(), work}) {
+        DWORD attributes = GetFileAttributesW(path.c_str());
+        if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & FILE_ATTRIBUTE_REPARSE_POINT)) return;
+    }
+    std::error_code ec;
+    fs::remove_all(work, ec);
+    if (ec) LOGE("Game code: cleaning generated compiler files failed: %s", ec.message().c_str());
+    else LOGR("Game code: cleaned generated compiler files for %ls", image.exe.c_str());
 }
 
 bool Build(std::vector<Target>& targets) {
@@ -472,6 +492,7 @@ bool Build(std::vector<Target>& targets) {
     g_progress.stage = Stage::Linking;
     for (const Target& target : targets)
         if (!Link(target, run)) return false;
+    for (const Target& target : targets) CleanWork(*target.image);
     return true;
 }
 
@@ -553,7 +574,6 @@ struct Layout {
     RECT bottom;
     RECT start;
     RECT exit;
-    RECT delete_toggle;
 };
 
 Layout Arrange(const RECT& client, int unit) {
@@ -565,25 +585,16 @@ Layout Arrange(const RECT& client, int unit) {
     l.bottom = {l.bar.left, l.bar.bottom + unit / 2, l.bar.right, l.bar.bottom + unit / 2 + unit * 2};
     l.exit = {l.bottom.right - unit * 8, l.bottom.top, l.bottom.right, l.bottom.bottom};
     l.start = {l.exit.left - unit * 9, l.bottom.top, l.exit.left - unit, l.bottom.bottom};
-    l.delete_toggle = {l.bottom.left, l.bottom.top, l.start.left - unit, l.bottom.bottom};
     return l;
 }
 
 // the ready page's buttons, with the controller button that presses each
-void PaintChoices(HDC dc, const Layout& l, int unit) {
+void PaintChoices(HDC dc, const Layout& l) {
     FillBox(dc, l.start, kBarFull);
     DrawLine(dc, l.start, L"Start (A)", kBackground, DT_CENTER);
     FillBox(dc, l.exit, kBarEmpty);
     DrawLine(dc, l.exit, L"Exit (B)", kText, DT_CENTER);
-    int middle = (l.delete_toggle.top + l.delete_toggle.bottom) / 2;
-    RECT box{l.delete_toggle.left, middle - unit / 2, l.delete_toggle.left + unit, middle + unit / 2};
-    FillBox(dc, box, kBarEmpty);
-    if (g_delete_compiler) InflateRect(&box, -unit / 4, -unit / 4);
-    if (g_delete_compiler) FillBox(dc, box, kBarFull);
-    RECT label = l.delete_toggle;
-    label.left += unit * 3 / 2;
-    std::wstring megabytes = std::to_wstring(g_compiler_bytes >> 20);
-    DrawLine(dc, label, L"Delete the compiler files, " + megabytes + L" MB (X)", kText, DT_LEFT);
+
 }
 
 void Paint(HDC dc, const RECT& client, int unit) {
@@ -599,7 +610,7 @@ void Paint(HDC dc, const RECT& client, int unit) {
     filled.right = l.bar.left + LONG(float(l.bar.right - l.bar.left) * Fraction());
     FillBox(dc, filled, kBarFull);
     if (ready) {
-        PaintChoices(dc, l, unit);
+        PaintChoices(dc, l);
         return;
     }
     DrawLine(dc, l.bottom, std::to_wstring(int(Fraction() * 100.0f)) + L"%", kDim, DT_LEFT);
@@ -627,31 +638,13 @@ void PaintWindow(HWND hwnd) {
     EndPaint(hwnd, &ps);
 }
 
-// what the compiler folder holds, shown beside the delete box
-uint64_t CompilerBytes() {
-    uint64_t bytes = 0;
-    std::error_code ec;
-    for (auto& e : fs::recursive_directory_iterator(CompilerDir(), ec))
-        if (e.is_regular_file(ec)) bytes += e.file_size(ec);
-    return bytes;
-}
-
-// the game runs from the DLLs alone; a later release brings the compiler again
-void DeleteCompiler() {
-    std::error_code ec;
-    fs::remove_all(CompilerDir(), ec);
-    if (ec) LOGE("Game code: deleting the compiler folder failed: %s", ec.message().c_str());
-    else LOGR("Game code: compiler folder deleted");
-}
-
 void CloseWindowWith(HWND hwnd, bool start) {
     g_start = start;
-    if (g_progress.stage == Stage::Ready && g_delete_compiler) DeleteCompiler();
     DeleteObject(reinterpret_cast<HFONT>(GetWindowLongPtrW(hwnd, GWLP_USERDATA)));
     DestroyWindow(hwnd);
 }
 
-// once ready: Start or Enter starts the game, Exit, Escape or the close button leaves, Space ticks the delete box
+// once ready: Start or Enter starts the game, Exit, Escape or the close button leaves
 void OnClick(HWND hwnd, LPARAM lp) {
     if (g_progress.stage != Stage::Ready) return;
     RECT client;
@@ -660,17 +653,15 @@ void OnClick(HWND hwnd, LPARAM lp) {
     POINT at{short(LOWORD(lp)), short(HIWORD(lp))};
     if (PtInRect(&l.start, at)) CloseWindowWith(hwnd, true);
     else if (PtInRect(&l.exit, at)) CloseWindowWith(hwnd, false);
-    else if (PtInRect(&l.delete_toggle, at)) g_delete_compiler = !g_delete_compiler;
 }
 
-// a controller's A starts, B leaves and X ticks the delete box, once ready; on the press, not the hold
+// a controller button acts on the press once ready
 void PollController(HWND hwnd) {
     static uint16_t held = 0;
     uint16_t now = input::HeldOnAnyController();
     uint16_t pressed = now & ~held;
     held = now;
     if (g_progress.stage != Stage::Ready) return;
-    if (pressed & XINPUT_GAMEPAD_X) g_delete_compiler = !g_delete_compiler;
     if (pressed & XINPUT_GAMEPAD_A) CloseWindowWith(hwnd, true);
     else if (pressed & XINPUT_GAMEPAD_B) CloseWindowWith(hwnd, false);
 }
@@ -691,7 +682,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             OnClick(hwnd, lp);
             return 0;
         case WM_KEYDOWN:
-            if (ready && wp == VK_SPACE) g_delete_compiler = !g_delete_compiler;
             if (ready && (wp == VK_RETURN || wp == VK_ESCAPE)) CloseWindowWith(hwnd, wp == VK_RETURN);
             InvalidateRect(hwnd, nullptr, FALSE);
             return 0;
@@ -709,7 +699,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 CloseWindowWith(hwnd, false);  // failed or stopped; ready stays up for the player's pick
                 return 0;
             }
-            g_compiler_bytes = CompilerBytes();
             FlashWindow(hwnd, TRUE);
             return 0;
     }

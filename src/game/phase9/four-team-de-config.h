@@ -1,0 +1,2 @@
+#pragma once
+namespace mvp::four_team_de { struct Profile {uint32_t key,regular,slot,start;}; inline constexpr Profile kProfiles[]={{2u,2u,17u,29001u},{15u,37u,56u,29001u},{21u,43u,62u,29002u},{22u,44u,63u,28989u}}; inline constexpr uint32_t kRoutes[7][2][2]={{{3u,0u},{2u,0u}},{{3u,1u},{2u,1u}},{{4u,0u},{4294967295u,2u}},{{5u,0u},{4u,1u}},{{5u,1u},{4294967295u,2u}},{{6u,0u},{6u,1u}},{{4294967295u,2u},{4294967295u,2u}}}; }

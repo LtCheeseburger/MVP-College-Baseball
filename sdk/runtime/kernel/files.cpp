@@ -14,12 +14,18 @@
 #include "kernel/modvfs.h"
 #include "kernel/xsh.h"
 #include "kernel/save_safety.h"
+#include "app/app.h"
 
 namespace fs = std::filesystem;
 
 namespace kernel {
 
 namespace {
+
+bool SaveAllowed(const fs::path& path,bool writing) {
+    std::string reason;if(saves::Allow(path,writing,reason))return true;
+    LOGE("save blocked: %s: %s",path.string().c_str(),reason.c_str());app::SaveBlocked(reason);return false;
+}
 
 std::mutex g_links_lock;
 std::map<std::string, std::string> g_links;    // upper case "\??\D:" -> "\Device\CdRom0"
@@ -378,6 +384,7 @@ KERNEL_EXPORT(190, NtCreateFile, 9) {
     Target t = Resolve(name, root);
     if (t.disc) return OpenOnDisc(t.entry, name, handle_out, iosb, disposition, options);
     const std::string& host = t.host;
+    if(!host.empty() && !SaveAllowed(host,disposition!=1 || (access&0x40000116u))) { IoStatus(iosb,kAccessDenied,0);return kAccessDenied; }
     bool trace = IsSavePath(name) || IsSavePath(host);
     if (trace) LOGD("save: create %s disposition %u options %08X", name.c_str(), disposition, options);
     if (host.empty()) {
@@ -493,6 +500,7 @@ KERNEL_EXPORT(202, NtOpenFile, 6) {
     Target t = Resolve(name, root);
     if (t.disc) return OpenOnDisc(t.entry, name, handle_out, iosb, 1, options);
     const std::string& host = t.host;
+    if(!host.empty() && !SaveAllowed(host,false)){IoStatus(iosb,kAccessDenied,0);return kAccessDenied;}
     std::error_code ec;
     if (!host.empty() && !(options & 1) && mods::FromMod(host)) return OpenLoose(host, name, handle_out, iosb);
     if (!host.empty() && !mods::Exists(host) && !IsSavePath(name)) return OpenLoose(host, name, handle_out, iosb);
@@ -653,6 +661,7 @@ KERNEL_EXPORT(226, NtSetInformationFile, 5) {
             std::string target = ReadAnsiString(in + 8);
             std::string host = ResolvePath(target, root);
             if (host.empty()) return kObjectPathNotFound;
+            if(!SaveAllowed(host,true))return kAccessDenied;
             if (IsSavePath(f->xbox) || IsSavePath(target))
                 LOGD("save: rename %s -> %s (replace %u)", f->host.string().c_str(), host.c_str(), G<uint8_t>(in));
             if (!G<uint8_t>(in) && fs::exists(host, ec)) return kObjectNameCollision;
@@ -751,7 +760,7 @@ KERNEL_EXPORT(207, NtQueryDirectoryFile, 10) {
                 if (WildMatch(pat, e.name)) f->disc_entries.push_back(&e);
         } else {
             for (const mods::Child& c : mods::List(f->host))
-                if (WildMatch(pat, c.name)) f->entries.push_back(c.name);
+                if (WildMatch(pat, c.name) && saves::ContinueEntryVisible(f->host,c.name)) f->entries.push_back(c.name);
         }
         f->next = 0;
         f->listed = true;
@@ -803,6 +812,7 @@ KERNEL_EXPORT(210, NtQueryFullAttributesFile, 2) {
 KERNEL_EXPORT(195, NtDeleteFile, 1) {
     std::string name = ReadAnsiString(R32(a[0] + 4));
     std::string host = ResolvePath(name, R32(a[0]));
+    if(!host.empty() && !SaveAllowed(host,true))return kAccessDenied;
     std::error_code ec;
     if (IsSavePath(host)) saves::BeforeChange(host, false);
     bool removed = !host.empty() && fs::remove(host, ec);

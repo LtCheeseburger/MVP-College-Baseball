@@ -72,8 +72,9 @@ void DrawBatterCard() {
         white = IM_COL32(245, 247, 250, 255);
   d->AddRectFilled(p(0, 0), p(1320, 228), IM_COL32(10, 14, 20, 250));
   d->AddRectFilled(p(0, 0), p(6, 228), primary);
-  d->AddRectFilled(p(6, 0), p(230, 228), IM_COL32(225, 230, 235, 255));
-  if (auto logo = gpu::g_ui_image(root / ("base-logos/" + c.logo + ".png")))
+  d->AddRectFilledMultiColor(p(6,0),p(230,228),primary,IM_COL32(14,20,30,255),IM_COL32(9,13,20,255),primary);
+  if(auto material=gpu::g_ui_image(root/"pause-v2/team-surface.png"))d->AddImage((ImTextureID)material,p(6,0),p(230,228),{0,0},{.5f,1},IM_COL32(255,255,255,24));
+  if (auto logo = gpu::g_ui_image(overhaul::TeamLogo(c.team,{},c.logo)))
     d->AddImage((ImTextureID)logo, p(35, 22), p(199, 186));
   auto text = [&](UiFont font, float size, float x, float y,
                   const std::string &value, float width) {
@@ -82,14 +83,15 @@ void DrawBatterCard() {
   d->AddRectFilledMultiColor(p(230, 0), p(1320, 83), primary,
                              IM_COL32(14, 19, 26, 255),
                              IM_COL32(14, 19, 26, 255), primary);
-  text(UiFont::TeamDisplay, 52, 258, 8, c.number, 95);
-  text(UiFont::TeamDisplay, 51, 360, 9, c.name, 810);
+  const bool generic=c.name==c.position+" #"+c.number;
+  if(generic)text(UiFont::TeamDisplay,51,270,9,c.name,900);
+  else {text(UiFont::TeamDisplay,45,258,12,"#"+c.number,98);text(UiFont::TeamDisplay,51,380,9,c.name,790);}
   text(UiFont::Heading, 44, 1220, 15, c.position, 78);
   d->AddLine(p(252, 84), p(1295, 84), IM_COL32(255, 255, 255, 55), s);
   if (!c.rank.empty()) {
-    auto rank = c.rank == "0" ? "NR" : "#" + c.rank;
-    UiText(d, UiFont::Prompt, 24 * s, p(90, 193), IM_COL32(30, 39, 49, 255),
-           rank.c_str(), 105 * s);
+    auto rank = c.rank == "0" ? "UNRANKED" : "TEAM RANK #" + c.rank;
+    UiText(d, UiFont::Prompt, 24 * s, p(22, 197), IM_COL32(220, 228, 239, 255),
+           rank.c_str(), 202 * s);
   }
   for (int i = 0; i < 3; ++i) {
     float x = 270 + i * 345;

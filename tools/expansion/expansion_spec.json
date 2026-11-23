@@ -1358,6 +1358,1162 @@
    "old": "0x190u",
    "new": "(0x190u * expansion::kSaveScale)",
    "note": "rollover lists (departures 1,500 x 16 bytes etc., 0x4D79A0): scaled with the player table"
+  },
+  {
+   "funcs": [
+    "00259E90"
+   ],
+   "note": "Expanded frontend texture directory: move image cache after 512 records",
+   "new": "0x79E0u",
+   "at": "00259E96",
+   "old": "0x30C0u"
+  },
+  {
+   "funcs": [
+    "00259E90"
+   ],
+   "note": "Expanded frontend texture directory: move image cache after 512 records",
+   "new": "0x79E4u",
+   "at": "00259E9C",
+   "old": "0x30C4u"
+  },
+  {
+   "funcs": [
+    "00259E90"
+   ],
+   "note": "Expanded frontend texture directory: move image cache after 512 records",
+   "new": "0x7808u",
+   "at": "00259EBE",
+   "old": "0x2EE8u"
+  },
+  {
+   "funcs": [
+    "0025A040"
+   ],
+   "note": "Expanded frontend texture directory: move image cache after 512 records",
+   "new": "0x7804u",
+   "at": "0025A040",
+   "old": "0x2EE4u"
+  },
+  {
+   "funcs": [
+    "00266B10"
+   ],
+   "note": "Expanded frontend texture directory: move image cache after 512 records",
+   "new": "0x7808u",
+   "at": "00259F65",
+   "old": "0x2EE8u"
+  },
+  {
+   "funcs": [
+    "00266B10"
+   ],
+   "note": "Expanded frontend texture directory: move image cache after 512 records",
+   "new": "0x79E4u",
+   "at": "00259F8C",
+   "old": "0x30C4u"
+  },
+  {
+   "funcs": [
+    "00267740"
+   ],
+   "note": "Expanded frontend texture directory: move image cache after 512 records",
+   "new": "0x780Cu",
+   "at": "00267757",
+   "old": "0x2EECu"
+  },
+  {
+   "funcs": [
+    "002677D0"
+   ],
+   "note": "Expanded frontend texture directory: move image cache after 512 records",
+   "new": "0x780Cu",
+   "at": "002677D3",
+   "old": "0x2EECu"
+  },
+  {
+   "funcs": [
+    "00272850"
+   ],
+   "note": "Expanded frontend texture directory: move image cache after 512 records",
+   "new": "0x79E4u",
+   "at": "00272856",
+   "old": "0x30C4u"
+  },
+  {
+   "funcs": [
+    "00272850"
+   ],
+   "note": "Expanded frontend texture directory: move image cache after 512 records",
+   "new": "0x780Cu",
+   "at": "0027285C",
+   "old": "0x2EECu"
+  },
+  {
+   "funcs": [
+    "00272970"
+   ],
+   "note": "Expanded frontend texture directory: move image cache after 512 records",
+   "new": "0x7800u",
+   "at": "00272976",
+   "old": "0x2EE0u"
+  },
+  {
+   "funcs": [
+    "002729F0"
+   ],
+   "note": "Expanded frontend texture directory: move image cache after 512 records",
+   "new": "0x79E4u",
+   "at": "002729F4",
+   "old": "0x30C4u"
+  },
+  {
+   "note": "Frontend directory supports 512 texture packs",
+   "new": "0x200u",
+   "at": "259EA5",
+   "old": "0xC8u"
+  },
+  {
+   "note": "Frontend directory supports 512 texture packs",
+   "new": "0x200u",
+   "at": "25A011",
+   "old": "0xC8u"
+  },
+  {
+   "note": "Frontend directory supports 512 texture packs",
+   "new": "0x200u",
+   "at": "2728BF",
+   "old": "0xC8u"
+  },
+  {
+   "note": "Frontend directory supports 512 texture packs",
+   "new": "0x200u",
+   "at": "272A00",
+   "old": "0xC8u"
+  },
+  {
+   "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+   "note": "Use separate expanded frontend texture directory",
+   "at": "259E90"
+  },
+  {
+   "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+   "note": "Use separate expanded frontend texture directory",
+   "at": "259FA0"
+  },
+  {
+   "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+   "note": "Use separate expanded frontend texture directory",
+   "at": "267740"
+  },
+  {
+   "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+   "note": "Use separate expanded frontend texture directory",
+   "at": "2677D0"
+  },
+  {
+   "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+   "note": "Use separate expanded frontend texture directory",
+   "at": "272850"
+  },
+  {
+   "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+   "note": "Use separate expanded frontend texture directory",
+   "at": "2728B0"
+  },
+  {
+   "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+   "note": "Use separate expanded frontend texture directory",
+   "at": "272970"
+  },
+  {
+   "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+   "note": "Use separate expanded frontend texture directory",
+   "at": "2729F0"
+  },
+  {
+   "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+   "note": "Use separate expanded frontend texture directory",
+   "at": "266B10"
+  },
+  {
+   "note": "Reset expanded frontend image cache",
+   "new": "expansion::LogoTable(ctx.ecx) +",
+   "at": "25A040",
+   "old": "ctx.ecx +"
+  },
+  {
+   "new": "(0xFFFFFF44u - phase9::ScheduleImporterExtra())",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004AF3D0",
+   "old": "0xFFFFFF44u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004DED89",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004DED92",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004DEDBD",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004DEDC6",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004DEE89",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004DEE92",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004DEECE",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004DEED7",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004DEF2A",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004DEF33",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004DEFE9",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004DEFF2",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleManagerBytes()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004E8B49",
+   "old": "0xA0u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004E8B80",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004E8B8F",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004E8D09",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004E8D16",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004E8E2D",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004E8E3A",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004E8F57",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004E8F64",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004E9087",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004E9094",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F10BF",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F10CC",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F12C1",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F12CE",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F3BE1",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F3BEE",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F4639",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F4646",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F504E",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F5057",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F5108",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F5115",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F5397",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F53A4",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F549A",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "004F54A7",
+   "old": "0x25u"
+  },
+  {
+   "new": "(0xC4u + phase9::ScheduleImporterExtra())",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "00500E85",
+   "old": "0xC4u"
+  },
+  {
+   "new": "(0xDCu + phase9::ScheduleImporterExtra())",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "00500EB3",
+   "old": "0xDCu"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "0050102A",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "00501030",
+   "old": "0x25u"
+  },
+  {
+   "new": "(0xE4u + phase9::ScheduleImporterExtra())",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "00501043",
+   "old": "0xE4u"
+  },
+  {
+   "new": "phase9::ScheduleManagerBytes()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "005010A5",
+   "old": "0xA0u"
+  },
+  {
+   "new": "phase9::ScheduleManagerBytes()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "005010B0",
+   "old": "0xA0u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "005010C3",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "005010CB",
+   "old": "0x25u"
+  },
+  {
+   "new": "(0xCCu + phase9::ScheduleImporterExtra())",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "005010DE",
+   "old": "0xCCu"
+  },
+  {
+   "new": "(0xC4u + phase9::ScheduleImporterExtra())",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "005010EE",
+   "old": "0xC4u"
+  },
+  {
+   "new": "(0xD0u + phase9::ScheduleImporterExtra())",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "005010FC",
+   "old": "0xD0u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "00097497",
+   "old": "0x25u"
+  },
+  {
+   "new": "phase9::ScheduleSlots()",
+   "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+   "at": "0009749D",
+   "old": "0x25u"
+  },
+  {
+   "after": "phase9::ObserveScheduleToken(ctx);",
+   "note": "Observe actual native ranked tokens only inside optional annual import",
+   "at": "500708"
+  },
+  {
+   "old": "0x7D6u",
+   "new": "phase9::FirstYear()",
+   "note": "Optional annual schedules start at their authored 2027 season",
+   "at": "501111"
+  },
+  {
+   "after": "ctx.eax=phase9::ScheduleAnchor(ctx.eax,ctx.ebp,X86_MEM32(ctx.esp+8)&0xffffu);",
+   "note": "Optional annual schedules preserve authored date anchor",
+   "at": "501063"
+  },
+  {
+   "after": "ctx.eax=phase9::RegularSlot(ctx.eax);",
+   "note": "Map new conference regular tables without colliding with postseason",
+   "at": "4F30FE"
+  },
+  {
+   "old": "ctx.ebx * 4u + 0x10u",
+   "new": "phase9::RegularSlot(ctx.ebx+1)*4u + 0xCu",
+   "note": "Map actual native conference ordinal to its optional expanded regular table",
+   "at": "500F31"
+  },
+  {
+   "note": "Compact native schedule tokens around retired/missing school slots",
+   "at": "500A40",
+   "after": "if (!phase9::ScheduleSchool(ctx.esi)) { ++ctx.esi; X86_MEM32(ctx.esp+0x44)+=0x30; if(ctx.esi<ctx.ebp) goto loc_00500A40; ctx.edi=phase9::CompactTokenBytes(ctx.edi,X86_MEM32(ctx.esp+0x10)); goto loc_00500A89; }"
+  },
+  {
+   "old": "X86_MEM32(ea)",
+   "new": "phase9::CompactTokenBytes(ctx.edi,X86_MEM32(ctx.esp+0x10u))",
+   "note": "Use actual active token bytes, retaining the original sentinel row",
+   "at": "500A85"
+  },
+  {
+   "old": "0x3u",
+   "at": "4EF1BC",
+   "note": "Optional modern dynasty: five classes, original behavior when disabled",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? 4u : 0x3u)"
+  },
+  {
+   "old": "0x3u",
+   "at": "4FFAF1",
+   "note": "Optional modern dynasty: five classes, original behavior when disabled",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? 4u : 0x3u)"
+  },
+  {
+   "old": "0x4u",
+   "at": "4E5080",
+   "note": "Optional modern dynasty: five classes, original behavior when disabled",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? 5u : 0x4u)"
+  },
+  {
+   "old": "0x7u",
+   "at": "81B0A",
+   "note": "Optional modern dynasty: five classes, original behavior when disabled",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? 4u : 0x7u)"
+  },
+  {
+   "old": "0x7u",
+   "at": "81B0F",
+   "note": "Optional modern dynasty: five classes, original behavior when disabled",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? 4u : 0x7u)"
+  },
+  {
+   "at": "87DA9",
+   "note": "No redshirt eligibility freeze in optional modern dynasty",
+   "before": "if(phase9::Enabled(phase9::Feature::ModernDynasty)) goto loc_00087DBF;"
+  },
+  {
+   "at": "4EF1D7",
+   "note": "Final class leaves regardless of legacy redshirt status",
+   "before": "if(phase9::Enabled(phase9::Feature::ModernDynasty)) goto loc_004EF1FB;"
+  },
+  {
+   "at": "4EF2E3",
+   "note": "Departure reason: graduate is the final class (graduated/drafted); seniors take the underclass transfer path",
+   "before": "if(phase9::Enabled(phase9::Feature::ModernDynasty)){ if(ctx.ebx!=4u) goto loc_004EF302; ctx.ebx=3u; }"
+  },
+  {
+   "at": "4D2183",
+   "note": "Prevent new redshirt roster status",
+   "after": "if(phase9::Enabled(phase9::Feature::ModernDynasty) && ctx.ecx==3) ctx.ecx=0;"
+  },
+  {
+   "at": "81B06",
+   "note": "Idempotently clear legacy redshirt when assigning class",
+   "before": "phase9::NormalizeClass(ctx.ecx,ctx.eax,true);"
+  },
+  {
+   "at": "81C5C",
+   "note": "Convert consumed legacy redshirt eligibility before status setter",
+   "before": "phase9::NormalizeClass(ctx.ecx,ctx.eax,false);"
+  },
+  {
+   "at": "81C5C",
+   "note": "Disallow assigning new redshirt flag",
+   "after": "if(phase9::Enabled(phase9::Feature::ModernDynasty)) ctx.esi=0;"
+  },
+  {
+   "old": "X86_MEM32(ea)",
+   "at": "855CC",
+   "note": "Five native abbreviated class labels",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? phase9::ClassLabel(ctx.eax,true) : X86_MEM32(ea))"
+  },
+  {
+   "old": "X86_MEM32(ea)",
+   "at": "855D8",
+   "note": "Five native full class labels",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? phase9::ClassLabel(ctx.ecx,false) : X86_MEM32(ea))"
+  },
+  {
+   "at": "531B74",
+   "note": "Remove redshirt action through original menu removal branch",
+   "before": "if(phase9::Enabled(phase9::Feature::ModernDynasty)) goto loc_00531B15;"
+  },
+  {
+   "at": "573F5D",
+   "note": "Add graduate class using original dropdown API",
+   "before": "phase9::AddGraduateOption(ctx);"
+  },
+  {
+   "new": "(phase9::Enabled(phase9::Feature::AnnualSchedules)?56u:30u)",
+   "old": "0x1Eu",
+   "at": "4F317B",
+   "note": "Optional formal conference schedules reserve their full per-team budget"
+  },
+  {
+   "note": "Preserve stable school IDs while excluding retired/null global schedule entries",
+   "at": "4E0940",
+   "before": "if (!phase9::ScheduleSchool(ctx.ebp)) goto loc_004E098B;"
+  },
+  {
+   "at": "11E683",
+   "before": "phase9::DynastySaveTick(ctx);",
+   "note": "Optional native autosave only after final result and stable dynasty menu"
+  },
+  {
+   "at": "4E990B",
+   "old": "0x60u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.edi+0x64u))*16u):0x60u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4E9968",
+   "old": "0x84u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionGames(base,X86_MEM32(ctx.edi+0x64u))*12u):0x84u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4DF7CD",
+   "old": "0x84u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionGames(base,X86_MEM32(ctx.esi+0x64u))*12u):0x84u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4DF9EE",
+   "old": "0x60u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.esi+0x64u))*16u):0x60u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4DFA45",
+   "old": "0x84u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionGames(base,X86_MEM32(ctx.esi+0x64u))*12u):0x84u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4DFBD0",
+   "old": "0x60u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.edi+0x64u))*16u):0x60u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4DFC31",
+   "old": "0x84u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionGames(base,X86_MEM32(ctx.edi+0x64u))*12u):0x84u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4E9D2C",
+   "old": "0x6u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.esi+0x64u))*1u):0x6u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4E9D39",
+   "old": "0x6u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.esi+0x64u))*1u):0x6u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4E9F7F",
+   "old": "0x6u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.esi+0x64u))*1u):0x6u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4E9F8A",
+   "old": "0x6u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.esi+0x64u))*1u):0x6u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4EA000",
+   "before": "const uint32_t phase9_field=phase9::Enabled(phase9::Feature::Competition)?phase9::CompetitionField(base,X86_MEM32(ctx.ecx+0x64u)):6u;"
+  },
+  {
+   "at": "4EA057",
+   "old": "0x6u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?phase9_field:0x6u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4EA067",
+   "old": "0x6u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?phase9_field:0x6u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4F0B49",
+   "old": "0xEu",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?phase9::CompetitionCapacity(ctx.eax):0xEu)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4F0BAA",
+   "old": "0xBu",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?phase9::CompetitionGames(base,ctx.esi):0xBu)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4F0BAC",
+   "old": "0x6u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?phase9::CompetitionField(base,ctx.esi):0x6u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4DFCD3",
+   "before": "phase9::CompetitionHome(ctx);",
+   "note": "Swap complete eight-byte native sides together, including participant bit 8"
+  },
+  {
+   "at": "4F6130",
+   "old": "0x44u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4F618B",
+   "old": "0x44u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4F6235",
+   "old": "0x44u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4F628D",
+   "old": "0x44u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4F63F5",
+   "old": "0x44u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4F64A5",
+   "old": "0x44u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+   "note": "Optional authored tournament shape; original owner when disabled"
+  },
+  {
+   "at": "4F6152",
+   "replacement": "X86_PUSH32(0x004F6157u); sub_004F0B20(ctx,base);",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)",
+   "note": "Standalone native generic bracket replaces legacy group-final class"
+  },
+  {
+   "at": "4F6257",
+   "replacement": "X86_PUSH32(0x004F625Cu); sub_004F0B20(ctx,base);",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)",
+   "note": "Standalone native generic bracket replaces legacy group-final class"
+  },
+  {
+   "at": "4F62AF",
+   "replacement": "X86_PUSH32(0x004F62B4u); sub_004F0B20(ctx,base);",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)",
+   "note": "Standalone native generic bracket replaces legacy group-final class"
+  },
+  {
+   "at": "4F6417",
+   "replacement": "X86_PUSH32(0x004F641Cu); sub_004F0B20(ctx,base);",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)",
+   "note": "Standalone native generic bracket replaces legacy group-final class"
+  },
+  {
+   "at": "4F61AD",
+   "replacement": "X86_PUSH32(0x004F61B2u); sub_004F0A00(ctx,base);",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F64C9",
+   "replacement": "X86_PUSH32(0x004F64CEu); sub_004F0B20(ctx,base);",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F6171",
+   "replacement": "/* Standalone bracket has no legacy group-final child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F617B",
+   "replacement": "/* Standalone bracket has no legacy group-final child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F61C9",
+   "replacement": "/* Standalone bracket has no legacy group-final child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F61D3",
+   "replacement": "/* Standalone bracket has no legacy group-final child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F6273",
+   "replacement": "/* Standalone bracket has no legacy group-final child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F627D",
+   "replacement": "/* Standalone bracket has no legacy group-final child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F62CB",
+   "replacement": "/* Standalone bracket has no legacy group-final child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F62D5",
+   "replacement": "/* Standalone bracket has no legacy group-final child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F6433",
+   "replacement": "/* Standalone bracket has no legacy group-final child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F643D",
+   "replacement": "/* Standalone bracket has no legacy group-final child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F64EC",
+   "replacement": "/* Generic hybrid owns its seed/descriptor child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F64EF",
+   "replacement": "/* Generic hybrid owns its seed/descriptor child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F64F1",
+   "replacement": "/* Generic hybrid owns its seed/descriptor child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F64F3",
+   "replacement": "/* Generic hybrid owns its seed/descriptor child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4DF707",
+   "old": "0x60u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.ebp+0x64u))*16u):0x60u)",
+   "note": "Native bracket readiness uses its complete dynamic field/descriptors"
+  },
+  {
+   "at": "4DF74D",
+   "old": "0x6u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.ebp+0x64u))*1u):0x6u)",
+   "note": "Native bracket readiness uses its complete dynamic field/descriptors"
+  },
+  {
+   "at": "4DF779",
+   "old": "0x6u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.ebp+0x64u))*1u):0x6u)",
+   "note": "Native bracket readiness uses its complete dynamic field/descriptors"
+  },
+  {
+   "at": "4DF75F",
+   "old": "0x84u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionGames(base,X86_MEM32(ctx.ebp+0x64u))*12u):0x84u)",
+   "note": "Native bracket readiness uses its complete dynamic field/descriptors"
+  },
+  {
+   "at": "4F64C2",
+   "replacement": "/* Generic constructor has two arguments. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F644D",
+   "old": "0x44u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)"
+  },
+  {
+   "at": "4F646F",
+   "replacement": "X86_PUSH32(0x004F6474u); sub_004F0B20(ctx,base);",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F648B",
+   "replacement": "/* Standalone Sun Belt bracket has no alternate child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4F6495",
+   "replacement": "/* Standalone Sun Belt bracket has no alternate child. */",
+   "guard": "phase9::Enabled(phase9::Feature::Competition)"
+  },
+  {
+   "at": "4FE95D",
+   "old": "0x3u",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?0x4u:0x3u)",
+   "note": "Optional four-team Patriot best-of-three semifinal/final"
+  },
+  {
+   "at": "4FEA9D",
+   "old": "ctx.ebp",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?(ctx.ebp+0x30u):ctx.ebp)",
+   "note": "Optional four-team Patriot best-of-three semifinal/final"
+  },
+  {
+   "at": "4F63D7",
+   "old": "ctx.ebp",
+   "new": "(phase9::Enabled(phase9::Feature::Competition)?2u:ctx.ebp)",
+   "note": "Optional four-team Patriot best-of-three semifinal/final"
+  },
+  {
+   "at": "4FEA73",
+   "before": "phase9::PatriotFourth(ctx);"
+  },
+  {
+   "at": "4F5789",
+   "before": "phase9::PatriotFixture(ctx);"
+  },
+  {
+   "at": "4FF0E6",
+   "before": "phase9::CompetitionRetry(ctx,ctx.ebp);"
+  },
+  {
+   "at": "5423C4",
+   "before": "phase9::StandingsBegin(ctx);"
+  },
+  {
+   "at": "54280C",
+   "before": "phase9::StandingsStore(ctx);"
+  },
+  {
+   "at": "55436F",
+   "after": "phase9::StandingsClear(ctx);"
+  },
+  {
+   "at": "542862",
+   "old": "0xCu",
+   "new": "(phase9::Enabled(phase9::Feature::StandingsAwards)?expansion::kStandingsRows:0xCu)",
+   "note": "Clear the complete owned row list when a scrolling conference changes"
+  },
+  {
+   "at": "542867",
+   "old": "0xCu",
+   "new": "(phase9::Enabled(phase9::Feature::StandingsAwards)?expansion::kStandingsRows:0xCu)",
+   "note": "Clear the complete owned row list when a scrolling conference changes"
+  },
+  {
+   "at": "4FCE64",
+   "before": "phase9::CompetitionStandings(ctx,ctx.ebp);",
+   "note": "Publish authored conference-specific standings and locked division qualification without widening native records"
+  },
+  {
+   "at": "4E9B86",
+   "before": "if(phase9::Enabled(phase9::Feature::Competition) && X86_MEM32(ctx.ebp)==0x63AD30u && X86_MEM32(ctx.ebp+8)==64u && X86_MEM32(ctx.ebp+16)==23u) goto loc_004E9BAE;",
+   "note": "MAAC reseeding owns reset cancellation; preserve required second final"
+  },
+  {
+   "at": "11370B",
+   "old": "0xBB0u",
+   "new": "0xD8Cu",
+   "note": "Allocate 42 native calendar cells instead of 35"
+  },
+  {
+   "at": "5565D6",
+   "old": "0x23u",
+   "new": "0x2Au",
+   "note": "Construct all 42 native calendar cells"
+  },
+  {
+   "at": "316172",
+   "old": "0x23u",
+   "new": "0x2Au",
+   "note": "Destroy all 42 native calendar cells"
+  },
+  {
+   "at": "5360B8",
+   "old": "0x23u",
+   "new": "0x2Au",
+   "note": "Bind all 42 native calendar cell owners"
+  },
+  {
+   "at": "5361DC",
+   "old": "0x5u",
+   "new": "0x6u",
+   "note": "Bind the sixth calendar navigation row"
+  },
+  {
+   "at": "53642B",
+   "old": "0x23u",
+   "new": "0x2Au",
+   "note": "Reset all 42 native calendar cells when changing months"
+  },
+  {
+   "at": "54E704",
+   "old": "0x4u",
+   "new": "0x5u",
+   "note": "Allow the sixth calendar week when selecting the current date"
+  },
+  {
+   "at": "54E709",
+   "old": "0x4u",
+   "new": "0x5u",
+   "note": "Clamp native calendar selection to week six"
+  },
+  {
+   "at": "54E73C",
+   "old": "0x4u",
+   "new": "0x5u",
+   "note": "Allow the sixth native calendar highlight week"
+  },
+  {
+   "at": "54E741",
+   "old": "0x4u",
+   "new": "0x5u",
+   "note": "Clamp native calendar highlights to week six"
+  },
+  {
+   "at": "54EA86",
+   "old": "0x23u",
+   "new": "0x2Au",
+   "note": "Populate dates and clear unused cells across all six calendar weeks"
+  },
+  {
+   "at": "54EBC4",
+   "old": "0x23u",
+   "new": "0x2Au",
+   "note": "Refresh game cells across all six calendar weeks"
+  },
+  {
+   "at": "55B260",
+   "old": "0x23u",
+   "new": "0x2Au",
+   "note": "Render and initialize all 42 native calendar cells"
+  },
+  {
+   "at": "5471E6",
+   "old": "0x5u",
+   "new": "0x6u",
+   "note": "Bind native sixth-week promotion widgets before refreshing calendar cells"
+  }
+,
+  {
+   "at": "513EDD",
+   "before": "goto loc_00513EFF;",
+   "note": "Keep Sunday and Monday month-end dates instead of truncating the calendar to five weeks"
+  },
+  {
+   "at": "4FCEDB",
+   "old": "0x190u",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+   "note": "Scale listed prospect ownership, quota and UI together for 309 schools"
+  },
+  {
+   "at": "4FCEF4",
+   "old": "0x190u",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+   "note": "Scale listed prospect ownership, quota and UI together for 309 schools"
+  },
+  {
+   "at": "4E2E54",
+   "old": "0xF0u",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitPositionQuota:0xF0u)",
+   "note": "Scale listed prospect ownership, quota and UI together for 309 schools"
+  },
+  {
+   "at": "98C5D",
+   "old": "0x190u",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+   "note": "Scale listed prospect ownership, quota and UI together for 309 schools"
+  },
+  {
+   "at": "98C97",
+   "old": "0x190u",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+   "note": "Scale listed prospect ownership, quota and UI together for 309 schools"
+  },
+  {
+   "at": "9768C",
+   "old": "0x640u",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?(phase9::kRecruitProspects*4u):0x640u)",
+   "note": "Scale listed prospect ownership, quota and UI together for 309 schools"
+  },
+  {
+   "at": "50CE6C",
+   "old": "0x190u",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+   "note": "Scale listed prospect ownership, quota and UI together for 309 schools"
+  },
+  {
+   "at": "50CF58",
+   "old": "0x190u",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+   "note": "Scale listed prospect ownership, quota and UI together for 309 schools"
+  },
+  {
+   "at": "53215D",
+   "old": "0x190u",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+   "note": "Scale listed prospect ownership, quota and UI together for 309 schools"
+  },
+  {
+   "at": "54C32B",
+   "old": "0x2u",
+   "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?3u:0x2u)",
+   "note": "Display five high-school and three junior-college eligibility years in modern dynasty"
   }
  ],
  "wrapped": [

@@ -266,6 +266,25 @@ bool IsFolder(const fs::path& dir) {
 
 bool Size(const fs::path& dir, uint64_t& size) { return Assemble(dir, nullptr, size); }
 
+bool SizeBound(const fs::path& dir, uint64_t& size) {
+    Meta m;if(!ReadMeta(dir,m))return false;
+    uint64_t total=m.head.size();
+    for(const Image& img:m.images){
+        std::error_code ec;uint64_t bytes=FileSize(dir/img.file,ec);if(ec)return false;
+        if(img.dds){
+            const int type=img.header[0],w=U16(img.header+4),h=U16(img.header+6),mips=U16(img.header+14)>>12;
+            if(!LevelBytes(type,w,h) || w<=0 || h<=0 || w>4096 || h>4096)return Size(dir,size);
+            // Valid DDS pixel chains fit after the 128-byte base header (DX10
+            // has a larger header). Invalid images use the original blank slot.
+            const uint64_t blank=ChainBytes(type,w,h,mips);
+            if(bytes>128+ChainBytes(0x7D,4096,4096,12))return Size(dir,size);
+            bytes=std::max(blank,bytes>128?bytes-128:0);
+        }
+        total+=16+bytes+img.pad+img.rest.size();
+    }
+    size=total;return true;
+}
+
 bool Build(const fs::path& dir, std::vector<uint8_t>& out) {
     uint64_t size = 0;
     return Assemble(dir, &out, size);

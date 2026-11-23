@@ -3291,6 +3291,2856 @@
           "occurrences": 1
         }
       ]
+    },
+    {
+      "note": "Expanded frontend texture directory: move image cache after 512 records",
+      "new": "0x79E0u",
+      "at": "00259E96",
+      "old": "0x30C0u",
+      "restricted": true,
+      "functions": [
+        {
+          "function": "00259E90",
+          "translation_sha256": "8194658ee1cecd64b92cb309b298246ab2ce30a3f3555649b989976bad193614",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Expanded frontend texture directory: move image cache after 512 records",
+      "new": "0x79E4u",
+      "at": "00259E9C",
+      "old": "0x30C4u",
+      "restricted": true,
+      "functions": [
+        {
+          "function": "00259E90",
+          "translation_sha256": "4087f23cb8ea335847fb54a787f17f7147bf4f9254e57ec2552a8dc9b56b49a0",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Expanded frontend texture directory: move image cache after 512 records",
+      "new": "0x7808u",
+      "at": "00259EBE",
+      "old": "0x2EE8u",
+      "restricted": true,
+      "functions": [
+        {
+          "function": "00259E90",
+          "translation_sha256": "1a76b1aec967c4bc877ec93abb1f4b4248ca3185bc320a282ba7697b34e21f30",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Expanded frontend texture directory: move image cache after 512 records",
+      "new": "0x7804u",
+      "at": "0025A040",
+      "old": "0x2EE4u",
+      "restricted": true,
+      "functions": [
+        {
+          "function": "0025A040",
+          "translation_sha256": "7cb169ec14560d54f71366cff0611ca3b7ed1d3fb55a7a7935da3e6111f4152b",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Expanded frontend texture directory: move image cache after 512 records",
+      "new": "0x7808u",
+      "at": "00259F65",
+      "old": "0x2EE8u",
+      "restricted": true,
+      "functions": [
+        {
+          "function": "00266B10",
+          "translation_sha256": "874b38cf401f63ff42679b4246e1d0507f3dea8b0a817a9ae3b17eb9ab2bfe7b",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Expanded frontend texture directory: move image cache after 512 records",
+      "new": "0x79E4u",
+      "at": "00259F8C",
+      "old": "0x30C4u",
+      "restricted": true,
+      "functions": [
+        {
+          "function": "00266B10",
+          "translation_sha256": "a38003db0b90e2f1fbc05ae890655ee275e9fa8e859d4f97b1684093b41d58dd",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Expanded frontend texture directory: move image cache after 512 records",
+      "new": "0x780Cu",
+      "at": "00267757",
+      "old": "0x2EECu",
+      "restricted": true,
+      "functions": [
+        {
+          "function": "00267740",
+          "translation_sha256": "07fd9ce632e5d6a1846eeb14a2a9ef827e6c4e99f39e137e0173e6fa41ccd6fb",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Expanded frontend texture directory: move image cache after 512 records",
+      "new": "0x780Cu",
+      "at": "002677D3",
+      "old": "0x2EECu",
+      "restricted": true,
+      "functions": [
+        {
+          "function": "002677D0",
+          "translation_sha256": "1d0aef36c58b1984db47cceb61573eafe01884d5eebb3996678893cb0c9a4642",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Expanded frontend texture directory: move image cache after 512 records",
+      "new": "0x79E4u",
+      "at": "00272856",
+      "old": "0x30C4u",
+      "restricted": true,
+      "functions": [
+        {
+          "function": "00272850",
+          "translation_sha256": "10e263642aac4554dbdddd0566c462bc3b922e3b2af609f2ec2c79bf8140da55",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Expanded frontend texture directory: move image cache after 512 records",
+      "new": "0x780Cu",
+      "at": "0027285C",
+      "old": "0x2EECu",
+      "restricted": true,
+      "functions": [
+        {
+          "function": "00272850",
+          "translation_sha256": "1d0aef36c58b1984db47cceb61573eafe01884d5eebb3996678893cb0c9a4642",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Expanded frontend texture directory: move image cache after 512 records",
+      "new": "0x7800u",
+      "at": "00272976",
+      "old": "0x2EE0u",
+      "restricted": true,
+      "functions": [
+        {
+          "function": "00272970",
+          "translation_sha256": "45dda4bdf624bab19059bb858faae6ae1cec6da5cd5f0f0b705d8984aa78aaf2",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Expanded frontend texture directory: move image cache after 512 records",
+      "new": "0x79E4u",
+      "at": "002729F4",
+      "old": "0x30C4u",
+      "restricted": true,
+      "functions": [
+        {
+          "function": "002729F0",
+          "translation_sha256": "a3d57eef12d11236bc3b5aea900e0c407df3d1eee1089814b93fbc1dae244aac",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Frontend directory supports 512 texture packs",
+      "new": "0x200u",
+      "at": "00259EA5",
+      "old": "0xC8u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00259E90",
+          "translation_sha256": "6398d8a979011e6fd4b71e25f93096ef4e1d5ab881e2b41f41255ff606389c5c",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Frontend directory supports 512 texture packs",
+      "new": "0x200u",
+      "at": "0025A011",
+      "old": "0xC8u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00259FA0",
+          "translation_sha256": "33c7a5be06545e0c32d147530a514310d5e9aa427a3dcd9db693c331597dd1af",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Frontend directory supports 512 texture packs",
+      "new": "0x200u",
+      "at": "002728BF",
+      "old": "0xC8u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "002728B0",
+          "translation_sha256": "5ce11d577fefef1e9059e6d501b7323a1b4dfeafa533ebbfd8d5bdf92b55bb72",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Frontend directory supports 512 texture packs",
+      "new": "0x200u",
+      "at": "00272A00",
+      "old": "0xC8u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "002729F0",
+          "translation_sha256": "0e772e65daffa0955a0b6b2b9091ec7e866cd8454836bb4353e10427d78a03fa",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+      "note": "Use separate expanded frontend texture directory",
+      "at": "00259E90",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00259E90",
+          "translation_sha256": "5491e203bed51bbed7255b58c32240c3e00053ab3170efd7f3b7acc6ed75381a",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+      "note": "Use separate expanded frontend texture directory",
+      "at": "00259FA0",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00259FA0",
+          "translation_sha256": "6fd036c648971bb214600ae5b41103bfe1c464e16b5c4528a22ddfa550eab42b",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+      "note": "Use separate expanded frontend texture directory",
+      "at": "00267740",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00267740",
+          "translation_sha256": "5067df439d1358dd8fd4c4a3fba082062f07d2a2481f96458a69ffddfac974e5",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+      "note": "Use separate expanded frontend texture directory",
+      "at": "002677D0",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "002677D0",
+          "translation_sha256": "3f79e844fd15e808d6dad40aed0b4ffc56435507aff4d5e01c9e70a93c70b17f",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+      "note": "Use separate expanded frontend texture directory",
+      "at": "00272850",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00272850",
+          "translation_sha256": "5491e203bed51bbed7255b58c32240c3e00053ab3170efd7f3b7acc6ed75381a",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+      "note": "Use separate expanded frontend texture directory",
+      "at": "002728B0",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "002728B0",
+          "translation_sha256": "5067df439d1358dd8fd4c4a3fba082062f07d2a2481f96458a69ffddfac974e5",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+      "note": "Use separate expanded frontend texture directory",
+      "at": "00272970",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00272970",
+          "translation_sha256": "9d1de6135c50630992eb70643eefbc18040a33dcdd40c8c352b3783416bdc83a",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+      "note": "Use separate expanded frontend texture directory",
+      "at": "002729F0",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "002729F0",
+          "translation_sha256": "9d1de6135c50630992eb70643eefbc18040a33dcdd40c8c352b3783416bdc83a",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "after": "ctx.ecx = expansion::LogoTable(ctx.ecx);",
+      "note": "Use separate expanded frontend texture directory",
+      "at": "00266B10",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00266B10",
+          "translation_sha256": "4c6755cea9c7522f545e225383af9c19701cdd80a51042b1d43252b8a5568bc4",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Reset expanded frontend image cache",
+      "new": "expansion::LogoTable(ctx.ecx) +",
+      "at": "0025A040",
+      "old": "ctx.ecx +",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "0025A040",
+          "translation_sha256": "7cb169ec14560d54f71366cff0611ca3b7ed1d3fb55a7a7935da3e6111f4152b",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "(0xFFFFFF44u - phase9::ScheduleImporterExtra())",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004AF3D0",
+      "old": "0xFFFFFF44u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004AF3D0",
+          "translation_sha256": "79b26168b589930b55b97659fea6e6cc8fa3d32f19af1db0884d02f31bbff1ba",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004DED89",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DED70",
+          "translation_sha256": "cb8db59083cdfcdf2b23bfc4e71fccbbec0e29a4e01f95fedbf7bea6404f1845",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004DED92",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DED70",
+          "translation_sha256": "cb8db59083cdfcdf2b23bfc4e71fccbbec0e29a4e01f95fedbf7bea6404f1845",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004DEDBD",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DEDA0",
+          "translation_sha256": "1a85d7ea699396b7daa9e7fa5f60c03c1516901f6a361d497dc2ac2840449991",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004DEDC6",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DEDA0",
+          "translation_sha256": "1a85d7ea699396b7daa9e7fa5f60c03c1516901f6a361d497dc2ac2840449991",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004DEE89",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DEE60",
+          "translation_sha256": "cb8db59083cdfcdf2b23bfc4e71fccbbec0e29a4e01f95fedbf7bea6404f1845",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004DEE92",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DEE60",
+          "translation_sha256": "cb8db59083cdfcdf2b23bfc4e71fccbbec0e29a4e01f95fedbf7bea6404f1845",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004DEECE",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DEEB0",
+          "translation_sha256": "1a85d7ea699396b7daa9e7fa5f60c03c1516901f6a361d497dc2ac2840449991",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004DEED7",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DEEB0",
+          "translation_sha256": "1a85d7ea699396b7daa9e7fa5f60c03c1516901f6a361d497dc2ac2840449991",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004DEF2A",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DEEF0",
+          "translation_sha256": "1a85d7ea699396b7daa9e7fa5f60c03c1516901f6a361d497dc2ac2840449991",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004DEF33",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DEEF0",
+          "translation_sha256": "1a85d7ea699396b7daa9e7fa5f60c03c1516901f6a361d497dc2ac2840449991",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004DEFE9",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DEFC0",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004DEFF2",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DEFC0",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleManagerBytes()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004E8B49",
+      "old": "0xA0u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E8B30",
+          "translation_sha256": "761a9d1ba627bd1b3841b610c89e0b6db2c61775e9107a74f69c3e9cc359eb22",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004E8B80",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E8B30",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004E8B8F",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E8B30",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004E8D09",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E8C30",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004E8D16",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E8C30",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004E8E2D",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E8D50",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004E8E3A",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E8D50",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004E8F57",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E8E70",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004E8F64",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E8E70",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004E9087",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E8FA0",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004E9094",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E8FA0",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F10BF",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F0F50",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F10CC",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F0F50",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F12C1",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F1110",
+          "translation_sha256": "cb8db59083cdfcdf2b23bfc4e71fccbbec0e29a4e01f95fedbf7bea6404f1845",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F12CE",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F1110",
+          "translation_sha256": "cb8db59083cdfcdf2b23bfc4e71fccbbec0e29a4e01f95fedbf7bea6404f1845",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F3BE1",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F3930",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F3BEE",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F3930",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F4639",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F43F0",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        },
+        {
+          "function": "004F44FD",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F4646",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F43F0",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        },
+        {
+          "function": "004F44FD",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F504E",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F4E40",
+          "translation_sha256": "31197508f983762fba628e663e5773f7522f0a38b37d01203371af8c71ce1620",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F5057",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F4E40",
+          "translation_sha256": "31197508f983762fba628e663e5773f7522f0a38b37d01203371af8c71ce1620",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F5108",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F4E40",
+          "translation_sha256": "31197508f983762fba628e663e5773f7522f0a38b37d01203371af8c71ce1620",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F5115",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F4E40",
+          "translation_sha256": "31197508f983762fba628e663e5773f7522f0a38b37d01203371af8c71ce1620",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F5397",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F5140",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        },
+        {
+          "function": "004F5250",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F53A4",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F5140",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        },
+        {
+          "function": "004F5250",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F549A",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F5140",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "004F54A7",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F5140",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "(0xC4u + phase9::ScheduleImporterExtra())",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "00500E85",
+      "old": "0xC4u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "cb8f52b9c381decdce177dc4693369aa27fda477e877de7120490204ea1c3a72",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "(0xDCu + phase9::ScheduleImporterExtra())",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "00500EB3",
+      "old": "0xDCu",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "db3d7e595270395adf6f95ecd3f30ae3cfaa0cc52da650e0eaa11c2839ceec8c",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "0050102A",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        },
+        {
+          "function": "00500ECD",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "00501030",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        },
+        {
+          "function": "00500ECD",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "(0xE4u + phase9::ScheduleImporterExtra())",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "00501043",
+      "old": "0xE4u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "e45dbd98cecac73ae83d32315a71d1c89b971679b96a585ffc994097b69ceb32",
+          "occurrences": 1
+        },
+        {
+          "function": "00500ECD",
+          "translation_sha256": "e45dbd98cecac73ae83d32315a71d1c89b971679b96a585ffc994097b69ceb32",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleManagerBytes()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "005010A5",
+      "old": "0xA0u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "2f0eeb8b91db8fb2759bede7e6184b3dfab920a24c1a66c0b76d5e39cf718899",
+          "occurrences": 1
+        },
+        {
+          "function": "00500ECD",
+          "translation_sha256": "2f0eeb8b91db8fb2759bede7e6184b3dfab920a24c1a66c0b76d5e39cf718899",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleManagerBytes()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "005010B0",
+      "old": "0xA0u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "2f0eeb8b91db8fb2759bede7e6184b3dfab920a24c1a66c0b76d5e39cf718899",
+          "occurrences": 1
+        },
+        {
+          "function": "00500ECD",
+          "translation_sha256": "2f0eeb8b91db8fb2759bede7e6184b3dfab920a24c1a66c0b76d5e39cf718899",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "005010C3",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        },
+        {
+          "function": "00500ECD",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "005010CB",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        },
+        {
+          "function": "00500ECD",
+          "translation_sha256": "9d16ebcdce32231a46c069aa18bf2c304484967b79800d1d4652b45db74e2a37",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "(0xCCu + phase9::ScheduleImporterExtra())",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "005010DE",
+      "old": "0xCCu",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "58ca53cbb036d8535863043d4e7d2c7b6fafe3a102b57f985d7f9bc37f4b8010",
+          "occurrences": 1
+        },
+        {
+          "function": "00500ECD",
+          "translation_sha256": "58ca53cbb036d8535863043d4e7d2c7b6fafe3a102b57f985d7f9bc37f4b8010",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "(0xC4u + phase9::ScheduleImporterExtra())",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "005010EE",
+      "old": "0xC4u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "cd564781fea7789907c773dcf28389ea1abded6d2df16f2f4ef6e67bf403bce8",
+          "occurrences": 1
+        },
+        {
+          "function": "00500ECD",
+          "translation_sha256": "cd564781fea7789907c773dcf28389ea1abded6d2df16f2f4ef6e67bf403bce8",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "(0xD0u + phase9::ScheduleImporterExtra())",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "005010FC",
+      "old": "0xD0u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "8ac11e8d4302317d000691aae35bda0f8344076f6ebb7bfd37d23d1a33c227a4",
+          "occurrences": 1
+        },
+        {
+          "function": "00500ECD",
+          "translation_sha256": "8ac11e8d4302317d000691aae35bda0f8344076f6ebb7bfd37d23d1a33c227a4",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "00097497",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00097380",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "phase9::ScheduleSlots()",
+      "note": "Optional annual/competition table capacity; original 20-byte records and disabled behavior retained",
+      "at": "0009749D",
+      "old": "0x25u",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00097380",
+          "translation_sha256": "b7488453a0af1bc64ae9269e260c653029740815e26342d34e8548ecdf8f118e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "after": "phase9::ObserveScheduleToken(ctx);",
+      "note": "Observe actual native ranked tokens only inside optional annual import",
+      "at": "00500708",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500650",
+          "translation_sha256": "60e9f1cb43d320362047b481d5a020458855db838ce5b2275de2b767b6460537",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "old": "0x7D6u",
+      "new": "phase9::FirstYear()",
+      "note": "Optional annual schedules start at their authored 2027 season",
+      "at": "00501111",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00501110",
+          "translation_sha256": "b0929cbaf257cc56027664a88828d6b2ae74360893c001e5daa779b5924df741",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "after": "ctx.eax=phase9::ScheduleAnchor(ctx.eax,ctx.ebp,X86_MEM32(ctx.esp+8)&0xffffu);",
+      "note": "Optional annual schedules preserve authored date anchor",
+      "at": "00501063",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "23ebb27ef98d887a25f4d3c24cdeb4f461ca47ff44fc71ec3d9420b55aa12011",
+          "occurrences": 1
+        },
+        {
+          "function": "00500ECD",
+          "translation_sha256": "23ebb27ef98d887a25f4d3c24cdeb4f461ca47ff44fc71ec3d9420b55aa12011",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "after": "ctx.eax=phase9::RegularSlot(ctx.eax);",
+      "note": "Map new conference regular tables without colliding with postseason",
+      "at": "004F30FE",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F30A0",
+          "translation_sha256": "cf2bc7323eab128cc5682f1a4ff90d17947532d5f9d2bd55cfa294c57eda7059",
+          "occurrences": 1
+        },
+        {
+          "function": "004F30DD",
+          "translation_sha256": "cf2bc7323eab128cc5682f1a4ff90d17947532d5f9d2bd55cfa294c57eda7059",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "old": "ctx.ebx * 4u + 0x10u",
+      "new": "phase9::RegularSlot(ctx.ebx+1)*4u + 0xCu",
+      "note": "Map actual native conference ordinal to its optional expanded regular table",
+      "at": "00500F31",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500E70",
+          "translation_sha256": "29c76b25b53b90ab8336a44c532e0f7b66e05552784547de713a2c18a50e65d3",
+          "occurrences": 1
+        },
+        {
+          "function": "00500ECD",
+          "translation_sha256": "29c76b25b53b90ab8336a44c532e0f7b66e05552784547de713a2c18a50e65d3",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Compact native schedule tokens around retired/missing school slots",
+      "at": "00500A40",
+      "after": "if (!phase9::ScheduleSchool(ctx.esi)) { ++ctx.esi; X86_MEM32(ctx.esp+0x44)+=0x30; if(ctx.esi<ctx.ebp) goto loc_00500A40; ctx.edi=phase9::CompactTokenBytes(ctx.edi,X86_MEM32(ctx.esp+0x10)); goto loc_00500A89; }",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500990",
+          "translation_sha256": "d36e01c970a64d3a6621febdfd6f6037fa2e847e484cd3ddf4cc3063163dadc5",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "old": "X86_MEM32(ea)",
+      "new": "phase9::CompactTokenBytes(ctx.edi,X86_MEM32(ctx.esp+0x10u))",
+      "note": "Use actual active token bytes, retaining the original sentinel row",
+      "at": "00500A85",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00500990",
+          "translation_sha256": "334df6da6e95271234618f036dc0d8198d80559017f45745b0f80159a98cf20a",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "old": "0x3u",
+      "at": "004EF1BC",
+      "note": "Optional modern dynasty: five classes, original behavior when disabled",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? 4u : 0x3u)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004EF190",
+          "translation_sha256": "e88054f7bf632b54202b4839bf5ff601c7ffe89ce7e3a259a12500d5e30b5dc6",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "old": "0x3u",
+      "at": "004FFAF1",
+      "note": "Optional modern dynasty: five classes, original behavior when disabled",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? 4u : 0x3u)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004FF9C0",
+          "translation_sha256": "e88054f7bf632b54202b4839bf5ff601c7ffe89ce7e3a259a12500d5e30b5dc6",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "old": "0x4u",
+      "at": "004E5080",
+      "note": "Optional modern dynasty: five classes, original behavior when disabled",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? 5u : 0x4u)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E5050",
+          "translation_sha256": "af69ca615e1d43047ce828ec49326164da35f2425d5476a457ea15409bbc38f2",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "old": "0x7u",
+      "at": "00081B0A",
+      "note": "Optional modern dynasty: five classes, original behavior when disabled",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? 4u : 0x7u)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00081960",
+          "translation_sha256": "1572721300f154e4195a46056d0754d5c4be57715be482a4ff3fdfd45bb48901",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "old": "0x7u",
+      "at": "00081B0F",
+      "note": "Optional modern dynasty: five classes, original behavior when disabled",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? 4u : 0x7u)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00081960",
+          "translation_sha256": "69c1eff2835ffc5d3163b11a669f2515c79b4372243f122f1db807e6a12c1110",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00087DA9",
+      "note": "No redshirt eligibility freeze in optional modern dynasty",
+      "before": "if(phase9::Enabled(phase9::Feature::ModernDynasty)) goto loc_00087DBF;",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00087D70",
+          "translation_sha256": "27c75d4499adb4d86bff0b20fac91ba8bc610c49439afee8346120539f848e9e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004EF1D7",
+      "note": "Final class leaves regardless of legacy redshirt status",
+      "before": "if(phase9::Enabled(phase9::Feature::ModernDynasty)) goto loc_004EF1FB;",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004EF190",
+          "translation_sha256": "0e7957a3f60908a5bcbed5ff73959df77d140878ac5bb90ce5a4122a754f8e79",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004EF2E3",
+      "note": "Departure reason: graduate is the final class (graduated/drafted); seniors take the underclass transfer path",
+      "before": "if(phase9::Enabled(phase9::Feature::ModernDynasty)){ if(ctx.ebx!=4u) goto loc_004EF302; ctx.ebx=3u; }",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004EF2B0",
+          "translation_sha256": "58bf584ab595326cfbd05d3cf9eedcf3fb1e1dec02d5b5c7969a163979b2abdd",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004D2183",
+      "note": "Prevent new redshirt roster status",
+      "after": "if(phase9::Enabled(phase9::Feature::ModernDynasty) && ctx.ecx==3) ctx.ecx=0;",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004D2170",
+          "translation_sha256": "f8922dec8ada3e006dbdf284fd2e29b1df893f370c18012c3ebc93918be97a86",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00081B06",
+      "note": "Idempotently clear legacy redshirt when assigning class",
+      "before": "phase9::NormalizeClass(ctx.ecx,ctx.eax,true);",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00081960",
+          "translation_sha256": "77a3cdff39ddc3611df225a35a8df8fcd83d739490bb50afa385f04efbdc2b88",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00081C5C",
+      "note": "Convert consumed legacy redshirt eligibility before status setter",
+      "before": "phase9::NormalizeClass(ctx.ecx,ctx.eax,false);",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00081960",
+          "translation_sha256": "77a3cdff39ddc3611df225a35a8df8fcd83d739490bb50afa385f04efbdc2b88",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00081C5C",
+      "note": "Disallow assigning new redshirt flag",
+      "after": "if(phase9::Enabled(phase9::Feature::ModernDynasty)) ctx.esi=0;",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00081960",
+          "translation_sha256": "77a3cdff39ddc3611df225a35a8df8fcd83d739490bb50afa385f04efbdc2b88",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "old": "X86_MEM32(ea)",
+      "at": "000855CC",
+      "note": "Five native abbreviated class labels",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? phase9::ClassLabel(ctx.eax,true) : X86_MEM32(ea))",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "000855C0",
+          "translation_sha256": "d8c1ebfd5927c6d2a7568dc3ed41b34a652684e82677a156229460cbaf6c8b13",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "old": "X86_MEM32(ea)",
+      "at": "000855D8",
+      "note": "Five native full class labels",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty) ? phase9::ClassLabel(ctx.ecx,false) : X86_MEM32(ea))",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "000855C0",
+          "translation_sha256": "d0dd9abcbbda5aacce27b2b0d000f06dd7a16b36933c597bcff85d972dccb185",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00531B74",
+      "note": "Remove redshirt action through original menu removal branch",
+      "before": "if(phase9::Enabled(phase9::Feature::ModernDynasty)) goto loc_00531B15;",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00531980",
+          "translation_sha256": "f76dc6b523fa3b2f0842316d3c40b4abcd683c3ad0c958e45c52483cc0494019",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00573F5D",
+      "note": "Add graduate class using original dropdown API",
+      "before": "phase9::AddGraduateOption(ctx);",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00573CF0",
+          "translation_sha256": "f13bd0b048cd8f3bd41a928bc1ce3d7e5b1839ded5dffb65dbb0e9fe1ee0bb2e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "new": "(phase9::Enabled(phase9::Feature::AnnualSchedules)?56u:30u)",
+      "old": "0x1Eu",
+      "at": "004F317B",
+      "note": "Optional formal conference schedules reserve their full per-team budget",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F30A0",
+          "translation_sha256": "600fc3be014bdf145a87dc8a561995c056fc859c0f4e2d8e1dcb085153bad192",
+          "occurrences": 1
+        },
+        {
+          "function": "004F30DD",
+          "translation_sha256": "600fc3be014bdf145a87dc8a561995c056fc859c0f4e2d8e1dcb085153bad192",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "note": "Preserve stable school IDs while excluding retired/null global schedule entries",
+      "at": "004E0940",
+      "before": "if (!phase9::ScheduleSchool(ctx.ebp)) goto loc_004E098B;",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E08D0",
+          "translation_sha256": "a173b8f3831c48e7c539a48af56eee9f23e78a9554cc158be27b1ab3335a999a",
+          "occurrences": 1
+        },
+        {
+          "function": "004E093A",
+          "translation_sha256": "a173b8f3831c48e7c539a48af56eee9f23e78a9554cc158be27b1ab3335a999a",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0011E683",
+      "before": "phase9::DynastySaveTick(ctx);",
+      "note": "Optional native autosave only after final result and stable dynasty menu",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "0011E640",
+          "translation_sha256": "8088d80ccf40ab78bd604f1138f1febdd0f73834b4d6a082a65959cba3d60260",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004E990B",
+      "old": "0x60u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.edi+0x64u))*16u):0x60u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E98E0",
+          "translation_sha256": "db24490fa1aa5d19a3acafccfb17500964badb83311935615070d4b40a4c42ca",
+          "occurrences": 1
+        },
+        {
+          "function": "004E98FA",
+          "translation_sha256": "db24490fa1aa5d19a3acafccfb17500964badb83311935615070d4b40a4c42ca",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004E9968",
+      "old": "0x84u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionGames(base,X86_MEM32(ctx.edi+0x64u))*12u):0x84u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E98E0",
+          "translation_sha256": "c770e7dce7c5f916a2871028ddc5c97b8f2e9acfc503afabc7a43b4f6b4932d9",
+          "occurrences": 1
+        },
+        {
+          "function": "004E98FA",
+          "translation_sha256": "c770e7dce7c5f916a2871028ddc5c97b8f2e9acfc503afabc7a43b4f6b4932d9",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004DF7CD",
+      "old": "0x84u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionGames(base,X86_MEM32(ctx.esi+0x64u))*12u):0x84u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DF790",
+          "translation_sha256": "1a54b5dd56bce1f67d99898a28367fe3dbbb75be94410765dd8019bd54fa7b90",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004DF9EE",
+      "old": "0x60u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.esi+0x64u))*16u):0x60u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DF9C0",
+          "translation_sha256": "c7e6fb1d3a0486b81274d167b5de56236265ff325da4764f6d3eeaa050713911",
+          "occurrences": 1
+        },
+        {
+          "function": "004DF9D8",
+          "translation_sha256": "c7e6fb1d3a0486b81274d167b5de56236265ff325da4764f6d3eeaa050713911",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004DFA45",
+      "old": "0x84u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionGames(base,X86_MEM32(ctx.esi+0x64u))*12u):0x84u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DFA10",
+          "translation_sha256": "1a54b5dd56bce1f67d99898a28367fe3dbbb75be94410765dd8019bd54fa7b90",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004DFBD0",
+      "old": "0x60u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.edi+0x64u))*16u):0x60u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DFB70",
+          "translation_sha256": "22aa9c882344aaa9bffe0e393acc6ba305c6f74d523a2dd1093bee13480a1cb0",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004DFC31",
+      "old": "0x84u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionGames(base,X86_MEM32(ctx.edi+0x64u))*12u):0x84u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DFB70",
+          "translation_sha256": "28a336f285f15c322760dac080f28ad9944c7a0c6f1e55e951f6fba035a96b8b",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004E9D2C",
+      "old": "0x6u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.esi+0x64u))*1u):0x6u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E9C70",
+          "translation_sha256": "28f0f6dc62dfe193b80d0011d0a6735af3699e5f1a837089f0811369500aeb39",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004E9D39",
+      "old": "0x6u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.esi+0x64u))*1u):0x6u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E9C70",
+          "translation_sha256": "929817ed6b8410275339956b9f44aff960f03252fdbec94a024c92855216a07b",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004E9F7F",
+      "old": "0x6u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.esi+0x64u))*1u):0x6u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E9F60",
+          "translation_sha256": "28f0f6dc62dfe193b80d0011d0a6735af3699e5f1a837089f0811369500aeb39",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004E9F8A",
+      "old": "0x6u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.esi+0x64u))*1u):0x6u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E9F60",
+          "translation_sha256": "f72189f19f95321c5412edbbee0f579c9f4df4ddb42f5d3e693c95641418fd4e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004EA000",
+      "before": "const uint32_t phase9_field=phase9::Enabled(phase9::Feature::Competition)?phase9::CompetitionField(base,X86_MEM32(ctx.ecx+0x64u)):6u;",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004EA000",
+          "translation_sha256": "3f034e7c8cd8550ac039426b837528c2e4d47e4c64cf206359e21b168b7a6483",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004EA057",
+      "old": "0x6u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?phase9_field:0x6u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004EA000",
+          "translation_sha256": "28f0f6dc62dfe193b80d0011d0a6735af3699e5f1a837089f0811369500aeb39",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004EA067",
+      "old": "0x6u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?phase9_field:0x6u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004EA000",
+          "translation_sha256": "0b4f191f0caafedf88e7b00d9dc2b9ed81bcaa6e71af4f0a92d1290830cbe7ed",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F0B49",
+      "old": "0xEu",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?phase9::CompetitionCapacity(ctx.eax):0xEu)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F0B20",
+          "translation_sha256": "4608993d0ccc310044d15cabe935b5ca8a832a09ce6e0dee5babe9ee1c532547",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F0BAA",
+      "old": "0xBu",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?phase9::CompetitionGames(base,ctx.esi):0xBu)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F0B20",
+          "translation_sha256": "b8480835f0c2278119e5aae48b2df8980c97c029498e8328dbce77848bda6ca6",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F0BAC",
+      "old": "0x6u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?phase9::CompetitionField(base,ctx.esi):0x6u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F0B20",
+          "translation_sha256": "b83e633c0bd3be1ddaad75a9c27ae0840cf9af8cdc985b1270263ba6d3036ae6",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004DFCD3",
+      "before": "phase9::CompetitionHome(ctx);",
+      "note": "Swap complete eight-byte native sides together, including participant bit 8",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DFC60",
+          "translation_sha256": "7876daf9f8edee3a93993c25e45361223407d3d4ec8167f4c800b88ea5b8b29a",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F6130",
+      "old": "0x44u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ad5318c11763c8d01d173a3af4c6c611f66d2a718f244d58451f1e989aa677e0",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F618B",
+      "old": "0x44u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ad5318c11763c8d01d173a3af4c6c611f66d2a718f244d58451f1e989aa677e0",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F6235",
+      "old": "0x44u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ad5318c11763c8d01d173a3af4c6c611f66d2a718f244d58451f1e989aa677e0",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F628D",
+      "old": "0x44u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ad5318c11763c8d01d173a3af4c6c611f66d2a718f244d58451f1e989aa677e0",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F63F5",
+      "old": "0x44u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ad5318c11763c8d01d173a3af4c6c611f66d2a718f244d58451f1e989aa677e0",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F64A5",
+      "old": "0x44u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+      "note": "Optional authored tournament shape; original owner when disabled",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ad5318c11763c8d01d173a3af4c6c611f66d2a718f244d58451f1e989aa677e0",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F6152",
+      "replacement": "X86_PUSH32(0x004F6157u); sub_004F0B20(ctx,base);",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "note": "Standalone native generic bracket replaces legacy group-final class",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "5a0bd8c9962a68010da111bfc91cd4477f05982c1a45c009c55dbe5ef767be77",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F6257",
+      "replacement": "X86_PUSH32(0x004F625Cu); sub_004F0B20(ctx,base);",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "note": "Standalone native generic bracket replaces legacy group-final class",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "12e17081f87da869aa41c5b149217fd642eab756223398942b70412f044b9462",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F62AF",
+      "replacement": "X86_PUSH32(0x004F62B4u); sub_004F0B20(ctx,base);",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "note": "Standalone native generic bracket replaces legacy group-final class",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "8812fc57006dbfada3babe236e4df7d1681d39e353048569122220bb9d000631",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F6417",
+      "replacement": "X86_PUSH32(0x004F641Cu); sub_004F0B20(ctx,base);",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "note": "Standalone native generic bracket replaces legacy group-final class",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "571d9cf6bf60d76d6a8d0a8df14ea9f0cfbdd3a4250eb76e814ec8c2e8faf8a5",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F61AD",
+      "replacement": "X86_PUSH32(0x004F61B2u); sub_004F0A00(ctx,base);",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "494a2c7d4b546c68dec125c6de9bcc77b1fd88fb5c8c69bccb33a8d7b4ab25b3",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F64C9",
+      "replacement": "X86_PUSH32(0x004F64CEu); sub_004F0B20(ctx,base);",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "655c66971be922ed076185f3ca604ce9349c5c5eb2e6bd15881152aebc29d271",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F6171",
+      "replacement": "/* Standalone bracket has no legacy group-final child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ba4e086dc1438fd0bfcb7fb64ce86655b924abfc2553204c61ffe7fb95410898",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F617B",
+      "replacement": "/* Standalone bracket has no legacy group-final child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "4c89c565a4d575e6165e815c42e2a8ac06eff43063fbfde44c83ededd85739ae",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F61C9",
+      "replacement": "/* Standalone bracket has no legacy group-final child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ba4e086dc1438fd0bfcb7fb64ce86655b924abfc2553204c61ffe7fb95410898",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F61D3",
+      "replacement": "/* Standalone bracket has no legacy group-final child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "4c89c565a4d575e6165e815c42e2a8ac06eff43063fbfde44c83ededd85739ae",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F6273",
+      "replacement": "/* Standalone bracket has no legacy group-final child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ba4e086dc1438fd0bfcb7fb64ce86655b924abfc2553204c61ffe7fb95410898",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F627D",
+      "replacement": "/* Standalone bracket has no legacy group-final child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "4c89c565a4d575e6165e815c42e2a8ac06eff43063fbfde44c83ededd85739ae",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F62CB",
+      "replacement": "/* Standalone bracket has no legacy group-final child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ba4e086dc1438fd0bfcb7fb64ce86655b924abfc2553204c61ffe7fb95410898",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F62D5",
+      "replacement": "/* Standalone bracket has no legacy group-final child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "4c89c565a4d575e6165e815c42e2a8ac06eff43063fbfde44c83ededd85739ae",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F6433",
+      "replacement": "/* Standalone bracket has no legacy group-final child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ba4e086dc1438fd0bfcb7fb64ce86655b924abfc2553204c61ffe7fb95410898",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F643D",
+      "replacement": "/* Standalone bracket has no legacy group-final child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "4c89c565a4d575e6165e815c42e2a8ac06eff43063fbfde44c83ededd85739ae",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F64EC",
+      "replacement": "/* Generic hybrid owns its seed/descriptor child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ba4e086dc1438fd0bfcb7fb64ce86655b924abfc2553204c61ffe7fb95410898",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F64EF",
+      "replacement": "/* Generic hybrid owns its seed/descriptor child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "9682bf263f0cd96ca83f57352ea44f721a334494d0e5c393f8aa0c8a726aa265",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F64F1",
+      "replacement": "/* Generic hybrid owns its seed/descriptor child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "74e05b505b86ef0f15866d0d50a0f909ab99fbeb6dd87a31d948bdd95005c099",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F64F3",
+      "replacement": "/* Generic hybrid owns its seed/descriptor child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "3dfa4493fa9c8661c1f8c765d2d36685bdfb5279219fc094dbba0b103294fb6c",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004DF707",
+      "old": "0x60u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.ebp+0x64u))*16u):0x60u)",
+      "note": "Native bracket readiness uses its complete dynamic field/descriptors",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DF6E0",
+          "translation_sha256": "db24490fa1aa5d19a3acafccfb17500964badb83311935615070d4b40a4c42ca",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004DF74D",
+      "old": "0x6u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.ebp+0x64u))*1u):0x6u)",
+      "note": "Native bracket readiness uses its complete dynamic field/descriptors",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DF6E0",
+          "translation_sha256": "e2fbe943c2fe59d97f09d78a8890a157157723919bb03bb34333e56e28eb8d52",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004DF779",
+      "old": "0x6u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionField(base,X86_MEM32(ctx.ebp+0x64u))*1u):0x6u)",
+      "note": "Native bracket readiness uses its complete dynamic field/descriptors",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DF6E0",
+          "translation_sha256": "f72189f19f95321c5412edbbee0f579c9f4df4ddb42f5d3e693c95641418fd4e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004DF75F",
+      "old": "0x84u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(phase9::CompetitionGames(base,X86_MEM32(ctx.ebp+0x64u))*12u):0x84u)",
+      "note": "Native bracket readiness uses its complete dynamic field/descriptors",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004DF6E0",
+          "translation_sha256": "d081c367273e5bc9630384c25eb65253851e198356031707ee20f410637068ff",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F64C2",
+      "replacement": "/* Generic constructor has two arguments. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "03017309acf66859307ce057fef4a2f3e03cd0a483895a693f193f2b2f175931",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F644D",
+      "old": "0x44u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?0x3Cu:0x44u)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ad5318c11763c8d01d173a3af4c6c611f66d2a718f244d58451f1e989aa677e0",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F646F",
+      "replacement": "X86_PUSH32(0x004F6474u); sub_004F0B20(ctx,base);",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "2ab3025baa6e003019c5ac5dd7fe21fdba419022f03f0171eaa419c2d9b93f34",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F648B",
+      "replacement": "/* Standalone Sun Belt bracket has no alternate child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "ba4e086dc1438fd0bfcb7fb64ce86655b924abfc2553204c61ffe7fb95410898",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F6495",
+      "replacement": "/* Standalone Sun Belt bracket has no alternate child. */",
+      "guard": "phase9::Enabled(phase9::Feature::Competition)",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "4c89c565a4d575e6165e815c42e2a8ac06eff43063fbfde44c83ededd85739ae",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004FE95D",
+      "old": "0x3u",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?0x4u:0x3u)",
+      "note": "Optional four-team Patriot best-of-three semifinal/final",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004FE8D0",
+          "translation_sha256": "dbfad0cde7ccfb10497d01d0ca6d0f8294e3febb73044112e5e80b84f4fc6255",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004FEA9D",
+      "old": "ctx.ebp",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?(ctx.ebp+0x30u):ctx.ebp)",
+      "note": "Optional four-team Patriot best-of-three semifinal/final",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004FE8D0",
+          "translation_sha256": "3f79e844fd15e808d6dad40aed0b4ffc56435507aff4d5e01c9e70a93c70b17f",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F63D7",
+      "old": "ctx.ebp",
+      "new": "(phase9::Enabled(phase9::Feature::Competition)?2u:ctx.ebp)",
+      "note": "Optional four-team Patriot best-of-three semifinal/final",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F6110",
+          "translation_sha256": "4c89c565a4d575e6165e815c42e2a8ac06eff43063fbfde44c83ededd85739ae",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004FEA73",
+      "before": "phase9::PatriotFourth(ctx);",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004FE8D0",
+          "translation_sha256": "809891cd4bbfe1f7fc3002e522d9e3e548a7f877fc62d56a811052c39bb91d32",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004F5789",
+      "before": "phase9::PatriotFixture(ctx);",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004F54D0",
+          "translation_sha256": "5491e203bed51bbed7255b58c32240c3e00053ab3170efd7f3b7acc6ed75381a",
+          "occurrences": 1
+        },
+        {
+          "function": "004F57D9",
+          "translation_sha256": "5491e203bed51bbed7255b58c32240c3e00053ab3170efd7f3b7acc6ed75381a",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004FF0E6",
+      "before": "phase9::CompetitionRetry(ctx,ctx.ebp);",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004FEFB0",
+          "translation_sha256": "d3529a5d9b50ffe9513d391426dc05febebe123b893df9ba12e37a17c919c3f2",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "005423C4",
+      "before": "phase9::StandingsBegin(ctx);",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00542190",
+          "translation_sha256": "1909478189d267096750a714f77bc65b862ab4797f72ecb89dfdbdcf50fee77e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0054280C",
+      "before": "phase9::StandingsStore(ctx);",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00542190",
+          "translation_sha256": "66d406673305ced3faa341c6dfa20d1516e9da269529578b88262ce8ee35d9ec",
+          "occurrences": 1
+        },
+        {
+          "function": "005423DD",
+          "translation_sha256": "66d406673305ced3faa341c6dfa20d1516e9da269529578b88262ce8ee35d9ec",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0055436F",
+      "after": "phase9::StandingsClear(ctx);",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00554260",
+          "translation_sha256": "95b4f36dfa99fe21ad3b7c5fcc90d406a2da80ed4caa9e8fb8fe898127228b39",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00542862",
+      "old": "0xCu",
+      "new": "(phase9::Enabled(phase9::Feature::StandingsAwards)?expansion::kStandingsRows:0xCu)",
+      "note": "Clear the complete owned row list when a scrolling conference changes",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00542190",
+          "translation_sha256": "db3658d7493d2561a3049ef65d88274c71aef474079229d0c0e962951e059df4",
+          "occurrences": 1
+        },
+        {
+          "function": "005423DD",
+          "translation_sha256": "db3658d7493d2561a3049ef65d88274c71aef474079229d0c0e962951e059df4",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00542867",
+      "old": "0xCu",
+      "new": "(phase9::Enabled(phase9::Feature::StandingsAwards)?expansion::kStandingsRows:0xCu)",
+      "note": "Clear the complete owned row list when a scrolling conference changes",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00542190",
+          "translation_sha256": "36d5cf66f6d64a52bb82e80a755fb2158f14fd8ed014c6d60f44ed8de79fb86a",
+          "occurrences": 1
+        },
+        {
+          "function": "005423DD",
+          "translation_sha256": "36d5cf66f6d64a52bb82e80a755fb2158f14fd8ed014c6d60f44ed8de79fb86a",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004FCE64",
+      "before": "phase9::CompetitionStandings(ctx,ctx.ebp);",
+      "note": "Publish authored conference-specific standings and locked division qualification without widening native records",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004FC9F0",
+          "translation_sha256": "64272d6f61e97b01d0f7769fd6391c7ec700b4f7b6e51a0a902bfe2d4f304a8e",
+          "occurrences": 1
+        },
+        {
+          "function": "004FCA36",
+          "translation_sha256": "64272d6f61e97b01d0f7769fd6391c7ec700b4f7b6e51a0a902bfe2d4f304a8e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004E9B86",
+      "before": "if(phase9::Enabled(phase9::Feature::Competition) && X86_MEM32(ctx.ebp)==0x63AD30u && X86_MEM32(ctx.ebp+8)==64u && X86_MEM32(ctx.ebp+16)==23u) goto loc_004E9BAE;",
+      "note": "MAAC reseeding owns reset cancellation; preserve required second final",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E9A50",
+          "translation_sha256": "494ab5fcc87334d23b96554986c53623ee675b5bd884a8e253961f4b4b604727",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0011370B",
+      "old": "0xBB0u",
+      "new": "0xD8Cu",
+      "note": "Allocate 42 native calendar cells instead of 35",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00112BC0",
+          "translation_sha256": "f166b52400fe18fd61dc98fcd96f5a061d932c8b8c16a99214e0814ed32e8999",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "005565D6",
+      "old": "0x23u",
+      "new": "0x2Au",
+      "note": "Construct all 42 native calendar cells",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00556580",
+          "translation_sha256": "e31256f36784d5275839483a972b61abdb1c096fa2f2ce112d02998c15eb408e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00316172",
+      "old": "0x23u",
+      "new": "0x2Au",
+      "note": "Destroy all 42 native calendar cells",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00316140",
+          "translation_sha256": "e31256f36784d5275839483a972b61abdb1c096fa2f2ce112d02998c15eb408e",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "005360B8",
+      "old": "0x23u",
+      "new": "0x2Au",
+      "note": "Bind all 42 native calendar cell owners",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00536090",
+          "translation_sha256": "2253356068995178388d16d39514534e9c77aedec87353397fdff78918b16010",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "005361DC",
+      "old": "0x5u",
+      "new": "0x6u",
+      "note": "Bind the sixth calendar navigation row",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00536090",
+          "translation_sha256": "06e1dd9c73c574fda0e6711962a1f15dfcb9fc6e1694e9c8cf9d6ff8bb2899e7",
+          "occurrences": 1
+        },
+        {
+          "function": "00536169",
+          "translation_sha256": "06e1dd9c73c574fda0e6711962a1f15dfcb9fc6e1694e9c8cf9d6ff8bb2899e7",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0053642B",
+      "old": "0x23u",
+      "new": "0x2Au",
+      "note": "Reset all 42 native calendar cells when changing months",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00536270",
+          "translation_sha256": "2253356068995178388d16d39514534e9c77aedec87353397fdff78918b16010",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0054E704",
+      "old": "0x4u",
+      "new": "0x5u",
+      "note": "Allow the sixth calendar week when selecting the current date",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "0054E650",
+          "translation_sha256": "de3a7144dcdb964b712999d89c592e08dbdba56cff595743942b73e66254b1c3",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0054E709",
+      "old": "0x4u",
+      "new": "0x5u",
+      "note": "Clamp native calendar selection to week six",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "0054E650",
+          "translation_sha256": "a63513216113760370839cbab4512b744c22c5c831977d352e0cd1841456a873",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0054E73C",
+      "old": "0x4u",
+      "new": "0x5u",
+      "note": "Allow the sixth native calendar highlight week",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "0054E650",
+          "translation_sha256": "3be180ead38297fe868e06eed995ce613646c6096cbe0108a43e2e680c7163e8",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0054E741",
+      "old": "0x4u",
+      "new": "0x5u",
+      "note": "Clamp native calendar highlights to week six",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "0054E650",
+          "translation_sha256": "af69ca615e1d43047ce828ec49326164da35f2425d5476a457ea15409bbc38f2",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0054EA86",
+      "old": "0x23u",
+      "new": "0x2Au",
+      "note": "Populate dates and clear unused cells across all six calendar weeks",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "0054E7B0",
+          "translation_sha256": "9cad8ade50a8414dc333d15249a5b95e4b62bab1d069c0fdd2c96a79b08a93dc",
+          "occurrences": 1
+        },
+        {
+          "function": "0054E925",
+          "translation_sha256": "9cad8ade50a8414dc333d15249a5b95e4b62bab1d069c0fdd2c96a79b08a93dc",
+          "occurrences": 1
+        },
+        {
+          "function": "0054EA33",
+          "translation_sha256": "9cad8ade50a8414dc333d15249a5b95e4b62bab1d069c0fdd2c96a79b08a93dc",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0054EBC4",
+      "old": "0x23u",
+      "new": "0x2Au",
+      "note": "Refresh game cells across all six calendar weeks",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "0054EAC0",
+          "translation_sha256": "2253356068995178388d16d39514534e9c77aedec87353397fdff78918b16010",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0055B260",
+      "old": "0x23u",
+      "new": "0x2Au",
+      "note": "Render and initialize all 42 native calendar cells",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00563B40",
+          "translation_sha256": "9cad8ade50a8414dc333d15249a5b95e4b62bab1d069c0fdd2c96a79b08a93dc",
+          "occurrences": 1
+        },
+        {
+          "function": "00566B20",
+          "translation_sha256": "9cad8ade50a8414dc333d15249a5b95e4b62bab1d069c0fdd2c96a79b08a93dc",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "005471E6",
+      "old": "0x5u",
+      "new": "0x6u",
+      "note": "Bind native sixth-week promotion widgets before refreshing calendar cells",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00547190",
+          "translation_sha256": "06e1dd9c73c574fda0e6711962a1f15dfcb9fc6e1694e9c8cf9d6ff8bb2899e7",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00513EDD",
+      "before": "goto loc_00513EFF;",
+      "note": "Keep Sunday and Monday month-end dates instead of truncating the calendar to five weeks",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00513E10",
+          "translation_sha256": "03cbf5ee7f31c70d3500e58516b10667624571d310005806e2fd55e00d99e6e0",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004FCEDB",
+      "old": "0x190u",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+      "note": "Scale listed prospect ownership, quota and UI together for 309 schools",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004FCE80",
+          "translation_sha256": "e1bd7922f4248a8aa6489cfd8520323b75474c322f0a2e09e60718c7c25c3623",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004FCEF4",
+      "old": "0x190u",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+      "note": "Scale listed prospect ownership, quota and UI together for 309 schools",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004FCE80",
+          "translation_sha256": "e1bd7922f4248a8aa6489cfd8520323b75474c322f0a2e09e60718c7c25c3623",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "004E2E54",
+      "old": "0xF0u",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitPositionQuota:0xF0u)",
+      "note": "Scale listed prospect ownership, quota and UI together for 309 schools",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "004E2E20",
+          "translation_sha256": "3e12ba1d0a78bf871951601e1515646c55dd128ef99f37b924ec3c4e8055b899",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00098C5D",
+      "old": "0x190u",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+      "note": "Scale listed prospect ownership, quota and UI together for 309 schools",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "000985A0",
+          "translation_sha256": "e646e95bff7662edd974dbdb3c5508dee9986a0adf8c2e0b242df3aa5534ae14",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "00098C97",
+      "old": "0x190u",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+      "note": "Scale listed prospect ownership, quota and UI together for 309 schools",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "000985A0",
+          "translation_sha256": "e646e95bff7662edd974dbdb3c5508dee9986a0adf8c2e0b242df3aa5534ae14",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0009768C",
+      "old": "0x640u",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?(phase9::kRecruitProspects*4u):0x640u)",
+      "note": "Scale listed prospect ownership, quota and UI together for 309 schools",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00097580",
+          "translation_sha256": "91f0098a9f0ed6814454e0d9721cb63b80404ad09764d99ee8f5b3d7f3d5c8f5",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0050CE6C",
+      "old": "0x190u",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+      "note": "Scale listed prospect ownership, quota and UI together for 309 schools",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "0050CE50",
+          "translation_sha256": "46175eec156711ddd7aa97a2bcd23bed8f73b9686060f70910e725c4d47439e3",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0050CF58",
+      "old": "0x190u",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+      "note": "Scale listed prospect ownership, quota and UI together for 309 schools",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "0050CEF0",
+          "translation_sha256": "c6b1b6371f63a5c076d4a5c9edb134a8eb979f9661e3778cb731178b85bec534",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0053215D",
+      "old": "0x190u",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?phase9::kRecruitProspects:0x190u)",
+      "note": "Scale listed prospect ownership, quota and UI together for 309 schools",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "00532100",
+          "translation_sha256": "bbdea43b4a4798e75be7e76ea50bd78407fa667432089f978cda7e742b5ea5e5",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "at": "0054C32B",
+      "old": "0x2u",
+      "new": "(phase9::Enabled(phase9::Feature::ModernDynasty)?3u:0x2u)",
+      "note": "Display five high-school and three junior-college eligibility years in modern dynasty",
+      "restricted": false,
+      "functions": [
+        {
+          "function": "0054C0F0",
+          "translation_sha256": "0e15ec82bfc89130ad6ddbd73a5a9d445e0171adcf57927eddd39ac60aace86b",
+          "occurrences": 1
+        }
+      ]
     }
   ]
 }

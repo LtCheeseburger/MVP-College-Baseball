@@ -28,5 +28,10 @@ int main(int argc,char** argv) {
     Write(manifest,json(hash,1)+"\n");if(translated_patches::Revision(root/"patches")==revision)throw std::runtime_error("content revision not changed");
     bool rejected=false;try{translated_patches::Apply(root/"gen",root/"patches");}catch(const std::exception&){rejected=true;}
     if(!rejected || Read(file)!=result)throw std::runtime_error("stale patched source accepted");
-    std::cout<<"PASS empty no-op, bad hash/count atomic rejection, DLL clone + stock dispatch, idempotency, content revision and stale-output rejection\n";
+    Write(file,original);Write(manifest,"{\"format\":1,\"condition\":\"test_active()\",\"includes\":[],\"edits\":[{\"at\":\"11111111\",\"before\":\"ctx.ebx = 42;\",\"functions\":[{\"function\":\"11111111\",\"translation_sha256\":\""+hash+"\",\"occurrences\":1}]}]}");
+    translated_patches::Apply(root/"gen",root/"patches");auto prefixed=Read(file);if(prefixed.find("ctx.ebx = 42;")>prefixed.find("ctx.eax = 7;")||prefixed.find("ctx.ebx = 42;",prefixed.find("ctx.ebx = 42;")+1)!=std::string::npos)throw std::runtime_error("before insertion leaked into original or wrong position");
+    Write(file,original);Write(manifest,"{\"format\":1,\"condition\":\"test_active()\",\"includes\":[],\"edits\":[{\"at\":\"11111111\",\"replacement\":\"ctx.eax = 99;\",\"guard\":\"optional_feature()\",\"functions\":[{\"function\":\"11111111\",\"translation_sha256\":\""+hash+"\",\"occurrences\":1}]}]}");
+    translated_patches::Apply(root/"gen",root/"patches");auto guarded=Read(file);
+    if(guarded.find("if (optional_feature())")==std::string::npos||guarded.find("ctx.eax = 99;")==std::string::npos||guarded.find("ctx.eax = 7;",guarded.find("ctx.eax = 7;")+1)==std::string::npos)throw std::runtime_error("Guarded replacement lost local original fallback");
+    std::cout<<"PASS empty no-op, bad hash/count atomic rejection, DLL clone + stock dispatch, idempotency, content revision, stale-output rejection, before insertion and guarded authored replacement\n";
 }

@@ -10,6 +10,9 @@ void BindMatchupLoading(unsigned root);
 void PollNativeMatchupLoading();
 void PublishMatchupLoading(const std::array<MatchupSide,2>& sides, bool visible, bool ready);
 void DrawMatchupLoading(double elapsed);
+using LoadoutScore = std::array<std::array<std::string,13>,2>;
+bool DrawLoadout();
+void DrawLoadoutCard(const std::array<MatchupSide,2>& teams, const LoadoutScore& score, double elapsed);
 bool MatchupLoadingReady();
 std::array<MatchupSide,2> SnapshotMatchupLoading();
 }

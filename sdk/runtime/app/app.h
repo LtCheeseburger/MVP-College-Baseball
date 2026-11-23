@@ -41,6 +41,7 @@ struct Settings {
     uint32_t screenshot_key = 0x7B;  // virtual key code, F12: the frame as a PNG in screenshots\, 0 off
     uint32_t save_backups = 10;      // copies of the saves folder at launch and exit kept in backups\, 0 off
     uint32_t save_history = 5;       // earlier versions kept per save in save_history\, 2 to 20
+    uint32_t button_icons = 0;       // button_icons: 0 Xbox, 1 PlayStation; presentation only
     uint32_t rumble = 100;           // controller vibration strength, 0 off to 100 as the game asks
     uint32_t deadzone_left = 0;      // round stick deadzone, percent of full tilt, 0 to 50; 0 leaves the game's own only
     uint32_t deadzone_right = 0;
@@ -91,6 +92,7 @@ void OpenGameWindow(bool apply = true);  // any thread but the window thread's; 
 // relaunched: the previous instance keeps its window up until this one has shown its first frames (handover.cpp)
 bool StartHandover();   // window thread, at launch; true: the game window starts hidden
 bool HandingOver();
+void SaveBlocked(const std::string& reason);
 void FinishHandover();  // any thread but the window thread's: opens the game window, lets the old instance go
 
 // held around ImGui: the window thread's messages and the renderer's frame
@@ -123,6 +125,8 @@ struct GameInfo {
     void (*ui)(double fps);        // each frame inside the ImGui frame, UiLock held
     void (*pad)(int port, input::Pad& pad);  // a polled pad before the game gets it
     void (*rumble)(int port, uint16_t& left, uint16_t& right);
+    std::vector<std::string> required_mods;  // retained in safe mode, checked before boot
+    const char* required_mod_replacement = nullptr;  // supplies the required mods in one package
 };
 extern const GameInfo kGame;
 

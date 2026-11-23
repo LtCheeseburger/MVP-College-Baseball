@@ -162,3 +162,17 @@ X86_FUNC(sub_00317590) {
     LOGR("game heap: %u KB at %08X, %u KB contiguous free before it", size >> 10, heap, free >> 10);
     kernel::Return(ctx, kernel::CallGuest(ctx, kSetFileCache, {hd ? 0x10000u : 0x80000u}), 0);
 }
+
+// Prospect-list construction uses the dedicated "FE Memory" heap, not the
+// dynasty season heap. Expanded recruiting needs a single 1.1 MB allocation,
+// exceeding the original ~1 MB arena. Resize at its constructor so allocation,
+// bounds and native destruction all use the same capacity; stock is unchanged.
+X86_EXTERN_FUNC(__imp__sub_000C13B0);
+X86_FUNC(sub_000C13B0) {
+ const auto stack=ctx.esp, requested=kernel::R32(stack+4);
+ const auto capacity=expansion::Active()?std::max(requested,4096u):requested;
+ kernel::W32(stack+4,capacity);
+ __imp__sub_000C13B0(ctx,base);
+ kernel::W32(stack+4,requested);
+ if(capacity!=requested)LOGR("frontend arena: expanded %u -> %u KB",requested,capacity);
+}

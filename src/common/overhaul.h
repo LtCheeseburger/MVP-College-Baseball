@@ -9,16 +9,22 @@
 namespace overhaul {
 
 constexpr const char* kModId = "mvp27-ui";
+constexpr const char* kCombinedModId = "mvp27-overhaul";
 
 // decided once, on the first call after kernel::mods::Init: mvp27-ui is on and serves data/overhaul/overhaul.json
 bool Active();
 
 // <game>/data/overhaul/startup, the overhaul's art; paths under it go through the mod layer
 std::filesystem::path Root();
+// Controller artwork is selected at draw time so PC Options changes apply immediately.
+std::filesystem::path ControllerIcon(const std::string& label);
+std::filesystem::path UiAsset(const std::filesystem::path& path);
 
 // a file under the game folder as the game sees it (mods on top of the disk)
 bool Load(const std::filesystem::path& path, std::vector<uint8_t>& out);
 std::string Text(const std::filesystem::path& path);
+// Canonical school aliases, with unique-nickname fallback for native abbreviations.
+std::filesystem::path TeamLogo(const std::string& school,const std::string& nickname={},const std::string& hint={});
 // a disk path for APIs that only open files (Media Foundation): the file itself, or a copy in %TEMP% when a mod
 // supplies it; empty when there is none
 std::filesystem::path DiskFile(const std::filesystem::path& path);

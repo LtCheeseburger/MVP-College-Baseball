@@ -434,12 +434,17 @@ public:
         for (auto& [name, p] : found)
             if (!p.empty() && taken.emplace(name, p).second) entries_.push_back({name, p});
 
+        // The player editor needs only a few members from these very large
+        // texture archives. Index their sizes now and rebuild the requested XSH
+        // on first read, rather than rebuilding/repacking every player's assets.
+        const bool stream_player_textures = Upper(label)=="MODELS.BIG" || Upper(label)=="GHEAD.BIG";
         for (Entry& e : entries_) {
             std::string up = Upper(e.name);
             e.pack = std::find(packed.begin(), packed.end(), up) != packed.end() || mods::Packed(e.path);
             if (xsh::IsFolder(e.path)) {
                 e.xsh = true;
-                if (!xsh::Size(e.path, e.size)) return false;
+                if(stream_player_textures)e.pack=false;
+                if (!(stream_player_textures?xsh::SizeBound(e.path,e.size):xsh::Size(e.path,e.size))) return false;
             } else if (mods::IsDir(e.path)) {
                 auto child = std::make_shared<LooseBig>();
                 if (!child->Build(e.path, label + "\\" + e.name, {})) return false;
@@ -478,7 +483,7 @@ public:
         // packing is most of the cost of opening a loose archive: spread it over the cores
         std::vector<Entry*> to_pack;
         for (Entry& e : entries_)
-            if (e.pack || (e.xsh && !e.loaded)) to_pack.push_back(&e);
+            if (e.pack || (e.xsh && !e.loaded && !stream_player_textures)) to_pack.push_back(&e);
         // reads go through the mod layer, whose lock this thread holds: read here, pack on the pool
         bool failed = false;
         for (Entry* e : to_pack)
@@ -546,6 +551,15 @@ private:
     size_t ReadEntry(Entry& e, uint64_t at, uint8_t* dst, size_t n) {
         if (e.child) return e.child->Read(at, dst, n);
         std::lock_guard<std::mutex> lock(lock_);
+        if(!e.loaded && e.xsh){
+            if(!xsh::Build(e.path,e.bytes) || e.bytes.size()>e.size){
+                LOGE("loose: texture changed or failed after indexing: %s",e.path.string().c_str());
+                e.bytes.clear();return 0;
+            }
+            // The SHPX header retains its actual length. The unused reserved
+            // BIG extent is zero padding, never part of the texture image.
+            e.bytes.resize(size_t(e.size),0);e.loaded=true;
+        }
         // a mod's member sits in its zip, not on disk: read it whole the first time
         if (!e.loaded && mods::FromMod(e.path)) {
             if (!mods::Load(e.path, e.bytes)) return 0;

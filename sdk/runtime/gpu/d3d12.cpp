@@ -3020,6 +3020,18 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
     // texture views and samplers, viewport and scissor, blend factor and stencil reference
     SetTextureViewsAndSamplers(s, a, stages);
     SetViewportScissor(s, size.w);
+    if(!a.pretransformed && s.rs[kRsZEnable] && prim!=8){
+        const float shift=g_menu_model_offset.load();
+        const float shiftY=g_menu_model_offset_y.load();
+        const float previewScale=g_menu_model_scale.load();
+        if(shift!=0||shiftY!=0||previewScale!=1){
+            const float w=float(bound_rt_?bound_rt_->w:bound_ds_->w),h=float(bound_rt_?bound_rt_->h:bound_ds_->h);
+            // Preserve the native menu model's horizontal anchor while giving
+            // the Appearance close-up breathing room. UI quads keep their viewport.
+            D3D12_VIEWPORT preview{w*(shift+(1-previewScale)*.70f),h*(shiftY+(1-previewScale)*.5f),w*previewScale,h*previewScale,0,1};
+            cl_->RSSetViewports(1,&preview);
+        }
+    }
     SetBlendFactorStencilRef(s);
 
     // geometry, counted while the title runs a visibility test
@@ -3622,9 +3634,9 @@ void D3D12Backend::DrawFrame(Target* t, uint32_t bi) {
     cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
     bound_rt_ = bound_ds_ = nullptr;
     if (t) BlitFrame(*t, post);
-    if (screenshot::Take()) ShotCopy(bb_[bi].Get(), bs);
     RenderUi();
     Begin(); // Restore the game root signature and heaps after ImGui.
+    if (screenshot::Take()) ShotCopy(bb_[bi].Get(), bs);
     if (capture_presented_) {
         CapSave({.res=bb_[bi].Get(), .state=&bs, .fmt=DXGI_FORMAT_B8G8R8A8_UNORM, .w=bb_w_, .h=bb_h_}, "presented");
         capture_presented_=false;
@@ -4001,7 +4013,7 @@ bool D3D12Backend::ReadBack(ID3D12Resource* res, uint32_t w, uint32_t h, std::ve
     return true;
 }
 
-// the frame as shown, without the UI drawn over it; the buffer is kept for the next one (33 MB at 4K)
+// the complete presented frame, including game menu UI; the buffer is kept for the next one (33 MB at 4K)
 void D3D12Backend::ShotCopy(ID3D12Resource* bb, D3D12_RESOURCE_STATES& state) {
     D3D12_RESOURCE_DESC rd = bb->GetDesc();
     D3D12_PLACED_SUBRESOURCE_FOOTPRINT fp;

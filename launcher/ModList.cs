@@ -22,6 +22,7 @@ sealed class ModList
         public string Author { get; init; } = "";
         public string Description { get; init; } = "";
         public bool AffectsSaves { get; init; }
+        public bool Required { get; init; }
         public List<(string Id, string Version)> Requires { get; init; } = [];
         public List<string> Conflicts { get; init; } = [];
         public HashSet<string> Files { get; init; } = new(StringComparer.OrdinalIgnoreCase);  // game paths, '/'
@@ -65,18 +66,19 @@ sealed class ModList
         {
             var m = found.FirstOrDefault(x => x.Error == null && x.Id == id);
             if (m == null) continue;
-            m.Enabled = on;
+            m.Enabled = m.Required || on;
             Mods.Add(m);
             found.Remove(m);
         }
-        Mods.AddRange(found.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase));  // new ones go last, off
+        foreach (var m in found) if (m.Required && m.Error == null) m.Enabled = true;
+        Mods.AddRange(found.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase));
     }
 
     public void Save()
     {
         Directory.CreateDirectory(Dir);
         var arr = new JsonArray();
-        foreach (var m in Mods.Where(m => m.Error == null)) arr.Add(new JsonObject { ["id"] = m.Id, ["enabled"] = m.Enabled });
+        foreach (var m in Mods.Where(m => m.Error == null)) arr.Add(new JsonObject { ["id"] = m.Id, ["enabled"] = m.Required || m.Enabled });
         var json = new JsonObject { ["format"] = Format, ["order"] = arr };
         var tmp = System.IO.Path.Combine(Dir, "mods.json.tmp");
         File.WriteAllText(tmp, json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
@@ -197,6 +199,7 @@ sealed class ModList
                 Author = S("author"),
                 Description = S("description"),
                 AffectsSaves = j["affectsSaves"] is JsonValue a && a.TryGetValue<bool>(out var b) && b,
+                Required = (bool?)j["required"] == true,
                 Requires = requires,
                 Conflicts = j["conflicts"] is JsonArray c ? c.Select(v => v?.GetValue<string>() ?? "").Where(v => v != "").ToList() : [],
                 Files = files,

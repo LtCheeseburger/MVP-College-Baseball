@@ -18,10 +18,14 @@ void Init(const std::filesystem::path& game_dir, const std::filesystem::path& mo
 bool Active();
 // a mod with this id is on (after Init)
 bool Enabled(const std::string& id);
+bool Required(const std::string& id);
 // the game folder Init was given; mod paths are relative to it
 std::filesystem::path GameDir();
 // Serializes complete VFS transactions against Workshop mount publication.
 std::unique_lock<std::recursive_mutex> Lock();
+// Render callbacks must never wait for a game-thread mount transaction: that
+// thread can be waiting for the renderer while opening native resources.
+std::unique_lock<std::recursive_mutex> TryLock();
 void RecordOpen(const std::filesystem::path& path);
 void RecordList(const std::filesystem::path& path);
 void ConfigureReload(const std::filesystem::path& request, const std::filesystem::path& mod, const std::string& sha);
@@ -55,6 +59,7 @@ bool Load(const std::filesystem::path& p, std::vector<uint8_t>& out, size_t limi
 
 // a mod supplies this file (not a folder)
 bool FromMod(const std::filesystem::path& p);
+bool FromMod(const std::filesystem::path& p, const std::string& id);
 // a mod asks for this added archive member to be RefPack-compressed (mod.json "refpack")
 bool Packed(const std::filesystem::path& p);
 

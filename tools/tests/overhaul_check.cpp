@@ -1,11 +1,13 @@
 // Headless integration checks using the production mod VFS and overhaul helper.
 #include "common/overhaul.h"
+#include "app/app.h"
 #include "kernel/mods.h"
 #include "core/log.h"
 #include <cstdio>
 #include <cstdarg>
 #include <fstream>
 #include <stdexcept>
+namespace app { Settings& Get(){static Settings settings;return settings;} }
 namespace fs = std::filesystem;
 namespace logx {
 void Write(Level, const char* format, ...) {

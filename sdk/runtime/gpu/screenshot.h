@@ -3,7 +3,7 @@
 
 #include <wrl/client.h>
 
-// Screenshots (screenshot_key, F12 by default): the backend copies the presented frame, before the UI overlay, into a
+// Screenshots (screenshot_key, F12 by default): the backend copies the complete presented frame, including game menu UI, into a
 // read-back buffer, and once the GPU is done a worker thread writes it as UserDir()\screenshots\<name>_<date>_<time>.png.
 // One at a time: a press while the last one is still being written is dropped.
 namespace gpu::screenshot {

@@ -4,6 +4,7 @@
 #include <sstream>
 #include "app/app.h"
 #include "core/log.h"
+#include "core/input.h"
 #include "gpu/backend.h"
 #include "imgui.h"
 #include "submenu_data.h"
@@ -18,6 +19,7 @@
 #include <cstring>
 #include <fstream>
 #include <mutex>
+#include <regex>
 #include <unordered_map>
 namespace game {
 namespace {
@@ -37,9 +39,26 @@ struct Model {
 std::mutex modelMutex;
 Model model;
 std::atomic<bool> nativePopupVisible{false};
+std::atomic<bool> tutorialNoticeVisible{false};
+std::string tutorialNoticeText;
 std::string popupText;
 std::vector<std::string> popupChoices;
 int popupSelection = 0;
+std::string MenuCopy(std::string value) {
+ // Native strings use nonbreaking spaces between platform/title words.
+ for(size_t at=0;(at=value.find("\xC2\xA0",at))!=std::string::npos;)value.replace(at,2," ");
+ value=std::regex_replace(value,std::regex("\\s*\\([0-9]+ block\\(s\\)\\)",std::regex::icase),"");
+ value=std::regex_replace(value,std::regex("Xbox hard disk",std::regex::icase),"your save library");
+ value=std::regex_replace(value,std::regex("Please don.t turn off your Xbox console\\.",std::regex::icase),"Please keep the game open until saving finishes.");
+ value=std::regex_replace(value,std::regex("^\\s*does not have a full 3-man pitching rotation\\.",std::regex::icase),"A team does not have a full 3-man pitching rotation.");
+ value=std::regex_replace(value,std::regex("MVP[^A-Za-z0-9]*06\\s+NCAA[^A-Za-z0-9]*Baseball",std::regex::icase),"MVP27 College Baseball");
+ if(value.starts_with("No MVP") && value.find("detected")!=std::string::npos){
+  if(value.find("Options")!=std::string::npos)value="No saved options were found in your save library.";
+  else if(value.find("Rosters")!=std::string::npos)value="No saved rosters were found in your save library.";
+  else if(value.find("Dynast")!=std::string::npos)value="No saved dynasties were found in your save library.";
+ }
+ return value;
+}
 double Clock() {
   return std::chrono::duration<double>(
              std::chrono::steady_clock::now().time_since_epoch())
@@ -122,10 +141,22 @@ int LibraryMenuKind() {
   return model.library;
 }
 void PublishLibrary(int selected, const std::vector<SettingsRow> &rows,
-                    const std::string &message, const std::string &album) {
+                    const std::string &message, const std::string &album,
+                    const std::string &title) {
   PublishSettings(selected, rows);
   std::lock_guard lock(modelMutex);
+  // Libraries can open from utility screens outside the main-menu model.
+  // Their native title owns the operation; the old selected menu row does not.
+  if(model.library==1 && !title.empty()){
+    model.title=MenuCopy(title);
+    for(auto& c:model.title)if(c>='a' && c<='z')c-=32;
+    if(model.title.find("BALLPARK")!=std::string::npos){
+      if(model.title.find("CREATE")!=std::string::npos)model.title="SAVE BALLPARK";
+      else if(model.title.find("EDIT")!=std::string::npos)model.title="LOAD BALLPARK";
+    }
+  }
   model.message = message;
+  if(model.library==1){model.message=MenuCopy(model.message);for(auto& row:model.settingsRows){row.label=MenuCopy(row.label);if(row.label.empty())row.label="Empty slot";}}
   model.album = album;
   std::string lower = album;
   for (auto &c : lower)
@@ -175,7 +206,11 @@ void OpenSubmenu(int cat, const char *scene) {
   settings = settings || library != 0;
   bool tuning = !std::strcmp(scene, "GPOPTIONS");
   model.fromSettings = model.settings;
-  if (settings && model.selected < int(model.labels.size()))
+  // Returning to the Scenario form from stadium selection reopens
+  // SMARTOPTIONS without republishing Game Modes. The labels are then only
+  // the unpublished Options defaults, whose first row is AUDIO OPTIONS.
+  const bool keepScenario = !model.published && model.title == "SCENARIO EDITOR";
+  if (settings && !keepScenario && model.selected < int(model.labels.size()))
     model.title = SubmenuText(model.labels[model.selected]);
   if (tuning)
     model.title = "GAMEPLAY TUNING";
@@ -239,7 +274,7 @@ int SubmenuRowCount() {
     return int(model.settingsRows.size());
   return int(model.labels.size());
 }
-bool SubmenuPopupVisible() { return nativePopupVisible.load(); }
+bool SubmenuPopupVisible() { return nativePopupVisible.load() || tutorialNoticeVisible.load(); }
 std::string UiString(uint32_t id) {
   static const auto strings = [] {
     std::unordered_map<uint32_t, std::string> result;
@@ -264,6 +299,37 @@ void PublishPopup(const std::string &text,
   popupChoices = choices;
   popupSelection = selected;
 }
+bool LegacyOnlineNotice(){
+ std::lock_guard lock(modelMutex);if(!nativePopupVisible.load())return false;
+ std::string text=MenuCopy(popupText);std::transform(text.begin(),text.end(),text.begin(),[](unsigned char c){return char(std::tolower(c));});
+ return text.find("xbox live")!=std::string::npos && text.find("sign")!=std::string::npos;
+}
+bool InspectPopup(std::string &text, std::vector<std::string> &choices, int &selected) {
+  std::lock_guard lock(modelMutex);
+  if (!nativePopupVisible.load()) return false;
+  text=popupText; choices=popupChoices; selected=popupSelection;
+  return true;
+}
+bool HandleTutorialNoticePad(int port,input::Pad& pad){
+ if(port!=0 || !overhaul::Active())return false;
+ static bool armed=false,release=false;
+ const bool pressed=pad.analog[0] || pad.analog[1];
+ auto consume=[&]{pad.buttons=0;pad.lx=pad.ly=pad.rx=pad.ry=0;for(auto& value:pad.analog)value=0;};
+ if(release){if(!pressed)release=false;consume();return true;}
+ if(tutorialNoticeVisible.load()){
+  if(!pressed)armed=true;
+  else if(armed){tutorialNoticeVisible=false;armed=false;release=true;}
+  consume();return true;
+ }
+ if(!nativePopupVisible.load() && pad.analog[0]){
+  const auto missing=MissingTutorialVideo();
+  if(!missing.empty()){
+   {std::lock_guard lock(modelMutex);tutorialNoticeText="This tutorial video is not installed in the supplied game data. Restore the original tutorial video to enable playback.\n\nMissing file: "+missing;}
+   tutorialNoticeVisible=true;armed=false;consume();return true;
+  }
+ }
+ return false;
+}
 void SetSubmenuPopupVisible(bool visible) {
   bool old = nativePopupVisible.exchange(visible);
   if (old != visible && dev::Env("MVP06_TRACE_FE")) {
@@ -273,7 +339,8 @@ void SetSubmenuPopupVisible(bool visible) {
 }
 void DrawNotification() {
   static float opacity = 0;
-  bool visible = nativePopupVisible.load();
+  const bool tutorialNotice=tutorialNoticeVisible.load();
+  bool visible = nativePopupVisible.load() || tutorialNotice;
   float step = ImGui::GetIO().DeltaTime / .18f;
   opacity = std::clamp(opacity + (visible ? step : -step), 0.f, 1.f);
   if (opacity <= 0)
@@ -286,9 +353,13 @@ void DrawNotification() {
     body = popupText;
     choices = popupChoices;
     selected = popupSelection;
+    if(tutorialNotice){body=tutorialNoticeText;choices={"Back"};selected=0;}
   }
   if (body.empty())
     return; // wait for the native dialog to finish populating
+  const bool legacyOnline=LegacyOnlineNotice();
+  if(legacyOnline){body="Legacy Xbox Live services are not supported in this build. Return to Game Modes to play offline.";choices={"Back"};selected=0;}
+  else body=MenuCopy(body);
   auto *d = ImGui::GetBackgroundDrawList();
   auto size = ImGui::GetIO().DisplaySize;
   float s = std::min(size.x / 2560.f, size.y / 1440.f),
@@ -315,7 +386,7 @@ void DrawNotification() {
                              color(25, 25, 28));
   auto root = Assets();
   auto strip = gpu::g_ui_image
-                   ? gpu::g_ui_image(root / "menu-selection-imagegen.png")
+                   ? gpu::g_ui_image(overhaul::UiAsset(root / "menu-selection-imagegen.png"))
                    : 0;
   if (strip)
     d->AddImageQuad((ImTextureID)strip, p(x + 40, y + 2), p(x + 150, y + 2),
@@ -325,7 +396,17 @@ void DrawNotification() {
   std::string title = "NOTIFICATION", lower = body;
   std::transform(lower.begin(), lower.end(), lower.begin(),
                  [](unsigned char c) { return char(std::tolower(c)); });
-  if (lower.find("roster") != std::string::npos)
+  if(tutorialNotice)title="VIDEO UNAVAILABLE";
+  else if(legacyOnline)title="ONLINE PLAY UNAVAILABLE";
+  else if(lower.find("save complete")!=std::string::npos)title="SAVE COMPLETE";
+  else if(lower.find("load complete")!=std::string::npos)title="LOAD COMPLETE";
+  else if(lower.find("no saved")!=std::string::npos && lower.find("were found")!=std::string::npos)title="SAVE LIBRARY";
+  else if(lower.find("want to quit")!=std::string::npos && lower.find("current game")!=std::string::npos)title="QUIT GAME";
+  else if(lower.find("discard")!=std::string::npos || lower.find("without saving")!=std::string::npos ||
+          ((lower.find("exit")!=std::string::npos || lower.find("quit")!=std::string::npos) &&
+           (lower.find("lose")!=std::string::npos || lower.find("lost")!=std::string::npos ||
+            lower.find("unsaved")!=std::string::npos)))title="DISCARD CHANGES";
+  else if (lower.find("roster") != std::string::npos)
     title = "ROSTER CHANGES";
   else if (lower.find("delete") != std::string::npos)
     title = "DELETE CONFIRMATION";
@@ -364,7 +445,7 @@ void DrawNotification() {
   d->AddRect(p(x, y), p(x + w, y + h), color(155, 158, 160), 0, 0, 2 * s);
   if (!choices.empty()) {
     auto icon = [&](const char *name, float xx) {
-      auto tex = gpu::g_ui_image(root / name);
+      auto tex = gpu::g_ui_image(overhaul::UiAsset(root / name));
       if (tex)
         d->AddImage((ImTextureID)tex, p(xx, y + h - 65), p(xx + 42, y + h - 23),
                     {0, 0}, {1, 1}, color(255, 255, 255));
@@ -405,31 +486,53 @@ void DrawLibrary(double elapsed) {
   a = a * a * (3 - 2 * a);
   float shift = 90 * (1 - a);
   bool files = state.library == 1;
+  if(files){
+    const auto tint=[&](int alpha){return IM_COL32(245,245,245,int(alpha*a));};
+    UiMenuBackdrop(d,size,UiBackdrop::Graphite);
+    UiBrandLogo(d,p(75,35),p(455,170));
+    const bool ballparkSave=state.title=="CREATE-A-BALLPARK" || state.title=="CREATE BALLPARK";
+    UiText(d,UiFont::Heading,70*s,p(1260,57),tint(255),ballparkSave?"SAVE BALLPARK":state.title.c_str(),1160*s);
+    d->AddRectFilled(p(1260,167),p(2445,175),IM_COL32(237,12,40,255));
+    const bool saving=ballparkSave || state.title.starts_with("SAVE ") || state.title=="SAVE";
+    const bool deleting=state.title.find("DELETE")!=std::string::npos;
+    UiBroadcastPanel(d,p(90,250),p(1660,1210),s);
+    UiText(d,UiFont::Heading,45*s,p(135,278),tint(255),"PC SAVE LIBRARY",1450*s);
+    UiText(d,UiFont::Prompt,30*s,p(135,342),tint(180),"NAME",1250*s);
+    const int count=int(state.settingsRows.size()),first=std::max(0,state.selected-7);
+    for(int j=0;j<std::min(8,count-first);++j){
+      const int index=first+j;const auto& row=state.settingsRows[index];const float y=400+j*94;
+      const bool empty=row.label.empty()||row.label=="Empty slot";
+      UiBroadcastPanel(d,p(120,y),p(1630,y+82),s,index==state.selected);
+      const auto number=std::to_string(index+1);
+      UiText(d,UiFont::Prompt,32*s,p(150,y+20),tint(160),number.c_str(),85*s);
+      UiText(d,UiFont::Heading,42*s,p(255,y+15),tint(empty?155:255),empty?(saving?"CREATE NEW SAVE":"EMPTY SLOT"):row.label.c_str(),1120*s);
+    }
+    UiBroadcastPanel(d,p(1710,250),p(2460,1210),s);
+    UiText(d,UiFont::Heading,43*s,p(1760,294),tint(255),saving?"SAVE YOUR PROGRESS":deleting?"MANAGE SAVES":"LOAD YOUR PROGRESS",650*s);
+    auto help=[&](const char* value,float y){d->AddText(Font(UiFont::Body),34*s,p(1760,y),tint(205),value,nullptr,640*s);};
+    help(saving?"Choose an empty slot to create a named save, or an existing save to replace it.":deleting?"Select a saved file to review the delete confirmation.":"Select a named save to load it. Empty slots contain no saved data.",405);
+    d->AddLine(p(1760,665),p(2410,665),tint(100),s);
+    help("Stored locally in your active PC profile.",710);
+    help("Your current game remains unchanged until you confirm an action.",845);
+    d->AddRectFilled(p(0,1295),p(2560,1440),IM_COL32(5,11,15,255));
+    UiControllerButton(d,p(140,1360),30*s,s,"B",IM_COL32_WHITE);
+    UiText(d,UiFont::Prompt,38*s,p(190,1338),tint(255),"BACK",350*s);
+    UiControllerButton(d,p(1750,1360),30*s,s,"A",IM_COL32_WHITE);
+    UiText(d,UiFont::Prompt,38*s,p(1800,1338),tint(255),"SELECT SAVE",620*s);
+    return;
+  }
   auto image = [&](const char *file, float x, float y, float w, float h) {
-    auto tex = gpu::g_ui_image(root / file);
+    auto tex = gpu::g_ui_image(overhaul::UiAsset(root / file));
     if (tex)
       d->AddImage((ImTextureID)tex, p(x, y), p(x + w, y + h));
   };
-  d->AddRectFilled({0, 0}, size, IM_COL32(0, 0, 0, 255));
-  image(files ? "menu_bg.png" : "settings-bg-imagegen.png", 0, 0, 2560, 1440);
-  if(files) {
-    // Move the trophy to the outer edge, blending the photograph at the left
-    // so the full-width background never exposes a hard black boundary.
-    auto tex=gpu::g_ui_image(root/"menu_bg.png");
-    if(tex) {
-      d->AddImage((ImTextureID)tex,p(500,0),p(1000,1440),{0,0},{500.f/2560,1});
-      int end=d->VtxBuffer.Size;
-      d->VtxBuffer[end-4].col=IM_COL32(255,255,255,0);
-      d->VtxBuffer[end-1].col=IM_COL32(255,255,255,0);
-      d->AddImage((ImTextureID)tex,p(1000,0),p(3060,1440),{500.f/2560,0},{1,1});
-    }
-  }
+  UiMenuBackdrop(d,size,files ? UiBackdrop::Steel : UiBackdrop::Charcoal);
   d->AddRectFilledMultiColor(p(0, 0), p(2250, 1440), IM_COL32(0, 0, 0, 100), 0,
                              0, IM_COL32(0, 0, 0, 150));
   image("menu-trim-imagegen.png", 0, 0, 420, 1440);
-  image("lg27.png", 165, 90, 590, 195);
+  UiBrandLogo(d,p(165,90),p(755,285));
   auto tint = [&](int v) { return IM_COL32(245, 245, 245, int(v * a)); };
-  auto strip = gpu::g_ui_image(root / "menu-selection-imagegen.png");
+  auto strip = gpu::g_ui_image(overhaul::UiAsset(root / "menu-selection-imagegen.png"));
   if (strip)
     d->AddImage((ImTextureID)strip, p(790 + shift, 153), p(1920 + shift, 272),
                 {.02f, .31f}, {.83f, .64f}, tint(220));
@@ -555,16 +658,16 @@ void DrawSettings(double elapsed) {
   a = a * a * (3 - 2 * a);
   float slide = 100 * (1 - a);
   auto image = [&](const char *file, float x, float y, float w, float h) {
-    auto t = gpu::g_ui_image(root / file);
+    auto t = gpu::g_ui_image(overhaul::UiAsset(root / file));
     if (t)
       d->AddImage((ImTextureID)t, p(x, y), p(x + w, y + h));
   };
-  image("settings-bg-imagegen.png", 0, 0, 2560, 1440);
+  UiMenuBackdrop(d,size,UiBackdrop::Graphite);
   image("menu-trim-imagegen.png", 0, 0, 420, 1440);
   d->AddRectFilledMultiColor(p(0, 0), p(1780, 1440), IM_COL32(0, 0, 0, 95), 0,
                              0, IM_COL32(0, 0, 0, 160));
-  image("lg27.png", 145 + 20 * a, 120 - 20 * a, 830 - 240 * a, 275 - 80 * a);
-  auto strip = gpu::g_ui_image(root / "menu-selection-imagegen.png");
+  UiBrandLogo(d,p(145+20*a,120-20*a),p(975-220*a,395-100*a));
+  auto strip = gpu::g_ui_image(overhaul::UiAsset(root / "menu-selection-imagegen.png"));
   auto tint = [&](int opacity) {
     return IM_COL32(255, 255, 255, int(opacity * a));
   };
@@ -655,6 +758,10 @@ void DrawSettings(double elapsed) {
   image("controller-reference-b.png", 425, 1320, 58, 58);
   UiText(d, UiFont::Prompt, 38 * s, p(180, 1325), tint(255), "SELECT");
   UiText(d, UiFont::Prompt, 38 * s, p(505, 1325), tint(255), "BACK");
+  if(state.title=="SCENARIO EDITOR") {
+    UiControllerButton(d,p(1820,1350),25*s,s,"START",tint(255));
+    UiText(d,UiFont::Prompt,38*s,p(1870,1325),tint(255),"PLAY SCENARIO",590*s);
+  }
   if (dev::Env("MVP06_TRACE_FE")) {
     static unsigned captured = ~0u;
     static unsigned capturedEnd = ~0u;
@@ -690,21 +797,23 @@ void DrawSubmenu(double elapsed, bool returningToMain, int mainRow) {
   auto p = [&](float x, float y) { return ImVec2(ox + x * s, oy + y * s); };
   auto image = [&](const char *file, float x, float y, float w, float h,
                    float alpha = 1.f) {
-    auto tex = gpu::g_ui_image(root / file);
+    auto tex = gpu::g_ui_image(overhaul::UiAsset(root / file));
     if (tex && alpha > 0)
       draw->AddImage((ImTextureID)tex, p(x, y), p(x + w, y + h), {0, 0}, {1, 1},
                      IM_COL32(255, 255, 255, int(255 * alpha)));
   };
-  image(snapshot.category == 5 ? "settings-bg-imagegen.png" : "menu_bg.png", 0,
-        0, 2560, 1440);
+  if (returningToMain)
+    image("menu_bg.png",0,0,2560,1440);
+  else
+    UiMenuBackdrop(draw,size,UiBackdrop::Graphite);
   float alpha = Fade(elapsed, 0, .35);
   alpha = 1 - std::pow(1 - alpha, 3.f);
   draw->AddRectFilledMultiColor(p(0, 0), p(1060 + 600 * alpha, 1440),
                                 IM_COL32(0, 0, 0, 190), IM_COL32(0, 0, 0, 0),
                                 IM_COL32(0, 0, 0, 0), IM_COL32(0, 0, 0, 230));
   image("menu-trim-imagegen.png", 0, 0, 600, 1440);
-  image("lg27.png", 145, 120, 830, 275);
-  auto strip = gpu::g_ui_image(root / "menu-selection-imagegen.png");
+  UiBrandLogo(draw,p(145,120),p(975,395));
+  auto strip = gpu::g_ui_image(overhaul::UiAsset(root / "menu-selection-imagegen.png"));
   auto panel = [&](float left, float top, float right, float h, bool selected,
                    float a) {
     auto points = std::array<ImVec2, 4>{p(left, top), p(right, top),

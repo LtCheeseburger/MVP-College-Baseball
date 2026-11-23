@@ -35,7 +35,7 @@ static class NativeLogos
         bw.Write(0x401008);for(int i=0;i<4;i++)bw.Write(0);
         foreach(var level in levels)bw.Write(level);return ms.ToArray();
     }
-    public static Dictionary<string,byte[]> Build(string source,string template,int mainSize,int wideWidth,int wideHeight,bool mipmaps)
+    public static Dictionary<string,byte[]> Build(string source,string template,int mainSize,int wideWidth,int wideHeight,bool mipmaps,bool allSlots=false)
     {
         static bool Power(int n)=>n>=4&&n<=512&&(n&(n-1))==0;
         if(!Power(mainSize)||!Power(wideWidth)||!Power(wideHeight))throw new InvalidDataException("Native logo dimensions must be powers of two, 4–512");
@@ -54,6 +54,8 @@ static class NativeLogos
         string Slot(SshImage image)=>parts.Keys.Single(key=>key.Contains("_"+image.Tag+".",StringComparison.Ordinal));
         parts[Slot(i)]=Dds(png,mainSize,mainSize,mipmaps);
         parts[Slot(j)]=Dds(png,wideWidth,wideHeight,mipmaps);
+        if(allSlots)foreach(var image in native.Images.Where(image=>image.Tag[0] is 'l' or 'e' or 'd'))
+            parts[Slot(image)]=Dds(png,image.Header.Width,image.Header.Height,false);
         var rebuilt=XshFolder.Build(parts["xsh.meta"],name=>parts.GetValueOrDefault(name),out error)??throw new InvalidDataException(error);
         var verify=SshFile.Read(rebuilt);
         foreach(var image in verify.Images) {

@@ -13,7 +13,7 @@ rem Never package a stale executable with developer tools, even from DEV.
 cmake --preset release -DMVP06_DEV_TOOLS=OFF || (echo configuring player capabilities failed & exit /b 1)
 cmake --build "%OUT%" --target MVP06 || (echo building player executable failed & exit /b 1)
 rem Build the optional UI from its source project, or verify a previously staged bundle.
-pwsh -NoProfile -File tools\build-ui-mod.ps1 || (echo building the bundled UI failed & exit /b 1)
+pwsh -NoProfile -File tools\build-bundled-mods.ps1 || (echo building the bundled UI failed & exit /b 1)
 set /p VER=<VERSION
 set "ZIP=MVP-27-College-Baseball-v%VER%.zip"
 rem setup and the launcher are launcher\ here; they use MVP Workshop's install code from the pinned submodule
@@ -39,7 +39,7 @@ rd /s /q "%OUT%\release" 2>nul
 rd /s /q "%PKG%" 2>nul
 mkdir "%PORT%"
 mkdir "%PORT%\bundled-mods"
-copy /y "%OUT%\bundled-mods\mvp27-ui.mvpmod" "%PORT%\bundled-mods\" >nul || exit /b 1
+for %%m in (mvp27-league mvp27-logos mvp27-ui) do copy /y "%OUT%\bundled-mods\%%m.mvpmod" "%PORT%\bundled-mods\" >nul || exit /b 1
 copy /y "%OUT%\bundled-mods\defaults.json" "%PORT%\bundled-mods\" >nul || exit /b 1
 rem only the runtime DLLs the executables import; xbe_recomp.exe needs its own copy, Windows only looks beside the
 rem exe it starts

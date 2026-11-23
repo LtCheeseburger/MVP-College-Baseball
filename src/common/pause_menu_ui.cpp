@@ -1,3 +1,4 @@
+#include "game/pitch_clock.h"
 #include "core/dev_tools.h"
 #include "pause_menu_ui.h"
 #include "overhaul.h"
@@ -16,6 +17,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <climits>
 #include <cmath>
 #include <fstream>
 #include <memory>
@@ -40,9 +42,10 @@ std::atomic<bool> nativeDrawTreesDirty{false};
 std::atomic<std::shared_ptr<const RenderMap>> renderNodes{
     std::make_shared<const RenderMap>()};
 bool FilterNativeRender(uint32_t target, uint32_t self) {
-  // Only FEGroup::Render is pure drawing. Derived Render methods may update
-  // native modal state and must retain their original behavior.
-  if (target != 0x000BBAC0)
+  // FEGroup and the clipping group only traverse child drawing. The latter
+  // (000A8340) brackets it with balanced clipping calls; it writes no UI state.
+  // Other derived Render methods may update modal state and must still run.
+  if (target != 0x000BBAC0 && target != 0x000A8340)
     return false;
   if (nativeDrawTreesDirty.exchange(false)) {
     auto snapshot = renderNodes.load();
@@ -393,6 +396,8 @@ void DrawPauseMenuTheme() {
   std::vector<Text> texts, controllers;
   std::array<bool, 16> enabled;
   enabled.fill(true);
+  if (active->name == "IGROSTERPOPT")
+    game::NoteDefensiveMenu();
   std::vector<std::string> options;
   int selected = 0;
   uint32_t menuGrid = 0;
@@ -428,6 +433,10 @@ void DrawPauseMenuTheme() {
         rows[level] = std::atoi(name.c_str() + at + 1);
         columns[level] = std::atoi(name.c_str() + 1);
       }
+    // NCAA defensive conference allowance used: the native MOUND VISIT row (PITCHING/DEFENSE row 0) is disabled.
+    if (menuGrid && tag == "GR" && name == "X0Y0" && active->name == "IGROSTERPOPT" &&
+        kernel::R32(node + 0x24) == kernel::R32(menuGrid + 0x24) + 1 && game::DefensiveConferenceLimitReached())
+      *static_cast<uint16_t *>(kernel::HostPtr(node + 0x28)) &= uint16_t(~2u);
     if (menuGrid && tag == "GR" && name.rfind("X0Y", 0) == 0 &&
         rows[level] >= 0 && rows[level] < 16 &&
         kernel::R32(node + 0x24) == kernel::R32(menuGrid + 0x24) + 1)
@@ -459,7 +468,9 @@ void DrawPauseMenuTheme() {
       if (!(kernel::R16(node + 0x28) & 1) && !active->hidden.count(node))
         continue;
       auto value = NativeUiText(node);
-      if (value.empty()) {
+      // Blank live box-score cells are intentional. A name-only lookup for
+      // repeated NUM nodes substitutes the FEL's 999 template placeholders.
+      if (value.empty() && active->name != "INGAMEBOXSCORE") {
         auto ids = defaultIds.find(active->name);
         if (ids != defaultIds.end())
           if (auto id = ids->second.find(name); id != ids->second.end())
@@ -500,6 +511,7 @@ void DrawPauseMenuTheme() {
       if (options[row].empty())
         options[row] = UiString(defaultIds[active->name][name]);
     }
+  game::NoteMoundVisitSelected(active->name == "IGROSTERPOPT" && selected == 0);
   for (auto &value : options)
     for (auto &c : value)
       c = char(std::toupper((unsigned char)c));
@@ -605,12 +617,9 @@ void DrawPauseMenuTheme() {
       std::string label = team.nickname.empty() ? team.name : team.nickname;
       if (!team.rank.empty() && team.rank != "0")
         label = "#" + team.rank + " " + label;
-      d->AddRectFilled(p(x + 18, sy + 3), p(x + 80, sy + 57),
-                       IM_COL32(222, 228, 235, 255), 3 * s);
-      if (auto i = logos.find(team.name); i != logos.end())
-        if (auto logo =
-                gpu::g_ui_image(assets / ("base-logos/" + i->second + ".png")))
-          d->AddImage((ImTextureID)logo, p(x + 24, sy + 5), p(x + 74, sy + 55));
+      if(auto logo=gpu::g_ui_image(overhaul::TeamLogo(team.name,team.nickname)))
+        d->AddImage((ImTextureID)logo,p(x+18,sy+2),p(x+76,sy+60));
+      else text(x+25,sy+16,25,team.name.substr(0,2),60);
       text(x + 100, sy + 12, 30, label, 505);
       for (int stat = 0; stat < 3; ++stat)
         text(x + 657 + stat * 90, sy + 4, 40, scores[side][stat], 100);
@@ -619,7 +628,7 @@ void DrawPauseMenuTheme() {
     for (size_t i = 0; i < options.size(); ++i) {
       float ry = y + 8 + i * rh;
       if (int(i) == selected)
-        panel(x + 12, ry + 2, w - 24, rh - 4, true);
+        UiMenuHighlight(d, p(x+12,ry+2), p(x+w-12,ry+rh-2), s);
       d->AddLine(p(x + 28, ry + rh), p(x + w - 28, ry + rh),
                  IM_COL32(100, 105, 110, 85), s);
       text(x + 82, ry + 9, 28, options[i], w - 125,
@@ -631,8 +640,8 @@ void DrawPauseMenuTheme() {
                                                   : IM_COL32_WHITE);
     }
     panel(x, y + h + 8, w, 45);
-    text(x + 28, y + h + 14, 27, showInfo ? "Y  HIDE INFO" : "Y  SHOW INFO",
-         400, IM_COL32(235, 195, 36, 255));
+    UiControllerGlyph(d,p(x+28,y+h+14),p(x+62,y+h+48),"Y");
+    text(x+75,y+h+14,27,showInfo?"HIDE INFO":"SHOW INFO",350,IM_COL32_WHITE);
     text(x + 710, y + h + 14, 27, wind, 175);
   } else if (active->name == "INGAMECTRLRMENU") {
     panel(510, 145, 900, 60);
@@ -656,12 +665,9 @@ void DrawPauseMenuTheme() {
       d->AddRectFilled(p(x + 1, 241), p(x + 389, 245),
                        side ? IM_COL32(213, 91, 21, 255)
                             : IM_COL32(34, 113, 204, 255));
-      d->AddRectFilled(p(x + 115, 258), p(x + 275, 418),
-                       IM_COL32(225, 230, 235, 255), 4 * s);
-      if (auto i = logos.find(sides[side].name); i != logos.end())
-        if (auto logo =
-                gpu::g_ui_image(assets / ("base-logos/" + i->second + ".png")))
-          d->AddImage((ImTextureID)logo, p(x + 120, 263), p(x + 270, 413));
+
+      if(auto logo=gpu::g_ui_image(overhaul::TeamLogo(sides[side].name,sides[side].nickname)))
+        d->AddImage((ImTextureID)logo,p(x+120,263),p(x+270,413));
       text(x + 28, 430, 34, sides[side].name, 335);
       text(x + 28, 476, 27, sides[side].nickname, 335);
       if (!sides[side].rank.empty())
@@ -686,20 +692,31 @@ void DrawPauseMenuTheme() {
     constexpr float bx = 380, bw = 1160;
     panel(bx, 180, bw, 690);
     text(bx + 30, 198, 36, "BOX SCORE", 1000);
-    std::unordered_map<int, std::string> names;
+    std::unordered_map<int, std::string> names, clubs;
     std::unordered_map<int, std::array<std::string, 9>> cells;
     std::array<std::array<std::string, 13>, 3> innings;
-    std::string club;
+    static uint32_t boxRoot=0;
+    static std::string club,period;
+    static std::array<std::string,9> headers;
+    if(boxRoot!=active->root){boxRoot=active->root;club.clear();period.clear();headers={"PLAYER","POS","AB","R","H","RBI","BB","SO","AVG"};}
+    const auto matchup=SnapshotMatchupLoading();
+    auto isClub=[&](const std::string& value){
+      for(const auto& side:matchup)for(auto name:{side.name,side.nickname}){
+        for(auto& ch:name)ch=char(std::toupper(static_cast<unsigned char>(ch)));
+        if(!name.empty() && value==name)return true;
+      }
+      return false;
+    };
     for (const auto &t : texts) {
       if (t.grid == "FIRSTCELL" && t.name == "NAME" && t.row >= 0 &&
           t.row < 100) {
-        if (t.value.find("----") == std::string::npos &&
+        if (!t.value.empty() &&
+            t.value.find("----") == std::string::npos &&
             t.value.find("WWWWW") == std::string::npos &&
             t.value != "PLAYER NAME") {
-          if (t.row == 1)
-            club = t.value;
-          else
-            names[t.row] = t.value;
+          if (isClub(t.value))
+            clubs[t.row] = t.value;
+          names[t.row] = t.value;
         }
       }
       if (t.grid == "CELL" && t.column >= 1 && t.column < 9 && t.row >= 0)
@@ -708,9 +725,35 @@ void DrawPauseMenuTheme() {
           t.row >= 0 && t.row < 3)
         innings[t.row][t.column] = t.value;
     }
-    text(bx + 30, 251, 27, club, 600, IM_COL32(190, 202, 218, 255));
-    const char *headers[] = {"PLAYER", "POS", "AB", "R",  "H",
-                             "RBI",    "BB",  "SO", "AVG"};
+    for(const auto& t:texts)if(t.grid=="CELL"){
+      if(t.value=="TODAY" || t.value=="TOURN" || t.value=="TOURNAMENT")period=t.value;
+      if(t.column>=1 && t.column<9){
+        const bool header=std::any_of(texts.begin(),texts.end(),[&](const auto& label){return label.grid=="FIRSTCELL" && label.row==t.row && label.value=="PLAYER NAME";});
+        if(header)headers[t.column]=t.value;
+      }
+    }
+    // Club rows are native section rows; the two clubs' sections alternate.
+    // Rows above a visible club row belong to the other club, so the header
+    // follows the window's top row instead of the most recently seen club.
+    auto otherClub=[&](const std::string& value){
+      if(matchup.size()==2)for(int i=0;i<2;++i)for(int f=0;f<2;++f){
+        auto name=f?matchup[i].nickname:matchup[i].name;
+        for(auto& ch:name)ch=char(std::toupper(static_cast<unsigned char>(ch)));
+        if(name!=value)continue;
+        auto other=f?matchup[1-i].nickname:matchup[1-i].name;
+        for(auto& ch:other)ch=char(std::toupper(static_cast<unsigned char>(ch)));
+        return other;
+      }
+      return std::string();
+    };
+    if(!names.empty()){
+      int top=INT_MAX,firstClub=INT_MAX;
+      for(auto& [r,n]:names)top=std::min(top,r);
+      for(auto& [r,n]:clubs)firstClub=std::min(firstClub,r);
+      if(firstClub==top)club=clubs[top];
+      else if(firstClub!=INT_MAX){auto other=otherClub(clubs[firstClub]);if(!other.empty())club=other;}
+    }
+    text(bx + 30, 251, 27, club+(period.empty()?"":"  /  "+period), 1000, IM_COL32(190, 202, 218, 255));
     float cx[] = {bx + 30,  bx + 452, bx + 532, bx + 607, bx + 682,
                   bx + 757, bx + 832, bx + 907, bx + 982};
     for (int c = 0; c < 9; ++c)
@@ -725,10 +768,12 @@ void DrawPauseMenuTheme() {
       if (count >= 10)
         break;
       float yy = 334 + count++ * 36;
-      if (r == selected)
+      const int first=menuGrid?int(kernel::R32(menuGrid+0x74)):0;
+      if (r == selected-first)
         panel(bx + 14, yy - 2, bw - 28, 34, true);
+      if(clubs.count(r)){text(cx[0], yy + 2, 26, names[r], 395, r == selected-first ? IM_COL32_WHITE : IM_COL32(232, 64, 64, 255));d->AddLine(p(bx + 28, yy + 33), p(bx + bw - 28, yy + 33),IM_COL32(255, 255, 255, 25), s);continue;}
       text(cx[0], yy + 2, 26, names[r], 395);
-      for (int c = 1; c < 9; ++c)
+      if(names[r].back()!=':' || names[r]=="TOTALS:")for (int c = 1; c < 9; ++c)
         text(cx[c], yy + 2, 26, cells[r][c], 86);
       d->AddLine(p(bx + 28, yy + 33), p(bx + bw - 28, yy + 33),
                  IM_COL32(255, 255, 255, 25), s);
@@ -747,6 +792,10 @@ void DrawPauseMenuTheme() {
              value, c ? 60 : 280,
              r ? IM_COL32_WHITE : IM_COL32(174, 187, 204, 255));
       }
+    panel(bx,895,bw,64);
+    UiControllerButton(d,p(bx+35,927),20*s,s,"B",IM_COL32_WHITE);
+    text(bx+70,910,26,"BACK",180);
+    text(bx+285,910,26,"UP / DOWN  SCROLL TEAMS & STATISTICS",830,IM_COL32(190,202,218,255));
   } else if (menuGrid && focusedGrid != "MENUOPTIONS") {
     struct SettingRow {
       int id;
@@ -926,11 +975,9 @@ void DrawPauseMenuTheme() {
       }
     }
   }
-  if (showInfo)
-    UiText(d, UiFont::Heading, 29 * s, screenPoint(50, 1020), IM_COL32_WHITE,
-           "START  RESUME       A  SELECT       B  BACK", 900 * s);
-  else
-    text(520, 965, 29, "START  RESUME       A  SELECT       B  BACK", 900);
+  const auto foot=showInfo?screenPoint(50,1020):p(520,965);
+  const char* buttons[]={"START","A","B"};const char* captions[]={"RESUME","SELECT","BACK"};
+  for(int i=0;i<3;++i){float x=foot.x+i*285*s;UiControllerGlyph(d,{x,foot.y},{x+58*s,foot.y+36*s},buttons[i]);UiText(d,UiFont::Heading,29*s,{x+72*s,foot.y},IM_COL32_WHITE,captions[i],190*s);}
   if (showInfo && dev::Env("MVP06_TRACE_FE") &&
       infoCaptureAt.time_since_epoch().count() != 0 &&
       std::chrono::steady_clock::now() > infoCaptureAt) {
@@ -943,8 +990,11 @@ void DrawPauseMenuTheme() {
         active->name + std::to_string(selected) + std::to_string(showInfo);
     if (last != key) {
       last = key;
-      LOGR("pause theme: %s selected=%d options=%zu texts=%zu",
-           active->name.c_str(), selected, options.size(), texts.size());
+      std::string list;
+      for (size_t i = 0; i < options.size(); ++i)
+        list += " | " + options[i] + (i < enabled.size() && !enabled[i] ? " (off)" : "");
+      LOGR("pause theme: %s selected=%d options=%zu texts=%zu%s",
+           active->name.c_str(), selected, options.size(), texts.size(), list.c_str());
       gpu::g_capture = true;
     }
   }

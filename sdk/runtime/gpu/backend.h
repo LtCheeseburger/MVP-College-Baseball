@@ -8,6 +8,10 @@
 #include "gpu/state.h"
 
 namespace gpu {
+// Native menu model framing: normalized target-width/height offsets, no 2D UI shift.
+inline std::atomic<float> g_menu_model_offset{0};
+inline std::atomic<float> g_menu_model_offset_y{0};
+inline std::atomic<float> g_menu_model_scale{1};
 
 // D3DCLEAR flags as the XDK defines them
 enum : uint32_t {

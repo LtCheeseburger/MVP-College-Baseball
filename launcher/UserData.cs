@@ -19,11 +19,11 @@ sealed class UserData(string installDir)
     public string BackupsDir => Path.Combine(Dir, "backups");
     public string LastGoodDir => Path.Combine(Dir, "save_lastgood");
     public string HistoryDir => Path.Combine(Dir, "save_history");
-    public string SaveModsDir => Path.Combine(Dir, "save_mods");
+    public string SaveModsDir => Path.Combine(Dir, "saves", ".mvp27-league-stamps");
 
     public sealed record SaveMod(string Id, string Version, bool AffectsSaves);
 
-    /// <summary>The mods a save was last written with (the runtime's save_mods\&lt;slot&gt;.json); null when unknown.</summary>
+    /// <summary>The league stamp stored within the backed-up save root; null for legacy unstamped saves.</summary>
     public List<SaveMod>? ModsOf(string slot)
     {
         try
@@ -38,6 +38,15 @@ sealed class UserData(string installDir)
 
     public sealed record Save(string Name, string Slot, DateTime Changed, int History);
     public sealed record Backup(string Folder, DateTime Time, string Why, long Bytes);
+
+    public Save? NewestDynasty(IEnumerable<SaveMod> enabled)
+    {
+        var now = enabled.Where(m => m.AffectsSaves).Select(m => $"{m.Id} {m.Version}").ToHashSet();
+        return Saves().Where(s => s.Name.EndsWith(" (Dynasty)", StringComparison.Ordinal))
+            .Where(s => { var data = Path.Combine(SavesDir, s.Slot, "data.dat"); return File.Exists(data) && new FileInfo(data).Length >= 268; })
+            .Where(s => { var had = ModsOf(s.Slot); return had is null ? now.Count == 0 : now.SetEquals(had.Where(m => m.AffectsSaves).Select(m => $"{m.Id} {m.Version}")); })
+            .OrderByDescending(s => File.GetLastWriteTime(Path.Combine(SavesDir, s.Slot, "data.dat"))).FirstOrDefault();
+    }
 
     /// <summary>Each save slot (a folder under UDATA\&lt;title&gt;) with the name its SaveMeta.xbx gives it.</summary>
     public List<Save> Saves()

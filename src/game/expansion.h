@@ -6,6 +6,7 @@
 // constants in place of the stock ones; hooks in expansion.cpp, poll.cpp and ranks.cpp do the rest.
 #include <cstdint>
 #include "cpu/x86_ops.h"
+#include "game/phase9.h"
 
 namespace expansion {
 
@@ -15,6 +16,11 @@ namespace expansion {
 constexpr uint32_t kStockMaxSchools = 130;   // registry and team buffers: 130 (the disc has 128)
 constexpr uint32_t kStockConferences = 14;
 X86_HOST_API bool Active();
+// After the off-season: empty roster slots whose player has no batter-table row (see expansion.cpp).
+void DropUnmappedRosterHandles();
+// Separate storage for the frontend's texture-directory records and twenty image cache slots.
+X86_HOST_API uint32_t LogoTable(uint32_t original);
+bool SchoolActive(uint32_t id);
 
 // 0x990D0 builds the player database inside one block: database.big is read into its top and each table is
 // decompressed from its bottom. Stock 0x12C000 (1.2 MB) only fits the 128-school tables.
@@ -132,3 +138,6 @@ constexpr uint32_t kSaveScale = (kBatterRows + 3249) / 3250 + 1;   // 4 for 7,67
 uint32_t PollRank(uint32_t team);
 
 }  // namespace expansion
+
+// External native Career Stats conference rows; no serialized layouts change.
+namespace expansion { X86_HOST_API uint32_t CareerConferenceRows(uint32_t self); }

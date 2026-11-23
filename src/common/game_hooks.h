@@ -1,4 +1,7 @@
 #pragma once
+namespace game { void WorkshopDynastyCreated(unsigned year); }
+namespace game { void WorkshopDynastySaved(); }
+namespace game { void WorkshopAwardsVerified(); }
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -9,11 +12,13 @@ struct Pad;
 
 // host side hooks game_info.cpp hands the runtime
 namespace game {
+bool DynastyDateAvailable(unsigned year,unsigned month,unsigned day);
 
 void WorkshopLaunchInit();
 void WorkshopLaunchPad(int port, input::Pad& pad);
 bool WorkshopMenuSelection(const std::string& name);
 void WorkshopObserve(uint32_t root);
+int DynastyHomeSelectedRow(); // observed native menu animation cursor
 void KeyboardPad(int port, input::Pad& p);  // keyboard.cpp
 
 // rebindable keyboard buttons, keyboard.cpp: virtual key codes for A, B, X, Y, Start, Back, LT, RT, White, Black

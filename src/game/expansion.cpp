@@ -3,11 +3,13 @@
 // 5-bit conference id, 9-bit schedule slots; tools/expansion/expansion_spec.json). Every hook here runs the stock
 // code unless Active(). Constants and the reasons for them: expansion.h.
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cstring>
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <stdexcept>
 
@@ -20,6 +22,7 @@
 namespace {
 
 constexpr uint32_t kStockTeamSlots = 0x82;
+std::array<bool,expansion::kDbTeams> g_active_schools{};
 
 // id list (0x4F0320): vtable, +4 data, +8 count, +0xC capacity, +0x10/+0x14 cursors, inline storage at +0x18
 constexpr uint32_t kListData = 0x4, kListCapacity = 0xC;
@@ -125,11 +128,23 @@ bool Detect() {
         LOGW("expansion: database.big not readable, stock limits");
         return false;
     }
-    std::vector<uint8_t> roster = Member(big, "roster.bin", 4);
+    std::vector<uint8_t> roster = Member(big, "roster.bin", size_t(2)<<20);
     std::vector<uint8_t> conf = Member(big, "conf.dat", size_t(1) << 20);
     uint32_t teams = 0;
     if (roster.size() >= 4) std::memcpy(&teams, roster.data(), 4);
-    uint32_t schools = teams ? teams - 1 : 0, conferences = ConferenceRows(conf);   // roster.bin counts empty slot 0
+    uint32_t schools = 0, conferences = ConferenceRows(conf);
+    // Canonical identities retain a retired-school hole. Count named schools,
+    // not header rows, while bounding every ID-indexed table by kDbTeams.
+    size_t cursor=4;
+    if(teams>expansion::kDbTeams)throw std::runtime_error("Roster ID range exceeds team buffers");
+    for(uint32_t row=0;row<teams;row++) {
+        if(cursor+487>roster.size())throw std::runtime_error("Truncated league roster");
+        uint32_t players=0;std::memcpy(&players,roster.data()+cursor+192,4);
+        if(players>30 || cursor+487+size_t(players)*8>roster.size())throw std::runtime_error("Invalid league roster slots");
+        if(roster[cursor+8]){schools++;g_active_schools[row]=true;}
+        cursor+=487+size_t(players)*8;
+    }
+    if(cursor!=roster.size())throw std::runtime_error("Unexpected league roster tail");
     bool on = schools > expansion::kStockMaxSchools || conferences > expansion::kStockConferences;
     if (on && (schools > expansion::kSchools || conferences > expansion::kConferenceRows - 1)) {
         LOGE("expansion: the database has %u schools in %u conferences, more than the %u / %u this build holds; "
@@ -149,9 +164,12 @@ bool Active() {
     static const bool on = Detect();
     return on;
 }
+bool SchoolActive(uint32_t id) {
+    (void)Active();return id<g_active_schools.size() && g_active_schools[id];
+}
 
 bool LoadConferenceSchedule(uint32_t conf) {
-    return conf < kScheduleConfs;   // 0-based here: conf.dat row 1 is 0
+    return conf < (phase9::ScheduleSlots()>37 ? 30u : kScheduleConfs);   // 0-based here
 }
 
 }  // namespace expansion
@@ -220,6 +238,7 @@ X86_EXTERN_FUNC(__imp__sub_004D9930);
 X86_FUNC(sub_004D9930) {
     if (!expansion::Active()) return __imp__sub_004D9930(ctx, base);
     uint32_t k = Arg(ctx, 0);
+    if(phase9::Enabled(phase9::Feature::Competition)){ctx.eax=uint32_t(phase9::CompetitionSlot(k));ctx.esp+=8;return;}
     int32_t slot = TournamentSlot(k);
     {
         std::lock_guard<std::mutex> lock(g_tourney_lock);
@@ -236,6 +255,7 @@ X86_FUNC(sub_004D9930) {
 X86_EXTERN_FUNC(__imp__sub_005000E0);
 X86_FUNC(sub_005000E0) {
     if (!expansion::Active()) return __imp__sub_005000E0(ctx, base);
+    if(phase9::CompetitionDefer(ctx)||phase9::CompetitionSeed(ctx)){ctx.esp+=8;return;}
     uint32_t mgr = ctx.ecx, ev = Arg(ctx, 0), k = ev ? kernel::R32(ev + 8) : 0;
     uint32_t need = TournamentTeams(k), have = need ? StandingsTeams(ctx, mgr, k) : 0;
     if (need && have < need) {
@@ -252,11 +272,13 @@ X86_FUNC(sub_005000E0) {
 // Default conference tournament setup (season start): a new season's tournaments start unskipped.
 X86_EXTERN_FUNC(__imp__sub_004F6110);
 X86_FUNC(sub_004F6110) {
+    const auto world=ctx.ecx;
     {
         std::lock_guard<std::mutex> lock(g_tourney_lock);
         std::memset(g_tourney_skipped, 0, sizeof g_tourney_skipped);
     }
     __imp__sub_004F6110(ctx, base);
+    phase9::CompetitionRegister(ctx,world);
 }
 
 // ---- Capacities ----------------------------------------------------------------------------------------------------
@@ -265,6 +287,70 @@ X86_FUNC(sub_004F6110) {
 // players (roster 0xF7800, dynasty 0x1C3400, ...). The serializers do not check the end of the buffer, so saving a
 // 305-school Dynasty ran off the end of "cDBManager::SaveBuffer" (0x77DA0) into the rest of memory (crash in the
 // node-map writer 0x797B0). Every section gets kSaveScale times the room.
+// The stock texture directory embeds 200 records before its twenty cache slots.
+// Give each directory 512 records, preserving the native cache and resource lifetime.
+uint32_t expansion::LogoTable(uint32_t original) {
+    static std::mutex lock;
+    static std::unordered_map<uint32_t, uint32_t> tables;
+    std::lock_guard guard(lock);
+    for (const auto& [old, expanded] : tables) if (expanded == original) return original;
+    auto& expanded = tables[original];
+    if (!expanded) {
+        expanded = mem::AllocSystem(512 * 60 + 20 * 24 + 8);
+        if (!expanded) throw std::runtime_error("Frontend texture directory allocation failed");
+        std::memset(kernel::HostPtr(expanded), 0, 512 * 60 + 20 * 24 + 8);
+    }
+    return expanded;
+}
+
+// Native FEL images can request an unavailable texture while changing calendar
+// months. The stock loader hashes directoryEntry+4 without checking the lookup;
+// a missing entry therefore reads guest address 4. The native renderer also
+// requires a real texture handle, so reject the image before queuing a draw.
+namespace {
+bool FrontendTextureAvailable(X86Context& ctx, uint32_t directory, uint32_t name) {
+    const auto saved = ctx;
+    const auto cached = CallThis(ctx, directory, 0x267740, {name});
+    const auto entry = cached ? cached : CallThis(ctx, directory, 0x259FA0, {name});
+    ctx = saved;
+    if (entry) return true;
+    static std::mutex reportLock;
+    static std::unordered_set<std::string> reported;
+    const auto texture = kernel::ReadCString(name, 64);
+    std::lock_guard guard(reportLock);
+    if (reported.insert(texture).second)
+        LOGW("frontend: unavailable texture %s; skipping native image", texture.c_str());
+    return false;
+}
+}
+X86_EXTERN_FUNC(__imp__sub_000E64F0);
+X86_FUNC(sub_000E64F0) {
+    const auto image = ctx.ecx;
+    if (expansion::Active() && (kernel::R16(image + 0x28) & 1) &&
+        (kernel::g_base[image + 0x6C] & 1) && kernel::g_base[image + 0x68]) {
+        const auto manager = kernel::R32(0x6D1B10);
+        if (!FrontendTextureAvailable(ctx, manager + 0xEF30, image + 0x4E)) {
+            ctx.esp += 4;
+            return;
+        }
+    }
+    __imp__sub_000E64F0(ctx, base);
+}
+X86_EXTERN_FUNC(__imp__sub_00279760);
+X86_FUNC(sub_00279760) {
+    if (expansion::Active()) {
+        const auto output = Arg(ctx, 0), name = Arg(ctx, 1);
+        const auto directory = ctx.ecx + 0xEF30;
+        if (!FrontendTextureAvailable(ctx, directory, name)) {
+            kernel::W32(output, 0);
+            ctx.eax = 0;
+            ctx.esp += 12; // thiscall: return address and two arguments
+            return;
+        }
+    }
+    __imp__sub_00279760(ctx, base);
+}
+
 X86_EXTERN_FUNC(__imp__sub_00077D10);
 X86_FUNC(sub_00077D10) {
     __imp__sub_00077D10(ctx, base);
@@ -318,4 +404,55 @@ X86_FUNC(sub_004F0320) {
     std::memset(kernel::HostPtr(buffer), 0, bytes);
     kernel::W32(self + kListData, buffer);
     kernel::W32(self + kListCapacity, expansion::kBatterRows);
+}
+
+// ---- Roster slots after the off-season -------------------------------------------------------------------------------
+
+// Roster handles without a player. With the batter table full, the rollover's CPU roster fill can still create a
+// recruit under a new random key (callers such as 0x4F2885 pass the key in and store it themselves); the stock code
+// gives that key no row or key-map entry, so the roster holds a player that does not exist (two or three such
+// handles on the last schools after a 309-school rollover). Once the off-season is complete (the new season's verified
+// schedule import, before the rollover autosave), each roster slot whose handle is not in the key map is emptied the
+// way the native departure step empties a slot (handle 0, status 0); that roster ends a player short, as short CPU
+// rosters already are.
+void expansion::DropUnmappedRosterHandles() {
+    if (!Active()) return;
+    const uint32_t world = kernel::R32(0x6C6540), map = world ? kernel::R32(world + 0x7C) : 0;
+    const uint32_t teams = world ? kernel::R32(world + 0x34) : 0;
+    if (!map || !teams) return;
+    const uint32_t entries = kernel::R32(map + 4), count = kernel::R32(map + 8);
+    const uint32_t first = kernel::R32(teams + 4), teamCount = kernel::R32(teams + 8);
+    if (!entries || count > 100000 || !first || teamCount > 400) return;
+    std::unordered_set<uint32_t> keys;
+    keys.reserve(count);
+    for (uint32_t i = 0; i < count; ++i) keys.insert(kernel::R32(entries + i * 12));
+    unsigned dropped = 0;
+    for (uint32_t team = 0; team < teamCount; ++team)
+        for (uint32_t slot = 0; slot < 30; ++slot) {
+            const uint32_t at = first + team * 0x2D8 + 0xC4 + slot * 8, handle = kernel::R32(at);
+            if (!handle || handle == 0xBB55BB55u || keys.count(handle)) continue;
+            LOGR("expansion: team %u slot %u held player %08X with no batter-table row; slot emptied", team, slot, handle);
+            kernel::W32(at, 0); kernel::W32(at + 4, 0); ++dropped;
+        }
+    if (dropped) LOGR("expansion: %u roster handles without a player emptied", dropped);
+}
+
+namespace {
+std::mutex careerRowsMutex;
+std::unordered_map<uint32_t,uint32_t> careerRows;
+void ReleaseCareerRows(uint32_t self){
+ std::lock_guard lock(careerRowsMutex);
+ if(auto at=careerRows.find(self);at!=careerRows.end()){mem::FreeSystem(at->second);careerRows.erase(at);}
+}
+}
+uint32_t expansion::CareerConferenceRows(uint32_t self){
+ std::lock_guard lock(careerRowsMutex);
+ auto& rows=careerRows[self];
+ if(!rows){rows=mem::AllocSystem(kConferenceRows*0x1F8);if(!rows)throw std::runtime_error("Career Stats conference allocation failed");std::memset(kernel::HostPtr(rows),0,kConferenceRows*0x1F8);}
+ return rows;
+}
+X86_EXTERN_FUNC(__imp__sub_00316340);
+X86_FUNC(sub_00316340){
+ const auto self=ctx.ecx;__imp__sub_00316340(ctx,base);
+ if(expansion::Active())ReleaseCareerRows(self);
 }
