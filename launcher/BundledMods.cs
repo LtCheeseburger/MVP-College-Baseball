@@ -8,14 +8,16 @@ namespace MVPSetup;
 // toggles are maintained separately, with one journaled config publication.
 static class BundledMods
 {
-    public const string CachePath = "bundled-mods/mvp27-ui.mvpmod";
+    public const string CachePath = "bundled-mods/mvp27-overhaul.mvpmod";
     static readonly (string Id,bool Required,bool AffectsSaves,bool Default)[] Packs =
-    [("mvp27-league",true,true,true),("mvp27-logos",false,false,false),("mvp27-ui",false,false,true)];
+    [("mvp27-overhaul",true,true,true)];
+    // Preserve replaced packages, but keep required legacy packs out of runtime discovery.
+    static readonly string[] Replaced=["mvp27-league","mvp27-logos","mvp27-ui","mvp27-annual-schedules","mvp27-competition","mvp27-standings-awards","mvp27-modern-dynasty","mvp27-saves-launcher"];
     public static void Install(string dir,Action<string>? beforeWrite=null)
     {
         var available=Packs.Where(p=>File.Exists(Path.Combine(dir,"bundled-mods",p.Id+".mvpmod"))).ToArray();
         var installedManifest=PortUpdater.ReadManifest(dir);
-        if(installedManifest?.Files.Any(f=>f.Path.Replace('\\','/')=="bundled-mods/mvp27-league.mvpmod")==true && !File.Exists(Path.Combine(dir,"bundled-mods/mvp27-league.mvpmod")))throw new InvalidDataException("Required league cache is missing. Update or re-extract the release before repairing.");
+        if(installedManifest?.Files.Any(f=>f.Path.Replace('\\','/')=="bundled-mods/mvp27-overhaul.mvpmod")==true && !File.Exists(Path.Combine(dir,"bundled-mods/mvp27-overhaul.mvpmod")))throw new InvalidDataException("Required Overhaul cache is missing. Update or re-extract the release before repairing.");
         if(available.Length==0)return;
         var manifest=installedManifest??throw new InvalidDataException("Missing port manifest for bundled mods.");
         var verified=new List<(string Id,bool Required,bool Default,string Cache,string Hash)>();
@@ -43,6 +45,21 @@ static class BundledMods
             var rows=order.Where(row=>(string?)row?["id"]==pack.Id).ToArray();
             if(rows.Length==0){order.Add(new JsonObject{["id"]=pack.Id,["enabled"]=pack.Required||((bool?)defaultState?[pack.Id]??pack.Default)});changed=true;}
             else if(pack.Required)foreach(var row in rows)if((bool?)row?["enabled"]!=true){row!["enabled"]=true;changed=true;}
+        }
+        if(verified.Any(p=>p.Id=="mvp27-overhaul")) {
+            foreach(var row in order)if(Replaced.Contains((string?)row?["id"]) && (bool?)row?["enabled"]==true){row!["enabled"]=false;changed=true;}
+            foreach(var mod in new ModList(dir).Mods.Where(m=>Replaced.Contains(m.Id) && m.Error==null)) {
+                // A required legacy League ignores enabled=false. Disable discovery while retaining its bytes.
+                var source=Directory.Exists(mod.Path)?Path.Combine(mod.Path,"mod.json"):mod.Path;
+                var target=source+".disabled";
+                File.Copy(source,target+".tmp",true);
+                try {
+                    beforeWrite?.Invoke(Path.GetRelativePath(dir,source));
+                    if(File.Exists(source))File.Delete(source);
+                    beforeWrite?.Invoke(Path.GetRelativePath(dir,target));
+                    File.Move(target+".tmp",target,true);
+                } finally {if(File.Exists(target+".tmp"))File.Delete(target+".tmp");}
+            }
         }
         if(changed){File.WriteAllText(configPath+".tmp",config.ToJsonString(new(){WriteIndented=true}));try{beforeWrite?.Invoke("mods/mods.json");File.Move(configPath+".tmp",configPath,true);}finally{if(File.Exists(configPath+".tmp"))File.Delete(configPath+".tmp");}}
     }
