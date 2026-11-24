@@ -85,6 +85,10 @@ void PublishTeamSelect(const std::array<TeamSelectSide, 2>& value, const std::ve
   teams = value;
   for(int i=0;i<2;++i)if(old[i].name==teams[i].name && teams[i].step!=TeamSelectSide::Step::Team){
     if(teams[i].uniform.empty())teams[i].uniform=old[i].uniform;
+    if(teams[i].uniformParts[1].empty()) {
+      teams[i].uniformParts=old[i].uniformParts;
+      teams[i].uniformRow=old[i].uniformRow;
+    }
     if(teams[i].uniformPreview.empty())teams[i].uniformPreview=old[i].uniformPreview;
     if(teams[i].difficulty.empty())teams[i].difficulty=old[i].difficulty;
     for(int j=0;j<5;++j)if(teams[i].grades[j].empty())teams[i].grades[j]=old[i].grades[j];
@@ -222,9 +226,30 @@ void DrawTeamSelect(double elapsed) {
     }
     if(!choosing){
       bool uniform=team.step==TeamSelectSide::Step::Uniform;
+      bool components=uniform && !team.uniformParts[1].empty();
       bool ready=team.step==TeamSelectSide::Step::Ready;
       center(UiFont::Prompt,28,cx,210,ready?"MATCH SETUP COMPLETE":uniform?"01  /  SELECT UNIFORM":"02  /  SELECT DIFFICULTY",accents[side],700);
-      if(uniform && !team.uniformPreview.empty()){
+      if(components){
+        UiBroadcastPanel(d,p(cx-350,285),p(cx-70,585),s);
+        center(UiFont::Prompt,23,cx-210,300,"JERSEY PREVIEW",color(205,215,225),250);
+        if(!team.uniformPreview.empty())if(auto jersey=gpu::g_ui_image(overhaul::UiAsset(root/("uniforms/"+team.uniformPreview+".png"))))
+          d->AddImage((ImTextureID)jersey,p(cx-325,345),p(cx-95,570),{0,.12f},{1,1});
+        for(int row=0;row<4;++row){
+          float y=285+row*77.f;
+          bool focused=row==team.uniformRow;
+          auto lo=p(cx-45,y),hi=p(cx+350,y+68);
+          UiBroadcastPanel(d,lo,hi,s);
+          if(focused){d->AddRectFilled(lo,hi,color(155,12,27,135),4*s);d->AddRect(lo,hi,accents[side],4*s,0,2*s);}
+          const auto& label=team.uniformParts[row];
+          auto split=label.find(": ");
+          text(UiFont::Prompt,22,cx-25,y+5,split==std::string::npos?"":label.substr(0,split),color(180,195,205),325);
+          text(UiFont::Heading,30,cx-25,y+29,split==std::string::npos?label:label.substr(split+2),color(245,247,249),325);
+          if(focused){arrow(cx-52,y+34,-1,accents[side]);arrow(cx+363,y+34,1,accents[side]);}
+        }
+        center(UiFont::Prompt,23,cx,610,"UP / DOWN: PART    LEFT / RIGHT: CHANGE",color(220,228,236),720);
+        center(UiFont::Prompt,21,cx,642,"PRESET RESETS ALL PARTS  /  HELMET FOLLOWS HAT",color(180,195,205),720);
+      }
+      if(uniform && !components && !team.uniformPreview.empty()){
         auto path="uniforms/"+team.uniformPreview+".png";
         UiBroadcastPanel(d,p(cx-215,260),p(cx+215,580),s);
         center(UiFont::Prompt,25,cx,274,"JERSEY DETAIL",color(205,215,225),390);
@@ -234,10 +259,12 @@ void DrawTeamSelect(double elapsed) {
           d->AddImage((ImTextureID)jersey,p(cx-145,318),p(cx+145,570),{0,.12f},{1,1});
       }
       float top=uniform?600.f:330.f;
+      if(!components){
       d->AddRectFilled(p(cx-340,top),p(cx+340,top+74),color(3,8,14,220),5*s);
       d->AddLine(p(cx-340,top+74),p(cx+340,top+74),accents[side],2*s);
       center(UiFont::Heading,48,cx,top+10,ready?"READY":uniform?team.uniform:team.difficulty,color(245,247,249),540);
       if(!ready){arrow(cx-300,top+37,-1,accents[side]);arrow(cx+300,top+37,1,accents[side]);}
+      }
       if(team.step==TeamSelectSide::Step::Difficulty){
         auto* font=Font(UiFont::Prompt);
         auto size=font->CalcTextSizeA(34*s,1e6f,600*s,team.difficultyDescription.c_str());
@@ -248,8 +275,13 @@ void DrawTeamSelect(double elapsed) {
         UiText(d,UiFont::Prompt,25*s,p(cx-26,610),accents[side],"RETURN TO UNIFORM");
       }
       if(ready){
-        center(UiFont::Prompt,34,cx,460,team.uniform,color(225,233,240),650);
-        center(UiFont::Prompt,34,cx,515,team.difficulty,color(225,233,240),650);
+        if(!team.uniformParts[1].empty()){
+          for(int row=1;row<4;++row)center(UiFont::Prompt,30,cx,400+row*45.f,team.uniformParts[row],color(225,233,240),650);
+          center(UiFont::Prompt,30,cx,580,team.difficulty,color(225,233,240),650);
+        }else{
+          center(UiFont::Prompt,34,cx,460,team.uniform,color(225,233,240),650);
+          center(UiFont::Prompt,34,cx,515,team.difficulty,color(225,233,240),650);
+        }
         center(UiFont::Prompt,26,cx,610,"WAITING FOR OTHER PLAYERS",accents[side],650);
       }
     }
@@ -307,11 +339,12 @@ void DrawTeamSelect(double elapsed) {
   image("controller-reference-b.png",185,1317,58,58);text(UiFont::Prompt,42,265,1322,"BACK",color(242,245,247));
   if(!setup){image("controller-reference-x.png",475,1317,58,58);text(UiFont::Prompt,42,555,1322,"RANDOM",color(242,245,247));}
   image("controller-reference-a.png",2070,1317,58,58);text(UiFont::Prompt,42,2150,1322,"ADVANCE",color(242,245,247));
-  text(UiFont::Prompt,28,setup?930:1050,1335,setup?"LEFT / RIGHT: CHANGE     A: CONFIRM     B: BACK":"LEFT / RIGHT: SIDE     UP / DOWN: TEAM",color(180,195,205),1000);
+  bool componentSetup=std::any_of(state.begin(),state.end(),[](const auto& team){return team.step==TeamSelectSide::Step::Uniform && !team.uniformParts[1].empty();});
+  text(UiFont::Prompt,28,setup?930:1050,1335,componentSetup?"UP / DOWN: PART    LEFT / RIGHT: CHANGE":setup?"LEFT / RIGHT: CHANGE     A: CONFIRM     B: BACK":"LEFT / RIGHT: SIDE     UP / DOWN: TEAM",color(180,195,205),1000);
   if(dev::Env("MVP06_TRACE_FE")){
     static std::string captured;
     std::string key=std::to_string(version);
-    for(const auto& team:state)key+=team.name+team.controller+std::to_string(int(team.step))+team.uniform+team.difficulty+team.uniformPreview;
+    for(const auto& team:state){key+=team.name+team.controller+std::to_string(int(team.step))+team.uniform+team.difficulty+team.uniformPreview+std::to_string(team.uniformRow);for(const auto& part:team.uniformParts)key+=part;}
     if(elapsed>1 && Clock()-std::max(changed[0],changed[1])>.4 && key!=captured){captured=key;gpu::g_capture=true;}
   }
 }

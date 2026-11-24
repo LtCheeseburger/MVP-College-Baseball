@@ -2812,7 +2812,16 @@ void PollNativeTeamSelect() {
       if(name=="HOMEJERSEY" || name=="AWAYJERSEY")team.step=TeamSelectSide::Step::Uniform;
       if(name=="HOMEDIFFICULTY" || name=="AWAYDIFFICULTY")team.step=TeamSelectSide::Step::Difficulty;
       if(name=="HOMEREADY" || name=="AWAYREADY")team.step=TeamSelectSide::Step::Ready;
-      if(uniform && name=="JERSEYNAME")team.uniform=NativeUiText(node);
+      if(uniform) {
+        const char* rows[]={"JERSEYNAME","UNIFORMHAT","UNIFORMJERSEY","UNIFORMPANTS"};
+        for(int i=0;i<4;++i)if(name==rows[i]) {
+          auto label=NativeUiText(node);
+          if(label.starts_with("> ")){team.uniformRow=i;label.erase(0,2);}
+          else if(label.starts_with("  "))label.erase(0,2);
+          team.uniformParts[i]=label;
+          if(i==0)team.uniform=label;
+        }
+      }
       if(difficulty && (name=="DHOME" || name=="DAWAY"))team.difficulty=NativeUiText(node);
       if(difficulty && name=="STAT")team.difficultyDescription=NativeUiText(node);
       if(uniform && (name=="HOMEJERSEY" || name=="AWAYJERSEY") && kernel::R32(node)==0x0060FCD0){

@@ -12,6 +12,8 @@ struct TeamSelectSide {
   Step step = Step::Team;
   std::string uniform, difficulty, difficultyDescription;
   std::string uniformPreview;
+  std::array<std::string,4> uniformParts{};
+  int uniformRow = -1;
   std::array<std::string, 5> grades;
 };
 struct DynastySchoolRow {

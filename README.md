@@ -20,6 +20,9 @@ This port was created using the [Xbox XBE Recomp](https://github.com/TGP482/Xbox
 ## Playing
 
 - **Controllers:** Xbox, PlayStation and Switch pads, plugged in before or during play. Keyboard works too.
+- **Uniforms:** on the pregame uniform screen, choose a preset or mix Hat, Jersey and Pants. Up/Down selects a row;
+  Left/Right changes it. Helmets follow the hat, and each new game starts with home/away defaults.
+  See [uniform components](docs/UNIFORM_COMPONENTS.md) to create standalone pieces.
 - **PC Options:** main menu > Options > PC Options for display mode, resolution, frame limit, effects, keyboard
   keys, vibration and save backups. Changes save straight away.
 - **Quit Game:** the last row of the main menu.
