@@ -10,7 +10,7 @@ if exist "%SYNC_PEER%\tools\sync-check.ps1" (
 )
 set "OUT=out\build\release"
 rem Never package a stale executable with developer tools, even from DEV.
-cmake --preset release -DMVP06_DEV_TOOLS=OFF || (echo configuring player capabilities failed & exit /b 1)
+cmake --preset release -DMVP06_DEV_TOOLS=OFF -DMVP06_UE_EMBED=OFF || (echo configuring player capabilities failed & exit /b 1)
 cmake --build "%OUT%" --target MVP06 || (echo building player executable failed & exit /b 1)
 rem Verify and stage the combined Overhaul built from its source project.
 pwsh -NoProfile -File tools\build-bundled-mods.ps1 || (echo staging the bundled Overhaul failed & exit /b 1)
